@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice ID: AI or Alive?</title>
+    <style>
+        :root {
+            --rh-red: #EE0000;
+            --rh-red-dark: #A30000;
+            --rh-dark: #151515;
+            --rh-dark-alt: #1E1E1E;
+            --rh-gray: #6A6E73;
+            --rh-light: #F0F0F0;
+            --rh-green: #3E8635;
+            --rh-blue: #0066CC;
+            --gold: #F0AB00;
+            --ai-color: #7B2FBE;
+            --human-color: #0066CC;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Red Hat Display', 'Segoe UI', system-ui, sans-serif;
+            background: var(--rh-dark);
+            color: var(--rh-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--rh-red-dark), var(--rh-red));
+            padding: 1.5rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 20px,
+                rgba(0,0,0,0.03) 20px,
+                rgba(0,0,0,0.03) 40px
+            );
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-top: 0.3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* --- Registration Screen --- */
+        #screen-register {
+            text-align: center;
+            padding-top: 3rem;
+        }
+
+        #screen-register h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #screen-register p {
+            color: var(--rh-gray);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .name-input {
+            background: var(--rh-dark-alt);
+            border: 2px solid #333;
+            color: var(--rh-light);
+            font-size: 1.3rem;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .name-input:focus {
+            border-color: var(--rh-red);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover { transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary {
+            background: var(--rh-red);
+            color: white;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary:hover { background: var(--rh-red-dark); }
+
+        .btn-primary:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .rules {
+            margin-top: 2.5rem;
+            text-align: left;
+            background: var(--rh-dark-alt);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            border: 1px solid #333;
+        }
+
+        .rules h3 {
+            color: var(--gold);
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .rules li {
+            margin-bottom: 0.5rem;
+            margin-left: 1.2rem;
+            color: #CCC;
+            line-height: 1.5;
+        }
+
+        /* --- Game Screen --- */
+        #screen-game { display: none; }
+
+        .progress-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .progress-dot {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+        }
+
+        .progress-dot.active {
+            border-color: var(--gold);
+            background: #333;
+            color: var(--gold);
+        }
+
+        .progress-dot.correct {
+            background: var(--rh-green);
+            border-color: var(--rh-green);
+            color: white;
+        }
+
+        .progress-dot.wrong {
+            background: var(--rh-red-dark);
+            border-color: var(--rh-red-dark);
+            color: white;
+        }
+
+        .clip-card {
+            background: var(--rh-dark-alt);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid #333;
+            text-align: center;
+        }
+
+        .clip-label {
+            font-size: 0.9rem;
+            color: var(--rh-gray);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .clip-lang {
+            display: inline-block;
+            background: var(--rh-blue);
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .audio-container {
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .audio-container audio {
+            width: 100%;
+            height: 50px;
+            border-radius: 8px;
+        }
+
+        .waveform {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            margin: 1rem 0;
+        }
+
+        .waveform .bar {
+            width: 4px;
+            background: var(--rh-red);
+            border-radius: 2px;
+            transition: height 0.1s;
+            min-height: 4px;
+        }
+
+        .play-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--rh-red);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem auto;
+            transition: all 0.2s;
+        }
+
+        .play-btn:hover {
+            background: var(--rh-red-dark);
+            transform: scale(1.05);
+        }
+
+        .play-btn svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+            margin-left: 3px;
+        }
+
+        .play-btn.playing svg { margin-left: 0; }
+
+        .choice-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .choice-btn {
+            flex: 1;
+            padding: 1.2rem;
+            border: 3px solid #444;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--rh-light);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .choice-btn.ai { border-color: var(--ai-color); }
+        .choice-btn.ai:hover { background: rgba(123,47,190,0.15); }
+
+        .choice-btn.human { border-color: var(--human-color); }
+        .choice-btn.human:hover { background: rgba(0,102,204,0.15); }
+
+        .choice-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .choice-btn.selected.ai { background: var(--ai-color); color: white; }
+        .choice-btn.selected.human { background: var(--human-color); color: white; }
+
+        /* --- Reveal --- */
+        .reveal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reveal-overlay.show { display: flex; }
+
+        .reveal-card {
+            background: var(--rh-dark-alt);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            animation: revealPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 3px solid transparent;
+        }
+
+        .reveal-card.correct { border-color: var(--rh-green); }
+        .reveal-card.wrong { border-color: var(--rh-red); }
+
+        @keyframes revealPop {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .reveal-icon {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .reveal-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .reveal-source {
+            color: var(--rh-gray);
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .reveal-source strong {
+            color: var(--rh-light);
+        }
+
+        .reveal-next {
+            margin-top: 1.5rem;
+            background: #333;
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .reveal-next:hover { background: #444; }
+
+        /* --- Results Screen --- */
+        #screen-results { display: none; text-align: center; padding-top: 2rem; }
+
+        .results-score {
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .results-score .of {
+            font-size: 2rem;
+            color: var(--rh-gray);
+            font-weight: 400;
+        }
+
+        .results-label {
+            font-size: 1.2rem;
+            color: var(--rh-gray);
+            margin: 0.5rem 0 1.5rem;
+        }
+
+        .prize-banner {
+            background: linear-gradient(135deg, #F0AB00, #FF6600);
+            color: var(--rh-dark);
+            padding: 1.2rem 2rem;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+
+        .no-prize {
+            background: #333;
+            color: var(--rh-gray);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .results-meta {
+            color: var(--rh-gray);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .leaderboard {
+            background: var(--rh-dark-alt);
+            border-radius: 12px;
+            border: 1px solid #333;
+            overflow: hidden;
+            text-align: left;
+            margin-top: 1.5rem;
+        }
+
+        .leaderboard h3 {
+            padding: 1rem 1.5rem;
+            background: #252525;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--gold);
+        }
+
+        .leaderboard-row {
+            display: flex;
+            padding: 0.8rem 1.5rem;
+            border-bottom: 1px solid #2a2a2a;
+            align-items: center;
+        }
+
+        .leaderboard-row:last-child { border-bottom: none; }
+
+        .leaderboard-rank {
+            width: 40px;
+            font-weight: 700;
+            color: var(--rh-gray);
+        }
+
+        .leaderboard-rank.top { color: var(--gold); }
+
+        .leaderboard-name { flex: 1; }
+
+        .leaderboard-score {
+            font-weight: 700;
+            color: var(--rh-green);
+        }
+
+        .leaderboard-time {
+            width: 80px;
+            text-align: right;
+            color: var(--rh-gray);
+            font-size: 0.85rem;
+        }
+
+        .btn-play-again {
+            margin-top: 2rem;
+        }
+
+        /* --- Leaderboard Tab --- */
+        #screen-leaderboard { display: none; }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 1.5rem;
+            background: #252525;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.8rem;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            background: transparent;
+            color: var(--rh-gray);
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: var(--rh-red);
+            color: white;
+        }
+
+        @media (max-width: 500px) {
+            .header h1 { font-size: 1.5rem; }
+            .container { padding: 1rem; }
+            .choice-buttons { flex-direction: column; }
+            .progress-dot { width: 38px; height: 38px; font-size: 0.9rem; }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <h1>Voice ID: AI or Alive?</h1>
+        <div class="subtitle">{{ conference_name }}</div>
+    </div>
+
+    <div class="container">
+        <!-- Registration -->
+        <div id="screen-register">
+            <h2>Can you tell the difference?</h2>
+            <p>Listen to {{ game_size }} voice clips. Decide: AI-generated or real human?</p>
+
+            <input type="text" class="name-input" id="player-name" placeholder="Your name" maxlength="40" autocomplete="off">
+            <br>
+            <button class="btn btn-primary" id="btn-start" disabled>Start Game</button>
+
+            <div class="rules">
+                <h3>How it works</h3>
+                <ul>
+                    <li>You'll hear {{ game_size }} voice clips in English, Czech, or Slovak</li>
+                    <li>For each clip, choose: <strong>AI Generated</strong> or <strong>Natural Voice</strong></li>
+                    <li>After each guess, we'll reveal the answer and the voice source</li>
+                    <li>Score {{ prize_threshold }}/{{ game_size }} or better to win a prize!</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Game -->
+        <div id="screen-game">
+            <div class="progress-bar" id="progress-bar"></div>
+
+            <div class="clip-card">
+                <div class="clip-label">Clip <span id="clip-number">1</span> of {{ game_size }}</div>
+                <span class="clip-lang" id="clip-lang">EN</span>
+
+                <div class="audio-container">
+                    <div class="waveform" id="waveform"></div>
+                    <button class="play-btn" id="play-btn">
+                        <svg viewBox="0 0 24 24" id="play-icon"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                    <audio id="audio-player" preload="auto"></audio>
+                </div>
+
+                <div class="choice-buttons">
+                    <button class="choice-btn ai" id="btn-ai" disabled>AI Generated</button>
+                    <button class="choice-btn human" id="btn-human" disabled>Natural Voice</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="screen-results">
+            <div class="results-score">
+                <span id="final-score">0</span><span class="of">/{{ game_size }}</span>
+            </div>
+            <div class="results-label" id="results-label">Correct guesses</div>
+            <div id="prize-section"></div>
+            <div class="results-meta" id="results-meta"></div>
+
+            <div class="leaderboard" id="results-leaderboard">
+                <h3>Leaderboard</h3>
+                <div id="leaderboard-rows"></div>
+            </div>
+
+            <button class="btn btn-primary btn-play-again" id="btn-play-again">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Reveal Overlay -->
+    <div class="reveal-overlay" id="reveal-overlay">
+        <div class="reveal-card" id="reveal-card">
+            <div class="reveal-icon" id="reveal-icon"></div>
+            <div class="reveal-title" id="reveal-title"></div>
+            <div class="reveal-source" id="reveal-source"></div>
+            <div class="reveal-source" id="reveal-speaker"></div>
+            <button class="reveal-next" id="reveal-next">Next</button>
+        </div>
+    </div>
+
+<script>
+const GAME_SIZE = {{ game_size }};
+const PRIZE_THRESHOLD = {{ prize_threshold }};
+
+let gameState = {
+    gameId: null,
+    clips: [],
+    currentIndex: 0,
+    results: [],
+};
+
+const LANG_NAMES = { en: 'English', cs: 'Czech', sk: 'Slovak' };
+
+// --- DOM ---
+const $register = document.getElementById('screen-register');
+const $game = document.getElementById('screen-game');
+const $results = document.getElementById('screen-results');
+const $nameInput = document.getElementById('player-name');
+const $startBtn = document.getElementById('btn-start');
+const $playBtn = document.getElementById('play-btn');
+const $audio = document.getElementById('audio-player');
+const $waveform = document.getElementById('waveform');
+const $btnAi = document.getElementById('btn-ai');
+const $btnHuman = document.getElementById('btn-human');
+const $revealOverlay = document.getElementById('reveal-overlay');
+const $revealCard = document.getElementById('reveal-card');
+
+// --- Waveform bars ---
+const NUM_BARS = 40;
+for (let i = 0; i < NUM_BARS; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.height = '4px';
+    $waveform.appendChild(bar);
+}
+const bars = $waveform.querySelectorAll('.bar');
+
+let audioCtx, analyser, source, animFrame;
+
+function initAudioAnalyser() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+    source = audioCtx.createMediaElementSource($audio);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+}
+
+function animateWaveform() {
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(data);
+    const step = Math.floor(data.length / NUM_BARS);
+    bars.forEach((bar, i) => {
+        const val = data[i * step] || 0;
+        bar.style.height = Math.max(4, (val / 255) * 70) + 'px';
+    });
+    animFrame = requestAnimationFrame(animateWaveform);
+}
+
+function stopWaveform() {
+    cancelAnimationFrame(animFrame);
+    bars.forEach(b => b.style.height = '4px');
+}
+
+// --- Registration ---
+$nameInput.addEventListener('input', () => {
+    $startBtn.disabled = !$nameInput.value.trim();
+});
+
+$nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !$startBtn.disabled) $startBtn.click();
+});
+
+$startBtn.addEventListener('click', async () => {
+    const name = $nameInput.value.trim();
+    if (!name) return;
+
+    $startBtn.disabled = true;
+    $startBtn.textContent = 'Loading...';
+
+    try {
+        const res = await fetch('/api/game/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_name: name }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        gameState.gameId = data.game_id;
+        gameState.clips = data.clips;
+        gameState.currentIndex = 0;
+        gameState.results = [];
+
+        showScreen('game');
+        loadClip(0);
+    } catch (err) {
+        alert('Error: ' + err.message);
+        $startBtn.disabled = false;
+        $startBtn.textContent = 'Start Game';
+    }
+});
+
+// --- Game ---
+function showScreen(name) {
+    $register.style.display = name === 'register' ? 'block' : 'none';
+    $game.style.display = name === 'game' ? 'block' : 'none';
+    $results.style.display = name === 'results' ? 'block' : 'none';
+}
+
+function buildProgressBar() {
+    const $bar = document.getElementById('progress-bar');
+    $bar.innerHTML = '';
+    for (let i = 0; i < GAME_SIZE; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot' + (i === gameState.currentIndex ? ' active' : '');
+        dot.textContent = i + 1;
+        if (gameState.results[i] !== undefined) {
+            dot.classList.add(gameState.results[i] ? 'correct' : 'wrong');
+            dot.classList.remove('active');
+        }
+        $bar.appendChild(dot);
+    }
+}
+
+function loadClip(index) {
+    const clip = gameState.clips[index];
+    buildProgressBar();
+
+    document.getElementById('clip-number').textContent = index + 1;
+    document.getElementById('clip-lang').textContent = LANG_NAMES[clip.language] || clip.language;
+
+    $audio.src = '/api/clip/' + clip.id + '/audio';
+    $audio.load();
+
+    $btnAi.disabled = false;
+    $btnHuman.disabled = false;
+    $btnAi.classList.remove('selected');
+    $btnHuman.classList.remove('selected');
+
+    stopWaveform();
+    updatePlayIcon(false);
+}
+
+// --- Audio playback ---
+$playBtn.addEventListener('click', () => {
+    initAudioAnalyser();
+    if ($audio.paused) {
+        $audio.play();
+        updatePlayIcon(true);
+        animateWaveform();
+    } else {
+        $audio.pause();
+        updatePlayIcon(false);
+        stopWaveform();
+    }
+});
+
+$audio.addEventListener('ended', () => {
+    updatePlayIcon(false);
+    stopWaveform();
+});
+
+function updatePlayIcon(playing) {
+    const $icon = document.getElementById('play-icon');
+    $playBtn.classList.toggle('playing', playing);
+    if (playing) {
+        $icon.innerHTML = '<rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/>';
+    } else {
+        $icon.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+    }
+}
+
+// --- Guessing ---
+async function submitGuess(guess) {
+    $btnAi.disabled = true;
+    $btnHuman.disabled = true;
+
+    if (guess === 'ai') $btnAi.classList.add('selected');
+    else $btnHuman.classList.add('selected');
+
+    $audio.pause();
+    stopWaveform();
+    updatePlayIcon(false);
+
+    const clip = gameState.clips[gameState.currentIndex];
+
+    try {
+        const res = await fetch(`/api/game/${gameState.gameId}/guess`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clip_id: clip.id, guess }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        gameState.results.push(data.correct);
+        buildProgressBar();
+        showReveal(data);
+    } catch (err) {
+        alert('Error: ' + err.message);
+        $btnAi.disabled = false;
+        $btnHuman.disabled = false;
+    }
+}
+
+$btnAi.addEventListener('click', () => submitGuess('ai'));
+$btnHuman.addEventListener('click', () => submitGuess('human'));
+
+// --- Reveal ---
+function showReveal(data) {
+    const $icon = document.getElementById('reveal-icon');
+    const $title = document.getElementById('reveal-title');
+    const $source = document.getElementById('reveal-source');
+    const $speaker = document.getElementById('reveal-speaker');
+
+    $revealCard.className = 'reveal-card ' + (data.correct ? 'correct' : 'wrong');
+    $icon.textContent = data.correct ? '✅' : '❌';
+    $title.textContent = data.correct ? 'Correct!' : 'Wrong!';
+
+    if (data.actual === 'ai') {
+        $source.innerHTML = 'This was <strong>AI Generated</strong>';
+        $speaker.innerHTML = 'Model: <strong>' + data.source + '</strong>';
+    } else {
+        $source.innerHTML = 'This was a <strong>Natural Voice</strong>';
+        $speaker.innerHTML = 'Speaker: <strong>' + data.speaker + '</strong>';
+    }
+
+    const isLast = gameState.currentIndex >= GAME_SIZE - 1;
+    document.getElementById('reveal-next').textContent = isLast ? 'See Results' : 'Next Clip';
+
+    $revealOverlay.classList.add('show');
+}
+
+document.getElementById('reveal-next').addEventListener('click', () => {
+    $revealOverlay.classList.remove('show');
+    gameState.currentIndex++;
+
+    if (gameState.currentIndex >= GAME_SIZE) {
+        completeGame();
+    } else {
+        loadClip(gameState.currentIndex);
+    }
+});
+
+// --- Complete ---
+async function completeGame() {
+    try {
+        const res = await fetch(`/api/game/${gameState.gameId}/complete`, {
+            method: 'POST',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        document.getElementById('final-score').textContent = data.score;
+
+        const $prize = document.getElementById('prize-section');
+        if (data.prize) {
+            $prize.innerHTML = '<div class="prize-banner">You won a prize! Show this to the booth staff.</div>';
+        } else {
+            $prize.innerHTML = '<div class="no-prize">Need ' + PRIZE_THRESHOLD + '/' + GAME_SIZE + ' to win a prize. Try again!</div>';
+        }
+
+        document.getElementById('results-meta').textContent =
+            'Rank #' + data.rank + ' • Time: ' + data.duration_sec + 's';
+
+        await loadLeaderboard();
+        showScreen('results');
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+async function loadLeaderboard() {
+    const res = await fetch('/api/leaderboard');
+    const rows = await res.json();
+    const $rows = document.getElementById('leaderboard-rows');
+    $rows.innerHTML = '';
+
+    if (rows.length === 0) {
+        $rows.innerHTML = '<div class="leaderboard-row" style="color:var(--rh-gray);">No scores yet</div>';
+        return;
+    }
+
+    rows.forEach((r, i) => {
+        const div = document.createElement('div');
+        div.className = 'leaderboard-row';
+        div.innerHTML = `
+            <span class="leaderboard-rank ${i < 3 ? 'top' : ''}">#${i + 1}</span>
+            <span class="leaderboard-name">${escHtml(r.player_name)}</span>
+            <span class="leaderboard-score">${r.score}/${r.total}</span>
+            <span class="leaderboard-time">${r.duration_sec ? r.duration_sec.toFixed(1) + 's' : ''}</span>
+        `;
+        $rows.appendChild(div);
+    });
+}
+
+function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// --- Play Again ---
+document.getElementById('btn-play-again').addEventListener('click', () => {
+    $nameInput.value = '';
+    $startBtn.disabled = true;
+    $startBtn.textContent = 'Start Game';
+    showScreen('register');
+});
+</script>
+</body>
+</html>

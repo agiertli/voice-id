@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voice-id
+  labels:
+    app: voice-id
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: voice-id
+  template:
+    metadata:
+      labels:
+        app: voice-id
+    spec:
+      containers:
+      - name: voice-id
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DATA_DIR
+          value: /app/data
+        - name: GAME_SIZE
+          value: "{{ .Values.game.size }}"
+        - name: PRIZE_THRESHOLD
+          value: "{{ .Values.game.prizeThreshold }}"
+        - name: CONFERENCE_NAME
+          value: "{{ .Values.conference.name }}"
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /api/leaderboard
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/leaderboard
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 10
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: voice-id-data

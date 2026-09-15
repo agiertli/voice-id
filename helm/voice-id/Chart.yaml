@@ -1,0 +1,6 @@
+apiVersion: v2
+name: voice-id
+description: Voice ID - AI or Alive? Interactive voice guessing game for conference booths
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
