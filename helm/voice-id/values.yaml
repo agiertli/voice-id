@@ -13,6 +13,7 @@ conference:
 game:
   size: 5
   prizeThreshold: 4
+  defaultLang: "en"
 
 storage: "1Gi"
 

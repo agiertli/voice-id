@@ -29,9 +29,14 @@ spec:
           value: "{{ .Values.game.prizeThreshold }}"
         - name: CONFERENCE_NAME
           value: "{{ .Values.conference.name }}"
+        - name: DEFAULT_LANG
+          value: "{{ .Values.game.defaultLang }}"
         volumeMounts:
         - name: data
           mountPath: /app/data
+        - name: config
+          mountPath: /app/config
+          readOnly: true
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         livenessProbe:
@@ -50,3 +55,6 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: voice-id-data
+      - name: config
+        configMap:
+          name: voice-id-config

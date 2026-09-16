@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voice-id-config
+data:
+  i18n.json: |
+{{ .Files.Get "i18n.json" | indent 4 }}

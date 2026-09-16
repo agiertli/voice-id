@@ -42,6 +42,15 @@ AUDIO_EXTENSIONS = {".wav", ".mp3", ".ogg", ".m4a", ".flac", ".webm"}
 
 AI_MODELS = {"fish", "xtts", "moss", "qwen", "higgs", "coqui"}
 
+MODEL_DISPLAY_NAMES = {
+    "fish": "Fish Audio S2 Pro",
+    "xtts": "Coqui XTTS v2",
+    "moss": "MOSS-TTS-Nano",
+    "qwen": "Qwen3-TTS",
+    "higgs": "Higgs Audio v3",
+    "coqui": "Coqui XTTS v2",
+}
+
 
 def parse_filename(filename, is_ai):
     stem = Path(filename).stem
@@ -59,6 +68,7 @@ def parse_filename(filename, is_ai):
     elif not is_ai and len(parts) >= 1:
         speaker = parts[0]
 
+    source = MODEL_DISPLAY_NAMES.get(source, source)
     return source, speaker
 
 

@@ -51,7 +51,25 @@ Filename convention: `{model}-{speaker}-{description}.{ext}` for AI, `{speaker}-
 - **Registry**: `quay.io/agiertli/voice-id`
 - **Tag policy**: Semantic versioning (v1.0.0, v1.1.0, etc.). Never use `latest`.
 - **Build**: `podman build --platform linux/amd64 -t quay.io/agiertli/voice-id:v1.0.0 .`
-- Audio samples are NOT in the image — they're loaded into SQLite on the PVC at runtime via `load_samples.py`
+- Audio samples are NOT in the image — they're loaded into SQLite on the PVC at runtime
+
+## Managing Clips on the Running Pod
+
+**NEVER use `oc cp` to copy the database to/from the pod.** This corrupts SQLite WAL and breaks the running app.
+
+Instead, use the upload API to add clips:
+```bash
+ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
+curl -sk "https://${ROUTE}/api/admin/upload" \
+  -F "audio=@samples/ai/en/fish-anton-hello.wav" \
+  -F "is_ai=1" -F "language=en" \
+  -F "source=Fish Audio S2 Pro" -F "speaker=anton" \
+  -F "filename=ai/en/fish-anton-hello.wav"
+```
+
+To delete a clip: `curl -sk -X DELETE "https://${ROUTE}/api/admin/delete-clip/<clip_id>"`
+
+To list all clips: `curl -sk "https://${ROUTE}/api/admin/clips"`
 
 ## Deployment
 
@@ -62,11 +80,18 @@ helm upgrade --install voice-id helm/voice-id \
   --set conference.name="DevConf 2026"
 ```
 
+## Localization
+
+UI strings are externalized in `helm/voice-id/i18n.json`, loaded into a ConfigMap, and served via `/api/i18n`. Adding a new language = edit the JSON, run `helm upgrade`. No image rebuild.
+
+The frontend stores the user's language choice in localStorage. Default language is configurable via `game.defaultLang` in values.yaml.
+
 ## 12-Factor Compliance
 
-- Config via env vars (GAME_SIZE, PRIZE_THRESHOLD, CONFERENCE_NAME, DATA_DIR)
+- Config via env vars (GAME_SIZE, PRIZE_THRESHOLD, CONFERENCE_NAME, DATA_DIR, DEFAULT_LANG)
+- Localization via ConfigMap-mounted JSON file
 - Stateless app process — all state in SQLite on PVC
-- Logs to stdout only
+- Logs to stdout only (game starts and guesses logged with clip filenames and model details)
 - No config baked into the image
 
 ## Game Flow

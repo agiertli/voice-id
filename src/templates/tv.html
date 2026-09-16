@@ -7,20 +7,24 @@
     <meta http-equiv="refresh" content="10">
     <style>
         :root {
-            --rh-red: #EE0000;
-            --rh-dark: #151515;
-            --rh-light: #F0F0F0;
-            --rh-gray: #6A6E73;
-            --gold: #F0AB00;
-            --rh-green: #3E8635;
+            --bg-dark: #1a3a4a;
+            --bg-darker: #132d3a;
+            --bg-card: #1e4050;
+            --cyan: #5de6c8;
+            --cyan-dim: #3aaa8e;
+            --magenta: #d94fa0;
+            --light: #e8f4f0;
+            --gray: #7a9baa;
+            --green: #4ade80;
+            --gold: #f0ab00;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Red Hat Display', 'Segoe UI', system-ui, sans-serif;
-            background: var(--rh-dark);
-            color: var(--rh-light);
+            background: var(--bg-dark);
+            color: var(--light);
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -28,21 +32,24 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #A30000, var(--rh-red));
-            padding: 2rem 3rem;
+            background: var(--bg-darker);
+            padding: 1.5rem 3rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid rgba(93,230,200,0.15);
         }
 
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 900;
+        .header img {
+            max-height: 80px;
+            width: auto;
         }
 
         .header .conf {
             font-size: 1.3rem;
-            opacity: 0.9;
+            color: var(--cyan-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .board {
@@ -55,7 +62,7 @@
         .board-header {
             display: flex;
             padding: 0.8rem 1.5rem;
-            color: var(--rh-gray);
+            color: var(--gray);
             text-transform: uppercase;
             letter-spacing: 2px;
             font-size: 0.9rem;
@@ -71,7 +78,7 @@
             display: flex;
             align-items: center;
             padding: 1rem 1.5rem;
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid rgba(93,230,200,0.08);
             font-size: 1.3rem;
             animation: fadeIn 0.5s ease;
         }
@@ -87,39 +94,31 @@
 
         .col-rank { font-weight: 900; }
         .col-name { font-weight: 600; }
-
-        .col-score {
-            font-weight: 800;
-            color: var(--rh-green);
-            text-align: center;
-        }
-
-        .col-time {
-            color: var(--rh-gray);
-            text-align: right;
-        }
+        .col-score { font-weight: 800; color: var(--green); text-align: center; }
+        .col-time { color: var(--gray); text-align: right; }
 
         .empty {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--rh-gray);
+            color: var(--gray);
             font-size: 1.8rem;
         }
 
         .footer {
             padding: 1rem 3rem;
             text-align: center;
-            color: var(--rh-gray);
-            font-size: 0.9rem;
+            color: var(--cyan-dim);
+            font-size: 1rem;
+            letter-spacing: 0.5px;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="header">
-        <h1>Voice ID: AI or Alive?</h1>
+        <img src="/static/logo.jpg" alt="Voice ID: AI or Alive?">
         <div class="conf">{{ conference_name }}</div>
     </div>
 
@@ -133,7 +132,7 @@
         <div id="rows"></div>
     </div>
 
-    <div class="footer">Can YOU tell the difference? Step up and play!</div>
+    <div class="footer">Trust your ears. Unmask the machine.</div>
 
 <script>
 async function load() {
@@ -143,7 +142,7 @@ async function load() {
         const $rows = document.getElementById('rows');
 
         if (data.length === 0) {
-            $rows.innerHTML = '<div class="empty">No scores yet — be the first!</div>';
+            $rows.innerHTML = '<div class="empty">No scores yet — step up and play!</div>';
             return;
         }
 

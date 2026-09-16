@@ -7,14 +7,28 @@ import uuid
 from io import BytesIO
 from pathlib import Path
 
+import logging
+
 from flask import Flask, Response, g, jsonify, render_template, request
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/app/data"))
+CONFIG_DIR = Path(os.environ.get("CONFIG_DIR", "/app/config"))
 GAME_SIZE = int(os.environ.get("GAME_SIZE", "5"))
 PRIZE_THRESHOLD = int(os.environ.get("PRIZE_THRESHOLD", "4"))
 CONFERENCE_NAME = os.environ.get("CONFERENCE_NAME", "Red Hat Summit")
+DEFAULT_LANG = os.environ.get("DEFAULT_LANG", "en")
+
+
+def load_i18n():
+    i18n_path = CONFIG_DIR / "i18n.json"
+    if i18n_path.exists():
+        with open(i18n_path) as f:
+            return json.load(f)
+    return {"en": {}}
 
 
 def get_db():
@@ -82,7 +96,13 @@ def index():
     return render_template("index.html",
                            conference_name=CONFERENCE_NAME,
                            game_size=GAME_SIZE,
-                           prize_threshold=PRIZE_THRESHOLD)
+                           prize_threshold=PRIZE_THRESHOLD,
+                           default_lang=DEFAULT_LANG)
+
+
+@app.route("/api/i18n")
+def api_i18n():
+    return jsonify(load_i18n())
 
 
 @app.route("/tv")
@@ -98,7 +118,8 @@ def serve_clip_audio(clip_id):
     row = db.execute("SELECT audio_data, content_type FROM clips WHERE id = ?", (clip_id,)).fetchone()
     if not row:
         return jsonify({"error": "clip not found"}), 404
-    return Response(row["audio_data"], mimetype=row["content_type"])
+    return Response(row["audio_data"], mimetype=row["content_type"],
+                    headers={"Content-Length": str(len(row["audio_data"]))})
 
 
 # --- Game API ---
@@ -111,12 +132,21 @@ def start_game():
         return jsonify({"error": "player_name required"}), 400
 
     db = get_db()
-    clips = db.execute("SELECT id, language FROM clips").fetchall()
+    ai_clips = [dict(c) for c in db.execute("SELECT id, language FROM clips WHERE is_ai = 1").fetchall()]
+    human_clips = [dict(c) for c in db.execute("SELECT id, language FROM clips WHERE is_ai = 0").fetchall()]
 
-    if len(clips) < GAME_SIZE:
-        return jsonify({"error": f"Not enough clips ({len(clips)}/{GAME_SIZE})"}), 500
+    if len(ai_clips) < 1 or len(human_clips) < 1:
+        return jsonify({"error": "Need at least 1 AI and 1 human clip"}), 500
+    if len(ai_clips) + len(human_clips) < GAME_SIZE:
+        return jsonify({"error": f"Not enough clips ({len(ai_clips) + len(human_clips)}/{GAME_SIZE})"}), 500
 
-    selected = random.sample([dict(c) for c in clips], GAME_SIZE)
+    max_ai = min(GAME_SIZE - 1, len(ai_clips))
+    min_ai = max(1, GAME_SIZE - len(human_clips))
+    num_ai = random.randint(min_ai, max_ai)
+    num_human = GAME_SIZE - num_ai
+
+    selected = random.sample(ai_clips, num_ai) + random.sample(human_clips, num_human)
+    random.shuffle(selected)
     clip_ids = [c["id"] for c in selected]
 
     game_id = str(uuid.uuid4())[:8]
@@ -125,6 +155,13 @@ def start_game():
         (game_id, player_name, json.dumps(clip_ids), time.time()),
     )
     db.commit()
+
+    clip_details = []
+    for c in selected:
+        row = db.execute("SELECT filename, is_ai, source, speaker FROM clips WHERE id = ?", (c["id"],)).fetchone()
+        ai_label = "AI" if row["is_ai"] else "HUMAN"
+        clip_details.append(f'{c["id"]}({ai_label}/{c["language"]}/{row["filename"]})')
+    logger.info("GAME_START game=%s player=%s clips=[%s]", game_id, player_name, ", ".join(clip_details))
 
     return jsonify({
         "game_id": game_id,
@@ -148,6 +185,11 @@ def submit_guess(game_id):
 
     actual_is_ai = bool(clip["is_ai"])
     correct = (guess == "ai") == actual_is_ai
+    actual_label = "ai" if actual_is_ai else "human"
+
+    clip_row = db.execute("SELECT filename FROM clips WHERE id = ?", (clip_id,)).fetchone()
+    logger.info("GUESS game=%s clip=%s file=%s guess=%s actual=%s correct=%s",
+                game_id, clip_id, clip_row["filename"], guess, actual_label, correct)
 
     row = db.execute("SELECT guesses FROM games WHERE id = ?", (game_id,)).fetchone()
     if not row:
@@ -221,6 +263,41 @@ def admin_clips():
         "SELECT id, filename, is_ai, language, source, speaker, content_type, created_at FROM clips"
     ).fetchall()
     return jsonify([dict(r) for r in rows])
+
+
+@app.route("/api/admin/upload", methods=["POST"])
+def admin_upload_clip():
+    audio_file = request.files.get("audio")
+    if not audio_file:
+        return jsonify({"error": "audio file required"}), 400
+
+    is_ai = request.form.get("is_ai", "0")
+    language = request.form.get("language", "en")
+    source = request.form.get("source", "")
+    speaker = request.form.get("speaker", "")
+    filename = request.form.get("filename", audio_file.filename or "upload.wav")
+
+    content_type = audio_file.content_type or "audio/wav"
+    audio_data = audio_file.read()
+
+    clip_id = str(uuid.uuid4())[:8]
+    db = get_db()
+    db.execute(
+        "INSERT INTO clips (id, filename, is_ai, language, source, speaker, audio_data, content_type, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (clip_id, filename, int(is_ai), language, source, speaker, audio_data, content_type, time.time()),
+    )
+    db.commit()
+
+    return jsonify({"id": clip_id, "filename": filename, "is_ai": bool(int(is_ai)), "language": language})
+
+
+@app.route("/api/admin/delete-clip/<clip_id>", methods=["DELETE"])
+def admin_delete_clip(clip_id):
+    db = get_db()
+    db.execute("DELETE FROM clips WHERE id = ?", (clip_id,))
+    db.commit()
+    return jsonify({"status": "deleted"})
 
 
 @app.route("/api/admin/reset", methods=["POST"])
