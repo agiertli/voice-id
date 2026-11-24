@@ -2096,8 +2096,27 @@ def _battle_begin(game_id, clip_id, opponent_id):
     return None, rnd
 
 
+_SPEC_DISPLAY_CACHE = {}
+
+
 def _spectrogram_url(png):
-    return "data:image/png;base64," + base64.b64encode(png).decode()
+    """Display copy of Iris's spectrogram. The model always analyses the full PNG; players
+    only need a picture, so send a compressed WebP (~10x smaller over booth Wi-Fi)."""
+    key = hashlib.sha256(png).hexdigest()
+    url = _SPEC_DISPLAY_CACHE.get(key)
+    if url:
+        return url
+    try:
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.open(io.BytesIO(png)).convert("RGB").save(buf, format="WEBP", quality=80, method=4)
+        url = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
+    except Exception:
+        url = "data:image/png;base64," + base64.b64encode(png).decode()
+    if len(_SPEC_DISPLAY_CACHE) > 512:
+        _SPEC_DISPLAY_CACHE.clear()
+    _SPEC_DISPLAY_CACHE[key] = url
+    return url
 
 
 def _battle_analyze(game_id, opponent_id):

@@ -178,3 +178,5 @@ unknown. Retrain with `apps/deepfake-detector/experiment_v4.py` (about 11 minute
 on an Apple M3), rebuild `quay.io/agiertli/deepfake-detector` with a new tag,
 update `infra/deepfake-detector/manifests.yaml` and re-measure. Details and
 caveats: `apps/deepfake-detector/FINDINGS.md`.
+
+Iris's spectrogram is analysed by Gemma as a full-quality PNG, but sent to the browser as a compressed WebP display copy (~10x smaller, e.g. 387 KB -> ~50 KB), so battle preparation stays fast on booth Wi-Fi. Measured on the live cluster with a warm cache (v3.4.1): pre-game analysis of 5 clips takes ~0.4-1.4 s for every opponent (was 4-23 s).
