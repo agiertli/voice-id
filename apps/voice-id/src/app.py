@@ -1788,9 +1788,24 @@ def _parse_judge_response(content):
             return json.loads(text[brace_start:brace_end + 1])
         return json.loads(text)
     except (json.JSONDecodeError, IndexError, ValueError):
-        content_lower = content.lower()
-        guess = "human" if "human" in content_lower else "ai"
-        return {"guess": guess, "reasoning": content[:200]}
+        pass
+    # Models (notably Qwen2-Audio) sometimes emit JSON members without the braces, e.g.
+    #   "guess": "human", "reasoning": "..."   -> try wrapping, then a tolerant regex.
+    text = content.strip().strip('`').strip()
+    try:
+        obj = json.loads("{" + text.strip().strip(",") + "}")
+        if isinstance(obj, dict) and "guess" in obj:
+            return obj
+    except (json.JSONDecodeError, ValueError):
+        pass
+    m_guess = re.search(r'["\']?guess["\']?\s*[:=]\s*["\']?(ai|human)', text, re.I)
+    m_reason = re.search(r'["\']?reasoning["\']?\s*[:=]\s*["\']?(.+?)["\']?\s*[,}]?\s*$', text, re.I | re.S)
+    if m_guess:
+        reason = m_reason.group(1).strip().strip('"').strip() if m_reason else ""
+        return {"guess": m_guess.group(1).lower(), "reasoning": reason[:300]}
+    content_lower = content.lower()
+    guess = "human" if re.search(r"\bhuman\b", content_lower) and not re.search(r"\bnot human\b", content_lower) else "ai"
+    return {"guess": guess, "reasoning": content[:200]}
 
 
 def ai_judge_analyze(spectrogram_png):
