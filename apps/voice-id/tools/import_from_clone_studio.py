@@ -25,6 +25,11 @@ Usage:
 --game-token (or env VOICEID_ADMIN_TOKEN) is the game's Helm value adminToken. It is
 required for --apply; a dry-run without it cannot see which clips already exist.
 
+Speaker keys: one person = one key = lowercase first name. Clone Studio speaker names are
+lowercased as-is, so make sure the person used their first name there (not a surname or
+nickname). The run ends with a speaker integrity report (dry-run: the state after --apply);
+resolve warnings in /admin#speakers (merge / mark AI-only) before the booth opens.
+
 Stdlib only. TLS verification is off by default (demo clusters use self-signed routes);
 pass --verify-tls to enable it.
 """
@@ -41,6 +46,9 @@ import urllib.request
 import uuid
 from collections import defaultdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from seedpack import integrity_from_clips, print_integrity  # noqa: E402  (same tools/ folder)
 
 # Must match the source strings already used in the game DB.
 PROVIDER_SOURCES = {
@@ -331,6 +339,29 @@ def print_summary(items, apply):
     return totals
 
 
+def report_integrity(http, game, items, game_clips, apply, have_token):
+    """Print the speaker integrity report: live from the game after --apply, else projected."""
+    try:
+        if apply and have_token:
+            report = http.get_json(f"{game}/api/admin/speakers/integrity", auth=True)
+            label = "game after import"
+        else:
+            planned = [{"is_ai": it["kind"] == "ai", "speaker": it["speaker"], "source": it["source"]}
+                       for it in items if it["status"] in ("planned", "uploaded")]
+            try:
+                meta = {s["name"]: s for s in http.get_json(f"{game}/api/speakers")}
+            except (HttpError, ValueError):
+                meta = {}
+            report = integrity_from_clips(list(game_clips) + planned, meta)
+            label = "projected state after --apply"
+    except (HttpError, ValueError) as e:
+        print(f"\n(Speaker integrity report unavailable: {e})")
+        return
+    print(f"\n[{label}]", end="")
+    if print_integrity(report):
+        print("  -> Resolve in /admin#speakers (Merge / AI-only voice) before the booth opens.")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--studio", required=True, help="Clone Studio base URL")
@@ -399,6 +430,7 @@ def main(argv=None):
         print(f"      -> {status}{extra}", flush=True)
 
     totals = print_summary(items, args.apply)
+    report_integrity(http, imp.game, items, game_clips, args.apply, bool(args.game_token))
     res = imp.write_manifest()
     if res:
         print(f"\nExported to {res[0]} ({res[1]} clips in manifest)")

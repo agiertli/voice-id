@@ -12,6 +12,7 @@ import sqlite3
 import subprocess
 import tempfile
 import time
+import unicodedata
 import uuid
 import warnings
 import zipfile
@@ -218,6 +219,11 @@ def init_db():
             updated_at REAL
         )
     """)
+    # ai_only = operator confirmed "AI-only voice, no real person" (silences the
+    # speaker integrity warning). Additive migration.
+    spk_cols = {r[1] for r in conn.execute("PRAGMA table_info(speakers)").fetchall()}
+    if "ai_only" not in spk_cols:
+        conn.execute("ALTER TABLE speakers ADD COLUMN ai_only INTEGER DEFAULT 0")
     # Server-authoritative scoring (additive migration; old rows keep working).
     # One row per (game, clip): first play time, the player's single guess with its
     # points, and the battle opponent's recorded answer.
@@ -873,7 +879,7 @@ def admin_reset_scores():
 # API (voice-id has no OpenAPI spec; this block is the reference):
 #
 #   GET  /api/speakers
-#        -> 200 [{name, display_name, has_photo, photo_url, human_clips, ai_clips}]
+#        -> 200 [{name, display_name, has_photo, photo_url, human_clips, ai_clips, ai_only}]
 #           One entry per distinct non-empty clips.speaker (lowercased) plus any row in
 #           the speakers table. display_name falls back to name with first letter
 #           capitalised; photo_url is "" when there is no photo.
@@ -881,7 +887,20 @@ def admin_reset_scores():
 #        -> 200 image bytes (stored Content-Type, Cache-Control, ETag) | 304 | 404
 #   PUT  /api/admin/speakers/<name>          [admin Bearer token]
 #        JSON {"display_name": "Anton G."}   (empty/null clears it -> fallback)
+#             and/or {"ai_only": true|false}  (operator: "AI-only voice, no real person")
 #        -> 200 speaker object (same shape as GET /api/speakers items) | 400 | 403
+#   POST /api/admin/speakers/merge           [admin Bearer token]
+#        JSON {"from": "jveverka", "to": "jakub"}. Moves every clip of <from> to <to>
+#        (also renames: <to> may be a new key) and merges the profile (target keeps its
+#        display name/photo when set, otherwise takes the source's). One transaction.
+#        -> 200 {status: "merged", from, to, clips_moved, profile, speaker} | 400 | 404 | 403
+#   GET  /api/admin/speakers/integrity       [admin Bearer token]
+#        -> 200 {ok, warnings: [{speaker, kind, human_clips, ai_clips, message, suggestions}],
+#                stock_voices: [names], ai_only: [names]}
+#        kind "ai_without_human": AI clips but no human clips, not a known XTTS stock voice,
+#        not flagged ai_only -> real recordings missing or filed under an alias.
+#        kind "human_without_ai_match": human-only speaker that looks like an alias of
+#        another speaker (fuzzy match on keys / display names).
 #   POST /api/admin/speakers/<name>/photo    [admin Bearer token]
 #        multipart "photo" (JPEG/PNG/WebP, max 5 MB; detected by magic bytes).
 #        Downscaled to max 512 px long edge + EXIF stripped when Pillow is available.
@@ -944,7 +963,7 @@ def _speaker_list(db, only=None):
     ).fetchall():
         counts[r["k"]] = (r["human"] or 0, r["ai"] or 0)
     profiles = {r["name"]: r for r in db.execute(
-        "SELECT name, display_name, photo IS NOT NULL AS has_photo FROM speakers"
+        "SELECT name, display_name, photo IS NOT NULL AS has_photo, ai_only FROM speakers"
     ).fetchall()}
     keys = sorted(set(counts) | set(profiles))
     if only is not None:
@@ -961,6 +980,7 @@ def _speaker_list(db, only=None):
             "photo_url": _speaker_photo_url(k) if has_photo else "",
             "human_clips": human,
             "ai_clips": ai,
+            "ai_only": bool(prof and prof["ai_only"]),
         })
     return out
 
@@ -969,7 +989,7 @@ def _speaker_obj(db, key):
     items = _speaker_list(db, only=key)
     return items[0] if items else {
         "name": key, "display_name": _default_display(key), "has_photo": False,
-        "photo_url": "", "human_clips": 0, "ai_clips": 0,
+        "photo_url": "", "human_clips": 0, "ai_clips": 0, "ai_only": False,
     }
 
 
@@ -1032,20 +1052,196 @@ def admin_update_speaker(name):
     if not _valid_speaker_key(key):
         return jsonify({"error": "invalid speaker name"}), 400
     data = request.get_json(silent=True)
-    if not isinstance(data, dict) or "display_name" not in data:
-        return jsonify({"error": "JSON body with display_name required"}), 400
-    display = (data.get("display_name") or "").strip()
-    if len(display) > MAX_DISPLAY_NAME:
+    if not isinstance(data, dict) or ("display_name" not in data and "ai_only" not in data):
+        return jsonify({"error": "JSON body with display_name and/or ai_only required"}), 400
+    if "ai_only" in data and not isinstance(data["ai_only"], bool):
+        return jsonify({"error": "ai_only must be true or false"}), 400
+    display = (data.get("display_name") or "").strip() if "display_name" in data else None
+    if display is not None and len(display) > MAX_DISPLAY_NAME:
         return jsonify({"error": f"display_name max {MAX_DISPLAY_NAME} chars"}), 400
     db = get_db()
-    db.execute(
-        "INSERT INTO speakers (name, display_name, updated_at) VALUES (?, ?, ?) "
-        "ON CONFLICT(name) DO UPDATE SET display_name = excluded.display_name, updated_at = excluded.updated_at",
-        (key, display or None, time.time()),
-    )
+    now = time.time()
+    db.execute("INSERT OR IGNORE INTO speakers (name, updated_at) VALUES (?, ?)", (key, now))
+    if display is not None:
+        db.execute("UPDATE speakers SET display_name = ?, updated_at = ? WHERE name = ?",
+                   (display or None, now, key))
+        logger.info("SPEAKER_UPDATE name=%s display=%s", key, display or "-")
+    if "ai_only" in data:
+        db.execute("UPDATE speakers SET ai_only = ?, updated_at = ? WHERE name = ?",
+                   (int(data["ai_only"]), now, key))
+        logger.info("SPEAKER_AI_ONLY name=%s ai_only=%s", key, data["ai_only"])
     db.commit()
-    logger.info("SPEAKER_UPDATE name=%s display=%s", key, display or "-")
     return jsonify(_speaker_obj(db, key))
+
+
+@app.route("/api/admin/speakers/merge", methods=["POST"])
+@require_admin
+def admin_merge_speakers():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or not isinstance(data.get("from"), str) or not isinstance(data.get("to"), str):
+        return jsonify({"error": 'JSON body {"from": "...", "to": "..."} required'}), 400
+    src, dst = _speaker_key(data["from"]), _speaker_key(data["to"])
+    if not _valid_speaker_key(src) or not _valid_speaker_key(dst):
+        return jsonify({"error": "invalid speaker name"}), 400
+    if src == dst:
+        return jsonify({"error": "from and to are the same speaker"}), 400
+    db = get_db()
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        sp = db.execute("SELECT * FROM speakers WHERE name = ?", (src,)).fetchone()
+        n_src = db.execute("SELECT COUNT(*) FROM clips WHERE LOWER(TRIM(speaker)) = ?", (src,)).fetchone()[0]
+        if not n_src and not sp:
+            db.rollback()
+            return jsonify({"error": f"speaker '{src}' not found"}), 404
+        moved = db.execute("UPDATE clips SET speaker = ? WHERE LOWER(TRIM(speaker)) = ?", (dst, src)).rowcount
+        dp = db.execute("SELECT * FROM speakers WHERE name = ?", (dst,)).fetchone()
+        profile = "none"
+        now = time.time()
+        if sp and not dp:
+            db.execute("UPDATE speakers SET name = ?, updated_at = ? WHERE name = ?", (dst, now, src))
+            profile = "moved"
+        elif sp and dp:
+            display = dp["display_name"] or sp["display_name"]
+            take_photo = dp["photo"] is None and sp["photo"] is not None
+            db.execute("UPDATE speakers SET display_name = ?, photo = ?, photo_type = ?, "
+                       "ai_only = ?, updated_at = ? WHERE name = ?",
+                       (display, sp["photo"] if take_photo else dp["photo"],
+                        sp["photo_type"] if take_photo else dp["photo_type"],
+                        int(bool(dp["ai_only"] or sp["ai_only"])), now, dst))
+            db.execute("DELETE FROM speakers WHERE name = ?", (src,))
+            profile = "merged"
+        # A speaker with real recordings is by definition not an AI-only voice.
+        if db.execute("SELECT 1 FROM clips WHERE is_ai = 0 AND LOWER(TRIM(speaker)) = ? LIMIT 1", (dst,)).fetchone():
+            db.execute("UPDATE speakers SET ai_only = 0 WHERE name = ?", (dst,))
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("SPEAKER_MERGE failed, rolled back")
+        return jsonify({"error": "merge failed, nothing changed"}), 500
+    logger.info("SPEAKER_MERGE from=%s to=%s clips=%d profile=%s", src, dst, moved, profile)
+    return jsonify({"status": "merged", "from": src, "to": dst, "clips_moved": moved,
+                    "profile": profile, "speaker": _speaker_obj(db, dst)})
+
+
+# --- Speaker identity integrity ---
+# One person = one speaker key (lowercase first name). If a person's AI clones and real
+# recordings sit under different keys (e.g. "jakub" vs "jveverka"), the game never links
+# the clone to the real person. Keep this logic in sync with tools/seedpack.py.
+
+# First names of Coqui XTTS v2 built-in (stock) voices - not real people we recorded.
+XTTS_STOCK_VOICES = frozenset("""
+aaron abrahan adde alexandra alison alma ana andrew annmarie asya badr baldur barbora brenda
+camilla chandra claribel craig daisy damien damjan dionisio eugenio ferran filip gilberto gitta
+gracie henriette ige ilkin kazuhiko kumar lidiya lilya ludvig luis maja marcos narelle nova
+rosemary royston sofia suad szofi tammie tammy tanja torcull uta viktor vjollca wulf xavier
+zacharie zofija
+""".split())
+
+
+def _fold(s):
+    s = unicodedata.normalize("NFKD", (s or "").lower())
+    return "".join(ch for ch in s if ch.isalnum() and not unicodedata.combining(ch))
+
+
+def _levenshtein(a, b):
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
+def _alias_reason(key, other, other_display, loose=False):
+    """Why `key` could be an alias of speaker `other` (or None)."""
+    a, b = _fold(key), _fold(other)
+    if not a or not b:
+        return None
+    if a == b:
+        return "same name without accents"
+    if len(a) >= 3 and len(b) >= 3 and (a.startswith(b) or b.startswith(a)):
+        return "prefix match"
+    if _levenshtein(a, b) <= max(1, min(len(a), len(b)) // 4):
+        return "similar spelling"
+    for tok in (other_display or "").split():
+        t = _fold(tok)
+        if len(t) >= 3 and t != b and (t in a or a in t):
+            return f"matches display name '{other_display}'"
+    if loose and len(a) >= 5 and a[0] == b[0] and len(a) > len(b) and not a.startswith(b):
+        return "same initial, surname-style key"
+    return None
+
+
+def _plural(n, word):
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def speaker_integrity(speakers):
+    """speakers: {key: {human, ai, sources:set, ai_only:bool, display:str}} -> report dict."""
+    def is_stock(k, v):
+        return k in XTTS_STOCK_VOICES and v["sources"] and all("xtts" in (s or "").lower() for s in v["sources"])
+
+    def reason(x, y, loose=False):
+        return (_alias_reason(x, y, speakers[y]["display"], loose)
+                or _alias_reason(y, x, speakers[x]["display"], loose))
+
+    warnings, stock, flagged, covered = [], [], [], set()
+    for k in sorted(speakers):
+        v = speakers[k]
+        if not (v["ai"] and not v["human"]):
+            continue
+        if v["ai_only"]:
+            flagged.append(k)
+        elif is_stock(k, v):
+            stock.append(k)
+        else:
+            sugg = [{"speaker": o, "reason": r} for o in sorted(speakers)
+                    if o != k and speakers[o]["human"] and not speakers[o]["ai"] for r in [reason(o, k, True)] if r]
+            covered.update(s["speaker"] for s in sugg)
+            msg = f"{_plural(v['ai'], 'AI clip')}, no real recordings."
+            msg += (" Possibly the same person as " + ", ".join(f"{s['speaker']} ({s['reason']})" for s in sugg)
+                    + " - merge." if sugg else f" Merge the person's real recordings into '{k}', or mark it AI-only voice.")
+            warnings.append({"speaker": k, "kind": "ai_without_human", "human_clips": 0, "ai_clips": v["ai"],
+                             "message": msg, "suggestions": sugg})
+    for k in sorted(speakers):
+        v = speakers[k]
+        if not (v["human"] and not v["ai"]) or k in covered:  # already reported on the AI side
+            continue
+        # AI-only voices that are resolved (stock / flagged) are not real people -> no alias targets
+        sugg = [{"speaker": o, "reason": r} for o in sorted(speakers)
+                if o != k and speakers[o]["ai"] and o not in stock and o not in flagged
+                for r in [reason(k, o)] if r]
+        if sugg:
+            warnings.append({
+                "speaker": k, "kind": "human_without_ai_match", "human_clips": v["human"], "ai_clips": 0,
+                "message": f"{_plural(v['human'], 'real recording')}, no AI clips. Possibly the same person as "
+                           + ", ".join(f"{s['speaker']} ({s['reason']})" for s in sugg) + ".",
+                "suggestions": sugg})
+    return {"ok": not warnings, "warnings": warnings, "stock_voices": stock, "ai_only": flagged}
+
+
+def _db_integrity(db):
+    sp = {}
+    for r in db.execute("SELECT LOWER(TRIM(speaker)) AS k, is_ai, source FROM clips "
+                        "WHERE TRIM(COALESCE(speaker, '')) != ''").fetchall():
+        v = sp.setdefault(r["k"], {"human": 0, "ai": 0, "sources": set(), "ai_only": False, "display": ""})
+        if r["is_ai"]:
+            v["ai"] += 1
+            v["sources"].add(r["source"] or "")
+        else:
+            v["human"] += 1
+    for r in db.execute("SELECT name, display_name, ai_only FROM speakers").fetchall():
+        if r["name"] in sp:
+            sp[r["name"]]["ai_only"] = bool(r["ai_only"])
+            sp[r["name"]]["display"] = r["display_name"] or ""
+    return speaker_integrity(sp)
+
+
+@app.route("/api/admin/speakers/integrity")
+@require_admin
+def admin_speaker_integrity():
+    return jsonify(_db_integrity(get_db()))
 
 
 @app.route("/api/admin/speakers/<name>/photo", methods=["POST"])
@@ -1103,12 +1299,13 @@ def admin_delete_speaker_photo(name):
 #           manifest.json {format: "voice-id-seedpack", version: 1, exported_at, app_version,
 #             clips: [{filename, is_ai, language, source, speaker, content_type, sha256, bytes,
 #                      file: "clips/<safe name>"}],
-#             speakers: [{name, display_name, photo_file|null, photo_type|null}]}
+#             speakers: [{name, display_name, photo_file|null, photo_type|null, ai_only}]}
 #           + clips/* + speakers/*. NO players/games/leaderboard/clip_stats/emails.
 #   POST /api/admin/seedpack            [admin: Bearer header]
 #        multipart "seedpack" (zip, max 1 GB), optional form "mode" = skip (default) | replace
 #        -> 200 {status: "imported", mode, clips: {added, skipped, conflicts, replaced, invalid},
-#                speakers: {added, updated, skipped, invalid}, errors: [...]}
+#                speakers: {added, updated, skipped, invalid}, errors: [...],
+#                integrity: <same as GET /api/admin/speakers/integrity>}
 #        -> 400 same shape with status "rejected" (nothing written) when the pack is not a zip,
 #           has the wrong format/version, exceeds limits, or ANY clip/speaker fails validation
 #           (sha256 mismatch, non-audio content, bad metadata, missing entry). All-or-nothing:
@@ -1207,7 +1404,7 @@ def admin_seedpack_export():
                 })
                 del data, row
             for j, r in enumerate(db.execute(
-                    "SELECT name, display_name, photo, photo_type FROM speakers ORDER BY name").fetchall()):
+                    "SELECT name, display_name, photo, photo_type, ai_only FROM speakers ORDER BY name").fetchall()):
                 photo_file = None
                 if r["photo"] is not None:
                     ext = _IMAGE_EXT.get(r["photo_type"] or "", "bin")
@@ -1215,7 +1412,8 @@ def admin_seedpack_export():
                     zf.writestr(photo_file, r["photo"])
                 speakers_meta.append({"name": r["name"], "display_name": r["display_name"],
                                       "photo_file": photo_file,
-                                      "photo_type": r["photo_type"] if photo_file else None})
+                                      "photo_type": r["photo_type"] if photo_file else None,
+                                      "ai_only": bool(r["ai_only"])})
             zf.writestr("manifest.json", json.dumps({
                 "format": SEEDPACK_FORMAT, "version": SEEDPACK_VERSION,
                 "exported_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -1362,6 +1560,8 @@ def admin_seedpack_import():
                     err = f"invalid speaker name {sp.get('name') if isinstance(sp, dict) else sp!r}"
                 elif sp.get("display_name") is not None and not _valid_meta_str(sp["display_name"], MAX_DISPLAY_NAME):
                     err = f"speaker {key}: invalid display_name"
+                elif sp.get("ai_only") is not None and not isinstance(sp["ai_only"], bool):
+                    err = f"speaker {key}: ai_only must be true/false"
                 photo, ptype = None, None
                 if not err and sp.get("photo_file"):
                     info = by_name.get(sp["photo_file"]) if isinstance(sp["photo_file"], str) else None
@@ -1379,7 +1579,8 @@ def admin_seedpack_import():
                     summary["speakers"]["invalid"] += 1
                     summary["errors"].append(err)
                 else:
-                    spk_valid.append((key, (sp.get("display_name") or "").strip() or None, photo, ptype))
+                    spk_valid.append((key, (sp.get("display_name") or "").strip() or None, photo, ptype,
+                                      bool(sp.get("ai_only"))))
             if summary["clips"]["invalid"] or summary["speakers"]["invalid"]:
                 logger.warning("SEEDPACK_IMPORT rejected: %d invalid clips, %d invalid speakers",
                                summary["clips"]["invalid"], summary["speakers"]["invalid"])
@@ -1431,12 +1632,13 @@ def admin_seedpack_import():
                         existing.setdefault(fn, []).append(cid)
                         sha_cache[cid] = c["sha256"]
                         summary["clips"]["added"] += 1
-                for key, display, photo, ptype in spk_valid:
-                    cur = db.execute("SELECT display_name, photo, photo IS NOT NULL AS has_photo FROM speakers WHERE name = ?",
+                for key, display, photo, ptype, ai_only in spk_valid:
+                    cur = db.execute("SELECT display_name, photo, photo IS NOT NULL AS has_photo, ai_only "
+                                     "FROM speakers WHERE name = ?",
                                      (key,)).fetchone()
                     if not cur:
-                        db.execute("INSERT INTO speakers (name, display_name, photo, photo_type, updated_at) "
-                                   "VALUES (?, ?, ?, ?, ?)", (key, display, photo, ptype, now))
+                        db.execute("INSERT INTO speakers (name, display_name, photo, photo_type, ai_only, updated_at) "
+                                   "VALUES (?, ?, ?, ?, ?, ?)", (key, display, photo, ptype, int(ai_only), now))
                         summary["speakers"]["added"] += 1
                         continue
                     set_display = (display is not None and display != cur["display_name"]
@@ -1449,7 +1651,10 @@ def admin_seedpack_import():
                     if set_photo:
                         db.execute("UPDATE speakers SET photo = ?, photo_type = ?, updated_at = ? WHERE name = ?",
                                    (photo, ptype, now, key))
-                    summary["speakers"]["updated" if (set_display or set_photo) else "skipped"] += 1
+                    set_flag = ai_only and not cur["ai_only"]  # flag only ever added by a pack
+                    if set_flag:
+                        db.execute("UPDATE speakers SET ai_only = 1, updated_at = ? WHERE name = ?", (now, key))
+                    summary["speakers"]["updated" if (set_display or set_photo or set_flag) else "skipped"] += 1
                 db.commit()
             except Exception as e:
                 db.rollback()
@@ -1464,6 +1669,7 @@ def admin_seedpack_import():
         except OSError:
             pass
     summary["status"] = "imported"
+    summary["integrity"] = _db_integrity(get_db())
     logger.info("SEEDPACK_IMPORT mode=%s clips=%s speakers=%s", mode, summary["clips"], summary["speakers"])
     return jsonify(summary)
 

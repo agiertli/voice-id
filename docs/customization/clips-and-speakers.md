@@ -15,7 +15,7 @@ PVC (`clips` table). Clips are **not** in the container image and **not** in Git
 A fresh install has no clips. Sources, in order of preference:
 
 1. **A seed pack** (zip with `manifest.json`, clips and speaker profiles) received
-   privately from the game owner. Import it on `/admin` → **Seed pack & backup**, or
+   privately from the game owner. Import it on `/admin` → **Clips & seed packs**, or
    with `apps/voice-id/tools/seedpack.py import`. This is the standard fresh-install
    path; see [SEEDING.md](../SEEDING.md).
 2. **New recordings** from Voice Clone Studio, imported with
@@ -27,6 +27,39 @@ A fresh install has no clips. Sources, in order of preference:
 **Never `oc cp` a database into or out of the pod.** SQLite runs in WAL mode;
 copying the file under a running app corrupts it. Every procedure here uses the
 HTTP API.
+
+## Speaker identity: one person = one key (hard rule)
+
+- Every person has exactly **one speaker key: their lowercase first name** (`jakub`,
+  `miska`). Never a surname, login, nickname or spelling variant (`jveverka`, `kuba`,
+  `Jakub`). Use the same key for their human clips, AI clones, photo and Clone Studio name.
+  If two people share a first name, add the surname initial (`jakubv`) and use it everywhere.
+- **Why:** the game links a clone to a real person only through the key. On 2026-11 a
+  booth had 13 AI clones under `jakub` and his 10 real recordings under `jveverka`;
+  players never saw "AI clone of Jakub" and the pair was useless.
+- **After every import** (seed pack, Clone Studio, manual upload) open `/admin` →
+  **Speakers** and resolve every warning before the booth opens:
+  - *AI clips, no real recordings*: merge the alias into the first-name key
+    (**Merge `jveverka` → `jakub`**), or tick **AI-only voice** for a synthetic voice with
+    no real person. Coqui XTTS stock voices (claribel, daisy, gracie, filip, ...) are
+    recognised automatically when all their clips are XTTS.
+  - *Real recordings, no AI clips, looks like an alias*: merge it.
+- **Merge or rename** (`/admin` → Speakers): moves every clip and the profile in one
+  transaction; the target keeps its display name and photo when set. Typing a new key renames.
+
+```bash
+AUTH="Authorization: Bearer ${VOICEID_ADMIN_TOKEN}"
+curl -sk -H "$AUTH" "https://${ROUTE}/api/admin/speakers/integrity" | python3 -m json.tool
+curl -sk -H "$AUTH" -H 'Content-Type: application/json' -X POST \
+  "https://${ROUTE}/api/admin/speakers/merge" -d '{"from": "jveverka", "to": "jakub"}'
+curl -sk -H "$AUTH" -H 'Content-Type: application/json' -X PUT \
+  "https://${ROUTE}/api/admin/speakers/robot" -d '{"ai_only": true}'
+```
+
+`seedpack.py pack` refuses to build a pack with an unlinked AI-clone speaker (use
+`--alias OLD=NEW` or `--allow-ai-only NAME`); `seedpack.py import`/`export` and
+`import_from_clone_studio.py` print the same integrity report. See
+[SEEDING.md](../SEEDING.md#create-a-seed-pack-copy-paste).
 
 ## What makes a good clip set
 
@@ -50,7 +83,7 @@ HTTP API.
 | `is_ai` | `1` AI-generated, `0` human | `1` |
 | `language` | `cs`, `sk` or `en` (shown on the reveal; games mix languages) | `cs` |
 | `source` | TTS model display name for AI clips; empty for human clips. Use the existing strings so reveals stay consistent | `Fish Audio S2 Pro`, `Coqui XTTS v2` |
-| `speaker` | Speaker key, lower case. For AI clips: the cloned person or the built-in voice | `anton` |
+| `speaker` | Speaker key: the person's lowercase first name, same for their human and AI clips ([rule](#speaker-identity-one-person--one-key-hard-rule)). For AI clips of a built-in voice: the voice name | `anton` |
 | `filename` | Logical path; also used by the import tool to detect duplicates | `ai/cs/fish-anton-devops.wav` |
 
 Non-WAV uploads (m4a, mp3, flac, ogg, webm) are transcoded to 44.1 kHz mono WAV by
@@ -202,6 +235,10 @@ Behaviour to know:
   but Clone Studio did not, restart Clone Studio
   (`oc rollout restart deploy/voice-clone-studio -n voice-clone-studio`) before
   generating.
+- **Speaker keys come from the Clone Studio speaker name**, lowercased. Make sure the
+  person entered their first name there; otherwise fix it with a merge afterwards.
+- The run ends with a **speaker integrity report** (dry run: the projected state after
+  `--apply`). Resolve warnings on `/admin` → Speakers before the booth opens.
 - Exit code is 1 if any item failed, 2 if the APIs could not be reached.
 
 After adding a new speaker or engine, Gary 2.0 has never heard it. Expect its
@@ -228,7 +265,8 @@ Training data stays outside Git like every other audio file.
 
 The reveal after each guess can show a speaker's display name and photo
 ("AI clone of Anton G."). Profiles are keyed by the lower-case speaker name and
-managed on `/admin` → Speakers, or by API with the admin token:
+managed on `/admin` → Speakers (also merge/rename and the AI-only flag, see
+[speaker identity](#speaker-identity-one-person--one-key-hard-rule)), or by API with the admin token:
 
 ```bash
 TOKEN=...   # the admin password, see booth-operations.md

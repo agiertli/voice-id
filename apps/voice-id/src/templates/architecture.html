@@ -95,9 +95,16 @@ button { font-family: inherit; color: inherit; }
 .step-num { font-weight: 700; font-size: 0.85rem; color: var(--rh-red-dark); }
 .step-title { font-size: 1.3rem; }
 .step-desc { font-size: 1rem; color: var(--text); max-width: 78rem; margin-top: 0.15rem; }
+.step-facts { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+.step-facts:empty { display: none; }
+.step-facts .hint { color: var(--rh-red-dark); font-weight: 700; }
+.step-facts kbd { font-family: inherit; font-weight: 700; border: 1px solid var(--border); border-radius: 4px; padding: 0 0.3rem; background: var(--bg); }
+.step-btn.next { width: auto; padding: 0 1.1rem 0 1.3rem; border-radius: 999px; display: inline-flex; gap: 0.4rem; font-weight: 700; font-size: 1rem; }
+.step-btn.next.primary { background: var(--text); border-color: var(--text); color: #fff; }
+.step-btn.next.primary svg { stroke: #fff; }
 .dots { flex: none; display: flex; gap: 0.15rem; }
 .dot { width: 30px; height: 44px; border: none; background: none; cursor: pointer; display: grid; place-items: center; }
-.dot::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: var(--border); }
+.dot::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
 .dot.active::before { background: var(--rh-red); }
 @media (max-width: 1400px) { .dots { display: none; } }
 
@@ -105,30 +112,31 @@ button { font-family: inherit; color: inherit; }
 .stage { flex: 1; min-height: 0; padding: 0.4rem 1.4rem 0; display: flex; }
 #arch { width: 100%; height: 100%; display: block; }
 #arch text { font-family: 'Red Hat Text', system-ui, sans-serif; fill: var(--text); }
-#arch .t-zone { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 22px; }
-#arch .t-group { font-weight: 700; font-size: 16px; fill: var(--text-muted); }
-#arch .t-name { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 22px; }
-#arch .t-sub { font-size: 16px; }
-#arch .t-small { font-size: 16px; fill: var(--text-muted); }
-#arch .t-badge { font-size: 13px; font-weight: 700; }
-#arch .t-status { font-size: 15px; fill: var(--text-muted); }
-#arch .t-status.on { fill: var(--text); font-weight: 700; }
+#arch .t-zone { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 20px; }
+#arch .t-group { font-size: 15px; fill: var(--text-muted); }
+#arch .t-name { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 21px; }
+#arch .t-sub { font-size: 16px; fill: var(--text-muted); }
+#arch .t-strong { font-weight: 700; fill: var(--text); }
+#arch .t-small { font-size: 15px; fill: var(--text-muted); }
+#arch .t-badge { font-size: 12px; fill: var(--text-muted); }
 #arch .t-flow { font-size: 15px; fill: var(--text-muted); }
 #arch .t-human { fill: var(--human); }
 #arch .t-ai { fill: var(--ai); }
-#arch .t-white { fill: #fff; }
+#arch .badge { fill: #fff; stroke: #a3a3a3; stroke-width: 1; }
+/* Live status: small filled dot = running in this game, hollow = not configured here. */
+#arch .st-dot { fill: #fff; stroke: #a3a3a3; stroke-width: 1.5; }
+#arch .st-dot.on { fill: #4d4d4d; stroke: #4d4d4d; }
 
 .node { transition: opacity 0.35s; }
-.node > rect.box { fill: #fff; stroke: #8c8c8c; stroke-width: 1.5; transition: stroke 0.25s, stroke-width 0.25s; }
-.focus .node { opacity: 0.38; }
+.node > rect.box { fill: #fff; stroke: var(--border); stroke-width: 1; transition: stroke 0.25s, stroke-width 0.25s; }
+.focus .node { opacity: 0.4; }
 .focus .node.active { opacity: 1; }
-.node.active > rect.box { stroke: var(--rh-red); stroke-width: 3.5; }
-.node.off > rect.box { stroke-dasharray: 5 5; }
+.node.active > rect.box { stroke: var(--rh-red); stroke-width: 2.5; }
 
-.flow { fill: none; stroke: #8c8c8c; stroke-width: 2.2; transition: stroke 0.25s, opacity 0.35s; }
-.flow.dashed { stroke-dasharray: 7 6; }
-.focus .flow { opacity: 0.3; }
-.flow.active { stroke: var(--rh-red); stroke-width: 4; opacity: 1; stroke-dasharray: 12 8; animation: dash 1.1s linear infinite; }
+.flow { fill: none; stroke: #a3a3a3; stroke-width: 1.5; transition: stroke 0.25s, opacity 0.35s; }
+.flow.dashed { stroke-dasharray: 6 5; }
+.focus .flow { opacity: 0.35; }
+.flow.active { stroke: var(--rh-red-dark); stroke-width: 3.5; opacity: 1; stroke-dasharray: 12 8; animation: dash 1.1s linear infinite; }
 @keyframes dash { to { stroke-dashoffset: -40; } }
 @media (prefers-reduced-motion: reduce) { .flow.active { animation: none; } }
 
@@ -141,10 +149,11 @@ button { font-family: inherit; color: inherit; }
 }
 .legend .k { display: inline-flex; align-items: center; gap: 0.45rem; }
 .sw { width: 16px; height: 16px; border-radius: 4px; display: inline-block; }
-.sw-line { width: 26px; height: 0; border-top: 3px solid var(--rh-red); }
-.sw-dash { width: 26px; height: 0; border-top: 2px dashed #8c8c8c; }
-.chip-gpu { background: #151515; color: #fff; font-weight: 700; font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 4px; }
-.chip-cpu { border: 1.5px solid #4d4d4d; color: var(--text); font-weight: 700; font-size: 0.75rem; padding: 0.05rem 0.4rem; border-radius: 4px; }
+.sw-line { width: 26px; height: 0; border-top: 3px solid var(--rh-red-dark); }
+.sw-dash { width: 26px; height: 0; border-top: 2px dashed #a3a3a3; }
+.chip { border: 1px solid #a3a3a3; color: var(--text-muted); font-size: 0.7rem; padding: 0 0.35rem; border-radius: 4px; }
+.sdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #a3a3a3; background: #fff; }
+.sdot.on { background: #4d4d4d; border-color: #4d4d4d; }
 .legend .credit { margin-left: auto; font-size: 0.75rem; }
 
 /* ---------- Tablet / smaller screens: give the diagram the height ---------- */
@@ -158,6 +167,8 @@ button { font-family: inherit; color: inherit; }
     .step-btn { width: 48px; height: 48px; }
     .step-title { font-size: 1.1rem; }
     .step-desc { font-size: 0.9rem; line-height: 1.35; }
+    .step-facts { font-size: 0.8rem; margin-top: 0.15rem; }
+    .step-btn.next { font-size: 0.9rem; padding: 0 0.9rem 0 1.1rem; }
     .stage { padding: 0.3rem 0.6rem 0; }
     .legend { padding: 0.3rem 1rem 0.45rem; gap: 0.3rem 1.1rem; font-size: 0.78rem; }
 }
@@ -189,224 +200,205 @@ button { font-family: inherit; color: inherit; }
         <div id="step-active">
             <div class="step-head"><span class="step-num" id="step-num"></span><h2 class="step-title" id="step-title"></h2></div>
             <p class="step-desc" id="step-desc"></p>
+            <p class="step-facts" id="step-facts"></p>
         </div>
     </div>
     <div class="dots" id="dots" role="tablist" aria-label="Steps"></div>
-    <button class="step-btn" id="btn-next" type="button" aria-label="Next step"><svg viewBox="0 0 24 24"><polyline points="9,5 16,12 9,19"/></svg></button>
+    <button class="step-btn next" id="btn-next" type="button" aria-label="Next step"><span>Next</span><svg viewBox="0 0 24 24"><polyline points="9,5 16,12 9,19"/></svg></button>
 </section>
 
 <main class="stage">
 <svg id="arch" viewBox="0 0 1600 730" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Voice ID architecture diagram">
     <defs>
-        <marker id="arr-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M0,1 L10,5 L0,9 z" fill="#8c8c8c"/>
+        <marker id="arr-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,1 L10,5 L0,9 z" fill="#a3a3a3"/>
         </marker>
         <marker id="arr-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
-            <path d="M0,1 L10,5 L0,9 z" fill="#ee0000"/>
+            <path d="M0,1 L10,5 L0,9 z" fill="#a60000"/>
         </marker>
     </defs>
 
-    <!-- ================= Zones (static frames) ================= -->
-    <text class="t-zone" x="20" y="44">At the booth</text>
+    <!-- ================= Areas: light tints, no heavy frames ================= -->
+    <rect x="8" y="8" width="266" height="714" rx="16" fill="#f2f2f2"/>
+    <text class="t-zone" x="24" y="44">At the booth</text>
 
-    <rect x="290" y="8" width="1294" height="714" rx="16" fill="none" stroke="#151515" stroke-width="1.5"/>
-    <rect x="310" y="24" width="8" height="24" fill="#ee0000"/>
-    <text class="t-zone" x="328" y="44">Red Hat OpenShift</text>
+    <rect x="290.5" y="8.5" width="1293" height="713" rx="16" fill="none" stroke="#c7c7c7" stroke-width="1"/>
+    <rect x="310" y="27" width="4" height="21" fill="#ee0000"/>
+    <text class="t-zone" x="322" y="44">Red Hat OpenShift</text>
 
-    <!-- AI opponents frame -->
-    <rect x="650" y="58" width="914" height="280" rx="14" fill="#f2f2f2"/>
-    <text class="t-zone" x="670" y="88">AI opponents</text>
-    <text class="t-small" x="830" y="88">battle mode: the game backend asks one of them about each clip</text>
-    <rect x="666" y="100" width="446" height="190" rx="10" fill="none" stroke="#707070" stroke-width="1.2" stroke-dasharray="6 5"/>
-    <image href="/static/icons/ai-inference.svg" x="680" y="106" width="26" height="26"/>
-    <text class="t-group" x="712" y="125">Red Hat OpenShift AI · KServe + vLLM</text>
-    <rect x="1124" y="100" width="424" height="190" rx="10" fill="none" stroke="#707070" stroke-width="1.2" stroke-dasharray="6 5"/>
-    <text class="t-group" x="1140" y="125">Classifiers · plain Deployments</text>
+    <rect x="650" y="60" width="914" height="222" rx="14" fill="#5e40be" fill-opacity="0.07"/>
+    <text class="t-zone" x="670" y="92">AI opponents</text>
+    <text class="t-small" x="808" y="92">battle mode only</text>
+    <image href="/static/icons/ai-inference.svg" x="670" y="108" width="20" height="20" opacity="0.8"/>
+    <text class="t-group" x="696" y="124">Red Hat OpenShift AI · vLLM</text>
+    <text class="t-group" x="1130" y="124">Classifiers</text>
 
-    <!-- Voice cloning frame -->
-    <rect x="650" y="372" width="474" height="274" rx="14" fill="#f2f2f2"/>
-    <text class="t-zone" x="670" y="402">Voice cloning engines</text>
-    <text class="t-small" x="670" y="424">used by Clone Studio only, never by the game</text>
+    <rect x="650" y="372" width="474" height="278" rx="14" fill="#147878" fill-opacity="0.07"/>
+    <text class="t-zone" x="670" y="404">Voice cloning engines</text>
+    <text class="t-small" x="670" y="428">used by Clone Studio only</text>
 
-    <!-- Same person frame -->
-    <rect x="1140" y="372" width="424" height="274" rx="14" fill="#fff" stroke="#c7c7c7" stroke-width="1.5"/>
-    <text class="t-zone" x="1160" y="402">Same person, real vs clone</text>
-    <text class="t-small" x="1160" y="630">Both versions go into the game. Can you tell?</text>
+    <rect x="1140.5" y="372.5" width="423" height="277" rx="14" fill="none" stroke="#e0e0e0" stroke-width="1"/>
+    <text class="t-zone" x="1160" y="404">Same person, real vs clone</text>
+    <text class="t-small" x="1160" y="630">Both go into the game. Can you tell?</text>
 
     <!-- ================= Flows ================= -->
     <g id="flows">
-        <path id="f-play"  class="flow" d="M250,112 H324" marker-end="url(#arr-g)"/>
-        <path id="f-audio" class="flow dashed" d="M330,156 H256" marker-end="url(#arr-g)"/>
-        <path id="f-tv"    class="flow" d="M250,282 H270 V190 H324" marker-end="url(#arr-g)"/>
-        <path id="f-db"    class="flow" d="M470,212 V232" marker-start="url(#arr-g)" marker-end="url(#arr-g)"/>
-        <path id="f-teddy" class="flow" d="M610,170 H632 V310 H786 V280" marker-end="url(#arr-g)"/>
-        <path id="f-iris"  class="flow" d="M610,170 H632 V310 H1000 V280" marker-end="url(#arr-g)"/>
-        <path id="f-gary"  class="flow" d="M610,170 H632 V310 H1236 V280" marker-end="url(#arr-g)"/>
-        <path id="f-gary2" class="flow" d="M610,170 H632 V310 H1441 V280" marker-end="url(#arr-g)"/>
-        <path id="f-rec"   class="flow" d="M250,500 H324" marker-end="url(#arr-g)"/>
-        <path id="f-studiodb" class="flow" d="M470,584 V602" marker-start="url(#arr-g)" marker-end="url(#arr-g)"/>
-        <path id="f-xtts"  class="flow" d="M610,490 H662" marker-end="url(#arr-g)"/>
-        <path id="f-fish"  class="flow" d="M610,550 H636 V620 H1000 V602" marker-end="url(#arr-g)"/>
-        <path id="f-clone" class="flow" d="M1104,562 H1154" marker-end="url(#arr-g)"/>
-        <path id="f-real"  class="flow dashed" d="M610,452 H630 V356 H1132 V466 H1154" marker-end="url(#arr-g)"/>
-        <path id="f-import" class="flow dashed" d="M470,436 V344" marker-end="url(#arr-g)"/>
+        <path id="f-play"  class="flow" d="M250,98 H324" marker-end="url(#arr-g)"/>
+        <path id="f-audio" class="flow dashed" d="M330,132 H256" marker-end="url(#arr-g)"/>
+        <path id="f-tv"    class="flow" d="M250,242 H270 V158 H324" marker-end="url(#arr-g)"/>
+        <path id="f-db"    class="flow" d="M470,182 V200" marker-start="url(#arr-g)" marker-end="url(#arr-g)"/>
+        <path id="f-teddy" class="flow" d="M610,110 H632 V250 H774 V224" marker-end="url(#arr-g)"/>
+        <path id="f-iris"  class="flow" d="M610,110 H632 V250 H996 V224" marker-end="url(#arr-g)"/>
+        <path id="f-gary"  class="flow" d="M610,110 H632 V250 H1230 V224" marker-end="url(#arr-g)"/>
+        <path id="f-gary2" class="flow" d="M610,110 H632 V250 H1444 V224" marker-end="url(#arr-g)"/>
+        <path id="f-rec"   class="flow" d="M250,486 H324" marker-end="url(#arr-g)"/>
+        <path id="f-studiodb" class="flow" d="M470,552 V574" marker-start="url(#arr-g)" marker-end="url(#arr-g)"/>
+        <path id="f-xtts"  class="flow" d="M610,486 H664" marker-end="url(#arr-g)"/>
+        <path id="f-fish"  class="flow" d="M610,526 H636 V610 H999 V534" marker-end="url(#arr-g)"/>
+        <path id="f-clone" class="flow" d="M1104,486 H1132 V562 H1154" marker-end="url(#arr-g)"/>
+        <path id="f-real"  class="flow dashed" d="M610,452 H630 V356 H1132 V470 H1154" marker-end="url(#arr-g)"/>
+        <path id="f-import" class="flow dashed" d="M470,434 V294" marker-end="url(#arr-g)"/>
     </g>
-    <text class="t-flow" x="484" y="384">import tool</text>
-    <text class="t-flow" x="484" y="404">or seed pack</text>
+    <text class="t-flow" x="484" y="360">import tool</text>
+    <text class="t-flow" x="484" y="380">or seed pack</text>
 
-    <!-- ================= Nodes ================= -->
+    <!-- ================= Nodes: title + one short line; details live in the step panel ================= -->
     <g id="nodes">
         <!-- Booth -->
         <g class="node" id="n-player">
-            <rect class="box" x="20" y="64" width="230" height="132" rx="12"/>
-            <image href="/static/icons/user.svg" x="36" y="78" width="40" height="40"/>
-            <text class="t-name" x="86" y="106">Player</text>
-            <text class="t-sub" x="36" y="150">Tablet browser</text>
-            <text class="t-small" x="36" y="174">plays the game at /</text>
+            <rect class="box" x="20" y="70" width="230" height="92" rx="10"/>
+            <image href="/static/icons/user.svg" x="36" y="84" width="32" height="32"/>
+            <text class="t-name" x="78" y="108">Player</text>
+            <text class="t-sub" x="36" y="144">Tablet browser</text>
         </g>
         <g class="node" id="n-tv">
-            <rect class="box" x="20" y="224" width="230" height="112" rx="12"/>
-            <image href="/static/icons/bar-graph.svg" x="36" y="238" width="40" height="40"/>
-            <text class="t-name" x="86" y="266">Booth monitor</text>
-            <text class="t-sub" x="36" y="304">Leaderboard at /tv</text>
-            <text class="t-small" x="36" y="326">refreshes every 10 s</text>
+            <rect class="box" x="20" y="196" width="230" height="92" rx="10"/>
+            <image href="/static/icons/bar-graph.svg" x="36" y="210" width="32" height="32"/>
+            <text class="t-name" x="78" y="234">Booth monitor</text>
+            <text class="t-sub" x="36" y="270">Leaderboard at /tv</text>
         </g>
         <g class="node" id="n-speaker">
-            <rect class="box" x="20" y="436" width="230" height="132" rx="12"/>
-            <image href="/static/icons/user.svg" x="36" y="450" width="40" height="40"/>
-            <text class="t-name" x="86" y="478">Speaker</text>
-            <text class="t-sub" x="36" y="522">Records their voice</text>
-            <text class="t-small" x="36" y="546">in Clone Studio</text>
+            <rect class="box" x="20" y="440" width="230" height="92" rx="10"/>
+            <image href="/static/icons/user.svg" x="36" y="454" width="32" height="32"/>
+            <text class="t-name" x="78" y="478">Speaker</text>
+            <text class="t-sub" x="36" y="514">Records their voice</text>
         </g>
 
         <!-- Game -->
         <g class="node" id="n-game">
-            <rect class="box" x="330" y="64" width="280" height="144" rx="12"/>
-            <text class="t-name" x="348" y="96">Voice ID game</text>
-            <text class="t-sub" x="348" y="120">Flask + gunicorn</text>
-            <text class="t-small" x="348" y="142">game API, scoring, battle proxy</text>
-            <rect x="348" y="154" width="48" height="24" rx="4" fill="#fff" stroke="#4d4d4d" stroke-width="1.5"/>
-            <text class="t-badge" x="372" y="171" text-anchor="middle">CPU</text>
-            <text class="t-status" id="st-game" x="408" y="171">checking…</text>
-            <text class="t-small" x="348" y="198">1 pod · Route with edge TLS</text>
+            <rect class="box" x="330" y="70" width="280" height="106" rx="10"/>
+            <text class="t-name" x="348" y="106">Voice ID game</text>
+            <rect class="badge" x="554.5" y="88.5" width="40" height="20" rx="4"/>
+            <text class="t-badge" x="574.5" y="103" text-anchor="middle">CPU</text>
+            <circle class="st-dot" id="dot-game" cx="354" cy="139" r="4.5"/>
+            <text class="t-sub" id="st-game" x="366" y="145">checking…</text>
         </g>
         <g class="node" id="n-gamedb">
-            <rect class="box" x="330" y="236" width="280" height="100" rx="12"/>
-            <image href="/static/icons/storage.svg" x="346" y="250" width="34" height="34"/>
-            <text class="t-name" x="390" y="275">Game database</text>
-            <text class="t-sub" x="346" y="304">SQLite on a persistent volume</text>
-            <text class="t-small" x="346" y="326">clips, players, leaderboard</text>
+            <rect class="box" x="330" y="206" width="280" height="82" rx="10"/>
+            <image href="/static/icons/storage.svg" x="346" y="220" width="30" height="30"/>
+            <text class="t-name" x="386" y="244">Game database</text>
+            <text class="t-sub" x="346" y="274">SQLite · clips, scores</text>
         </g>
 
         <!-- Opponents -->
         <g class="node" id="n-teddy" data-opp="qwen">
-            <rect class="box" x="682" y="136" width="208" height="140" rx="10"/>
-            <text class="t-name" x="698" y="166">Teddy</text>
-            <text class="t-sub" x="698" y="190">Qwen2-Audio-7B</text>
-            <text class="t-small" x="698" y="212">listens to the raw audio</text>
-            <rect x="698" y="224" width="84" height="24" rx="4" fill="#151515"/>
-            <text class="t-badge t-white" x="740" y="241" text-anchor="middle">L4 GPU 1</text>
-            <text class="t-status" x="698" y="266">checking…</text>
+            <rect class="box" x="670" y="134" width="208" height="84" rx="10"/>
+            <circle class="st-dot" cx="690" cy="163" r="4.5"><title>checking…</title></circle>
+            <text class="t-name" x="702" y="170">Teddy</text>
+            <rect class="badge" x="804.5" y="153.5" width="58" height="20" rx="4"/>
+            <text class="t-badge" x="833.5" y="168" text-anchor="middle">L4 GPU</text>
+            <text class="t-sub" x="686" y="200">Qwen2-Audio-7B</text>
         </g>
         <g class="node" id="n-iris" data-opp="gemma">
-            <rect class="box" x="896" y="136" width="208" height="140" rx="10"/>
-            <text class="t-name" x="912" y="166">Iris</text>
+            <rect class="box" x="892" y="134" width="208" height="84" rx="10"/>
+            <circle class="st-dot" cx="912" cy="163" r="4.5"><title>checking…</title></circle>
+            <text class="t-name" x="924" y="170">Iris</text>
             <!-- tiny spectrogram glyph: Iris is the only opponent that uses one -->
-            <g transform="translate(1032,148)" fill="#5e40be">
+            <g transform="translate(968,155) scale(0.7)" fill="#5e40be">
                 <rect x="0" y="14" width="5" height="8" opacity="0.35"/><rect x="7" y="8" width="5" height="14" opacity="0.6"/>
                 <rect x="14" y="2" width="5" height="20"/><rect x="21" y="9" width="5" height="13" opacity="0.6"/>
                 <rect x="28" y="5" width="5" height="17" opacity="0.8"/><rect x="35" y="13" width="5" height="9" opacity="0.35"/>
-                <rect x="42" y="7" width="5" height="15" opacity="0.6"/><rect x="49" y="12" width="5" height="10" opacity="0.8"/>
-                <rect x="56" y="15" width="5" height="7" opacity="0.35"/>
+                <rect x="42" y="7" width="5" height="15" opacity="0.6"/>
             </g>
-            <text class="t-sub" x="912" y="190">Gemma-4-12B FP8</text>
-            <text class="t-small" x="912" y="212">looks at a spectrogram</text>
-            <rect x="912" y="224" width="84" height="24" rx="4" fill="#151515"/>
-            <text class="t-badge t-white" x="954" y="241" text-anchor="middle">L4 GPU 2</text>
-            <text class="t-status" x="912" y="266">checking…</text>
+            <rect class="badge" x="1026.5" y="153.5" width="58" height="20" rx="4"/>
+            <text class="t-badge" x="1055.5" y="168" text-anchor="middle">L4 GPU</text>
+            <text class="t-sub" x="908" y="200">Gemma-4-12B</text>
         </g>
         <g class="node" id="n-gary" data-opp="gary-base">
-            <rect class="box" x="1136" y="136" width="200" height="140" rx="10"/>
-            <text class="t-name" x="1152" y="166">Gary</text>
-            <text class="t-sub" x="1152" y="190">Wav2Vec2, base</text>
-            <text class="t-small" x="1152" y="212">scores the waveform</text>
-            <rect x="1152" y="224" width="48" height="24" rx="4" fill="#fff" stroke="#4d4d4d" stroke-width="1.5"/>
-            <text class="t-badge" x="1176" y="241" text-anchor="middle">CPU</text>
-            <text class="t-status" x="1152" y="266">checking…</text>
+            <rect class="box" x="1130" y="134" width="200" height="84" rx="10"/>
+            <circle class="st-dot" cx="1150" cy="163" r="4.5"><title>checking…</title></circle>
+            <text class="t-name" x="1162" y="170">Gary</text>
+            <rect class="badge" x="1274.5" y="153.5" width="40" height="20" rx="4"/>
+            <text class="t-badge" x="1294.5" y="168" text-anchor="middle">CPU</text>
+            <text class="t-sub" x="1146" y="200">Wav2Vec2, base</text>
         </g>
         <g class="node" id="n-gary2" data-opp="gary-finetuned">
-            <rect class="box" x="1346" y="136" width="190" height="140" rx="10"/>
-            <text class="t-name" x="1362" y="166">Gary 2.0</text>
-            <text class="t-sub" x="1362" y="190">Wav2Vec2, V4-A</text>
-            <text class="t-small" x="1362" y="212">tuned on game clips</text>
-            <rect x="1362" y="224" width="48" height="24" rx="4" fill="#fff" stroke="#4d4d4d" stroke-width="1.5"/>
-            <text class="t-badge" x="1386" y="241" text-anchor="middle">CPU</text>
-            <text class="t-status" x="1362" y="266">checking…</text>
+            <rect class="box" x="1344" y="134" width="200" height="84" rx="10"/>
+            <circle class="st-dot" cx="1364" cy="163" r="4.5"><title>checking…</title></circle>
+            <text class="t-name" x="1376" y="170">Gary 2.0</text>
+            <rect class="badge" x="1488.5" y="153.5" width="40" height="20" rx="4"/>
+            <text class="t-badge" x="1508.5" y="168" text-anchor="middle">CPU</text>
+            <text class="t-sub" x="1360" y="200">Wav2Vec2, fine-tuned</text>
         </g>
 
         <!-- Clone Studio -->
         <g class="node" id="n-studio">
-            <rect class="box" x="330" y="436" width="280" height="144" rx="12"/>
-            <text class="t-name" x="348" y="470">Voice Clone Studio</text>
-            <text class="t-sub" x="348" y="496">Flask</text>
-            <text class="t-small" x="348" y="520">record, clone, compare</text>
-            <rect x="348" y="538" width="48" height="24" rx="4" fill="#fff" stroke="#4d4d4d" stroke-width="1.5"/>
-            <text class="t-badge" x="372" y="555" text-anchor="middle">CPU</text>
-            <text class="t-small" x="408" y="555">separate app</text>
+            <rect class="box" x="330" y="440" width="280" height="106" rx="10"/>
+            <text class="t-name" x="348" y="476">Voice Clone Studio</text>
+            <rect class="badge" x="554.5" y="458.5" width="40" height="20" rx="4"/>
+            <text class="t-badge" x="574.5" y="473" text-anchor="middle">CPU</text>
+            <text class="t-sub" x="348" y="512">Record, clone, compare</text>
         </g>
         <g class="node" id="n-studiodb">
-            <rect class="box" x="330" y="606" width="280" height="100" rx="12"/>
-            <image href="/static/icons/storage.svg" x="346" y="620" width="34" height="34"/>
-            <text class="t-name" x="390" y="645">Studio database</text>
-            <text class="t-sub" x="346" y="674">SQLite on a persistent volume</text>
-            <text class="t-small" x="346" y="696">voices, recordings, clips</text>
+            <rect class="box" x="330" y="580" width="280" height="82" rx="10"/>
+            <image href="/static/icons/storage.svg" x="346" y="594" width="30" height="30"/>
+            <text class="t-name" x="386" y="618">Studio database</text>
+            <text class="t-sub" x="346" y="648">SQLite · voices, clips</text>
         </g>
 
         <!-- Cloning engines -->
         <g class="node" id="n-xtts">
-            <rect class="box" x="666" y="438" width="214" height="160" rx="10"/>
-            <text class="t-name" x="682" y="472">XTTS v2</text>
-            <text class="t-sub" x="682" y="498">Coqui streaming server</text>
-            <text class="t-small" x="682" y="522">clones from a short sample</text>
-            <rect x="682" y="558" width="84" height="24" rx="4" fill="#151515"/>
-            <text class="t-badge t-white" x="724" y="575" text-anchor="middle">L4 GPU 3</text>
+            <rect class="box" x="670" y="444" width="210" height="84" rx="10"/>
+            <text class="t-name" x="686" y="480">XTTS v2</text>
+            <rect class="badge" x="806.5" y="494.5" width="58" height="20" rx="4"/>
+            <text class="t-badge" x="835.5" y="509" text-anchor="middle">L4 GPU</text>
+            <text class="t-sub" x="686" y="510">Coqui</text>
         </g>
         <g class="node" id="n-fish">
-            <rect class="box" x="890" y="438" width="214" height="160" rx="10"/>
-            <text class="t-name" x="906" y="472">Fish Speech</text>
-            <text class="t-sub" x="906" y="498">S2 Pro, torch.compile</text>
-            <text class="t-small" x="906" y="522">highest-quality clone</text>
-            <rect x="906" y="558" width="84" height="24" rx="4" fill="#151515"/>
-            <text class="t-badge t-white" x="948" y="575" text-anchor="middle">L4 GPU 4</text>
+            <rect class="box" x="894" y="444" width="210" height="84" rx="10"/>
+            <text class="t-name" x="910" y="480">Fish Speech</text>
+            <rect class="badge" x="1030.5" y="494.5" width="58" height="20" rx="4"/>
+            <text class="t-badge" x="1059.5" y="509" text-anchor="middle">L4 GPU</text>
+            <text class="t-sub" x="910" y="510">S2 Pro</text>
         </g>
 
         <!-- Same person: real vs clone -->
         <g class="node" id="n-real">
-            <rect class="box" x="1160" y="424" width="384" height="84" rx="10" style="stroke:#147878;stroke-width:2.5"/>
-            <g transform="translate(1178,444)" fill="#147878">
+            <rect class="box" x="1160" y="432" width="384" height="76" rx="10"/>
+            <g transform="translate(1180,451) scale(0.86)" fill="#147878">
                 <rect x="0" y="14" width="6" height="16" rx="3"/><rect x="10" y="6" width="6" height="32" rx="3"/>
                 <rect x="20" y="0" width="6" height="44" rx="3"/><rect x="30" y="10" width="6" height="24" rx="3"/>
                 <rect x="40" y="16" width="6" height="12" rx="3"/>
             </g>
-            <text class="t-name t-human" x="1240" y="458">Real recording</text>
-            <text class="t-small" x="1240" y="486">the speaker reads a sentence</text>
+            <text class="t-name t-human" x="1236" y="464">Real recording</text>
+            <text class="t-sub" x="1236" y="490">The speaker reads a sentence</text>
         </g>
         <g class="node" id="n-clone">
-            <rect class="box" x="1160" y="520" width="384" height="84" rx="10" style="stroke:#5e40be;stroke-width:2.5"/>
-            <g transform="translate(1178,540)" fill="#5e40be">
+            <rect class="box" x="1160" y="524" width="384" height="76" rx="10"/>
+            <g transform="translate(1180,543) scale(0.86)" fill="#5e40be">
                 <rect x="0" y="14" width="6" height="16" rx="1"/><rect x="10" y="6" width="6" height="32" rx="1"/>
                 <rect x="20" y="0" width="6" height="44" rx="1"/><rect x="30" y="10" width="6" height="24" rx="1"/>
                 <rect x="40" y="16" width="6" height="12" rx="1"/>
             </g>
-            <text class="t-name t-ai" x="1240" y="554">AI clone</text>
-            <text class="t-small" x="1240" y="582">same voice, same sentence, generated</text>
+            <text class="t-name t-ai" x="1236" y="556">AI clone</text>
+            <text class="t-sub" x="1236" y="582">Same voice, same sentence</text>
         </g>
 
         <!-- GPU nodes -->
         <g class="node" id="n-gpu">
-            <rect class="box" x="650" y="660" width="914" height="48" rx="10" style="fill:#151515;stroke:#151515"/>
-            <image href="/static/icons/gpu.svg" x="664" y="666" width="36" height="36" style="filter:invert(1)"/>
-            <text class="t-sub t-white" x="710" y="690"><tspan font-weight="700">4 × g6.2xlarge GPU nodes</tspan> · one NVIDIA L4 (24 GB) each · one whole GPU per workload</text>
+            <rect class="box" x="650" y="672" width="914" height="40" rx="10"/>
+            <image href="/static/icons/gpu.svg" x="666" y="678" width="28" height="28"/>
+            <text class="t-sub" x="704" y="698"><tspan class="t-strong">4 GPU nodes</tspan> · one NVIDIA L4 per GPU workload</text>
         </g>
     </g>
 </svg>
@@ -417,9 +409,8 @@ button { font-family: inherit; color: inherit; }
     <span class="k"><span class="sw" style="background:var(--ai)"></span>AI voice</span>
     <span class="k"><span class="sw-line"></span>Active data flow</span>
     <span class="k"><span class="sw-dash"></span>Audio to player, or operator step</span>
-    <span class="k"><span class="chip-gpu">L4 GPU</span>GPU workload</span>
-    <span class="k"><span class="chip-cpu">CPU</span>CPU workload</span>
-    <span class="k" id="status-note">● Opponent status: this game’s configuration</span>
+    <span class="k"><span class="chip">L4 GPU</span><span class="chip">CPU</span>Where it runs</span>
+    <span class="k" id="status-note"><span class="sdot on"></span>Running in this game <span class="sdot"></span>Not configured here</span>
     <span class="credit">Icons: Red Hat standard icons, CC BY 4.0</span>
 </footer>
 
@@ -428,63 +419,84 @@ button { font-family: inherit; color: inherit; }
     'use strict';
 
     // Each step highlights nodes (n-*) and flows (f-*). Facts: docs/ARCHITECTURE.md, infra/*/manifests.yaml.
+    // `facts` are the technical details that used to crowd the diagram boxes; they show in the step panel.
     const STEPS = [
         {
             title: 'Voice ID at a glance',
-            desc: 'Two small Flask apps and six model servers on one Red Hat OpenShift cluster. Follow a voice from a real person, through a clone, to the game and the AI opponents. Use the arrows, the arrow keys, or Auto tour.',
+            desc: 'Two small Flask apps and six model servers on one Red Hat OpenShift cluster. Follow a voice from a real person, through a clone, into the game and past the AI opponents.',
+            hint: true,
             nodes: [], flows: []
         },
         {
             title: 'A player starts a game',
-            desc: 'The player opens the game on a tablet. An OpenShift route with edge TLS passes the request to the Voice ID pod: Flask and gunicorn on ordinary CPU. The game itself needs no GPU.',
+            desc: 'The player opens the game on a tablet. An OpenShift route passes the request to the Voice ID pod on ordinary CPU. The game itself needs no GPU.',
+            facts: ['Flask + gunicorn', '1 pod', 'Route with edge TLS', 'game API, scoring, battle proxy'],
             nodes: ['n-player', 'n-game'], flows: ['f-play']
         },
         {
             title: 'Five clips from the game database',
-            desc: 'The server picks five random clips, at least one AI and one human, and streams the audio from SQLite on a persistent volume. The server decides what is right; the browser only adds up points.',
+            desc: 'The server picks five random clips, at least one AI and one human, and streams the audio to the tablet. The server decides what is right; the browser only adds up points.',
+            facts: ['SQLite on a persistent volume', 'clips, players, leaderboard'],
             nodes: ['n-player', 'n-game', 'n-gamedb'], flows: ['f-db', 'f-audio']
         },
         {
             title: 'Battle: Teddy listens',
-            desc: 'In battle mode the game backend sends every clip to the chosen opponent. Teddy is Qwen2-Audio-7B, served by vLLM as a KServe LLMInferenceService in Red Hat OpenShift AI on its own NVIDIA L4. He hears the raw audio with a forensic prompt.',
+            desc: 'In battle mode the game backend sends every clip to the chosen opponent. Teddy hears the raw audio with a forensic prompt.',
+            facts: ['Qwen2-Audio-7B', 'vLLM as a KServe LLMInferenceService', 'Red Hat OpenShift AI', '1 × NVIDIA L4'],
             nodes: ['n-game', 'n-teddy'], flows: ['f-teddy']
         },
         {
             title: 'Battle: Iris looks at a picture',
-            desc: 'Iris is Gemma-4-12B (the Red Hat AI FP8 build) on vLLM, on a second L4. She never hears the clip: the backend draws a spectrogram image and Iris judges the picture. She is the only opponent that uses spectrograms.',
+            desc: 'Iris never hears the clip: the backend draws a spectrogram image and Iris judges the picture. She is the only opponent that uses spectrograms.',
+            facts: ['Gemma-4-12B, Red Hat AI FP8 build', 'vLLM', 'Red Hat OpenShift AI', '1 × NVIDIA L4'],
             nodes: ['n-game', 'n-iris'], flows: ['f-iris']
         },
         {
             title: 'Battle: Gary and Gary 2.0',
-            desc: 'The Garys are Wav2Vec2 deepfake classifiers in plain CPU Deployments, no GPU. They score the waveform and return a fake probability. Gary 2.0 was fine-tuned on the voices in this game: about 90% balanced accuracy, and he rarely accuses a real human.',
+            desc: 'The Garys are deepfake classifiers: they score the waveform and return a fake probability. Gary 2.0 was fine-tuned on the voices in this game: about 90% balanced accuracy, and he rarely accuses a real human.',
+            facts: ['Wav2Vec2 base and V4-A fine-tune', 'plain Deployments', 'CPU, no GPU'],
             nodes: ['n-game', 'n-gary', 'n-gary2'], flows: ['f-gary', 'f-gary2']
         },
         {
             title: 'Results on the booth monitor',
-            desc: 'Every finished game lands on the leaderboard. The booth monitor shows /tv and asks the game API for the latest standings every 10 seconds.',
+            desc: 'Every finished game lands on the leaderboard. The booth monitor shows /tv and asks the game API for the latest standings.',
+            facts: ['/tv', 'refreshes every 10 s'],
             nodes: ['n-tv', 'n-game', 'n-gamedb'], flows: ['f-tv', 'f-db']
         },
         {
             title: 'A real person records',
-            desc: 'Behind the scenes, a speaker reads short sentences in Czech, Slovak or English in Voice Clone Studio. The recordings stay in the studio’s own SQLite database on a persistent volume. These become the human clips.',
+            desc: 'Behind the scenes, a speaker reads short sentences in Czech, Slovak or English in Voice Clone Studio. These recordings become the human clips.',
+            facts: ['Flask, separate app on CPU', 'SQLite on a persistent volume', 'voices, recordings, clips'],
             nodes: ['n-speaker', 'n-studio', 'n-studiodb', 'n-real'], flows: ['f-rec', 'f-studiodb', 'f-real']
         },
         {
             title: 'Cloning the same voice',
-            desc: 'About 30 seconds of the speaker’s voice registers a clone at XTTS v2 and Fish Speech S2 Pro, each on its own L4. Both then speak the same sentences in that voice. These become the AI clips.',
+            desc: 'About 30 seconds of the speaker’s voice registers a clone at XTTS v2 and Fish Speech S2 Pro. Both then speak the same sentences in that voice. These become the AI clips.',
+            facts: ['XTTS v2: Coqui streaming server', 'Fish Speech S2 Pro: torch.compile, highest quality', '1 × NVIDIA L4 each'],
             nodes: ['n-studio', 'n-xtts', 'n-fish', 'n-clone'], flows: ['f-xtts', 'f-fish', 'f-clone']
         },
         {
             title: 'Same person, real vs clone',
-            desc: 'An operator imports the matching pairs into the game with the import tool or a private seed pack. The game never calls the voice engines live, and voice data lives only in the cluster databases: never in Git, an image or a public place.',
+            desc: 'An operator imports the matching pairs into the game. The game never calls the voice engines live.',
+            facts: ['import tool or private seed pack', 'voice data stays in the cluster databases: never in Git, an image or a public place'],
             nodes: ['n-studio', 'n-studiodb', 'n-gamedb', 'n-real', 'n-clone'], flows: ['f-import']
         },
         {
             title: 'The platform underneath',
-            desc: 'Four AWS g6.2xlarge nodes, one NVIDIA L4 each, one whole GPU per workload. Red Hat OpenShift runs everything; Red Hat OpenShift AI serves the two LLM opponents through KServe and vLLM. The apps and the Garys run on regular CPU workers.',
+            desc: 'Red Hat OpenShift runs everything; Red Hat OpenShift AI serves the two LLM opponents through KServe and vLLM. The apps and the Garys run on regular CPU workers.',
+            facts: ['4 × AWS g6.2xlarge', 'one NVIDIA L4 (24 GB) each', 'one whole GPU per workload'],
             nodes: ['n-gpu', 'n-teddy', 'n-iris', 'n-xtts', 'n-fish'], flows: []
         }
     ];
+
+    function fillFacts(el, s) {
+        el.textContent = '';
+        if (s.hint) {
+            el.innerHTML = '<span class="hint">Press <kbd>→</kbd> or click Next to walk through the ' + STEPS.length + ' steps</span> · or start the Auto tour';
+            return;
+        }
+        el.textContent = (s.facts || []).join(' · ');
+    }
 
     const svg = document.getElementById('arch');
     const flowsLayer = document.getElementById('flows');
@@ -505,6 +517,7 @@ button { font-family: inherit; color: inherit; }
         ref.querySelector('.step-num').textContent = `Step ${i + 1} of ${STEPS.length}`;
         ref.querySelector('.step-title').textContent = s.title;
         ref.querySelector('.step-desc').textContent = s.desc;
+        fillFacts(ref.querySelector('.step-facts'), s);
         document.getElementById('step-copy').appendChild(ref);
 
         const d = document.createElement('button');
@@ -521,6 +534,8 @@ button { font-family: inherit; color: inherit; }
         document.getElementById('step-num').textContent = `Step ${current + 1} of ${STEPS.length}`;
         document.getElementById('step-title').textContent = s.title;
         document.getElementById('step-desc').textContent = s.desc;
+        fillFacts(document.getElementById('step-facts'), s);
+        document.getElementById('btn-next').classList.toggle('primary', current === 0);
         Array.from(dots.children).forEach((d, i) => {
             d.classList.toggle('active', i === current);
             d.setAttribute('aria-selected', i === current ? 'true' : 'false');
@@ -567,10 +582,10 @@ button { font-family: inherit; color: inherit; }
     function setOppStatus(list) {
         const ids = new Set((list || []).filter(o => o.available).map(o => o.id));
         document.querySelectorAll('[data-opp]').forEach(g => {
-            const t = g.querySelector('.t-status');
+            const dot = g.querySelector('.st-dot');
             const on = ids.has(g.dataset.opp);
-            t.textContent = on ? '● In the game' : 'Not configured here';
-            t.classList.toggle('on', on);
+            dot.classList.toggle('on', on);
+            dot.querySelector('title').textContent = on ? 'Running in this game' : 'Not configured here';
             g.classList.toggle('off', !on);
         });
     }
@@ -578,16 +593,15 @@ button { font-family: inherit; color: inherit; }
         fetch('/api/battle/opponents', { cache: 'no-store' })
             .then(r => r.ok ? r.json() : Promise.reject(r.status))
             .then(setOppStatus)
-            .catch(() => document.querySelectorAll('[data-opp] .t-status').forEach(t => { t.textContent = 'status unknown'; }));
+            .catch(() => document.querySelectorAll('[data-opp] .st-dot title').forEach(t => { t.textContent = 'Status unknown'; }));
         fetch('/api/leaderboard', { cache: 'no-store' })
             .then(r => r.ok ? r.json() : Promise.reject(r.status))
             .then(d => {
                 const n = d.total_players || 0;
-                const t = document.getElementById('st-game');
-                t.textContent = `● Live · ${n} player${n === 1 ? '' : 's'}`;
-                t.classList.add('on');
+                document.getElementById('st-game').textContent = `Live · ${n} player${n === 1 ? '' : 's'}`;
+                document.getElementById('dot-game').classList.add('on');
             })
-            .catch(() => { document.getElementById('st-game').textContent = 'status unknown'; });
+            .catch(() => { document.getElementById('st-game').textContent = 'Status unknown'; });
     }
 
     if (new URLSearchParams(location.search).get('auto') === '1') setAuto(true);

@@ -62,20 +62,16 @@ Limits of this mechanism:
 
 ## Admin page features
 
-- **Players:** nickname, email, games played, best correct count and best points;
-  click a player for their game history.
-- **Export CSV:** `rank, nickname, email, best_score, best_points, games_played`,
-  ordered by best points. This is the list to use for prize draws or follow-up;
-  it contains personal data (emails), so handle it accordingly.
-- **Reset all scores:** deletes every game and leaderboard row. Players (nicknames,
-  emails) and clips are kept.
-- **Seed pack & backup:** export or import a seed pack (clips and speaker
-  profiles, no personal data) and download a full backup (everything, including
-  emails; operator use only). See [SEEDING.md](../SEEDING.md) and
-  [backups](backups.md).
-- **Speakers:** display names and photos for the personal reveal. See
-  [clips and speakers](clips-and-speakers.md#speaker-display-names-and-photos).
-  Only upload photos of people who agreed to be shown.
+`/admin` has four tabs; the selected tab is kept in the URL (`/admin#speakers`), so
+you can bookmark or share a direct link. Arrow keys move between tabs. Help text sits
+behind the small **?** buttons.
+
+| Tab | What you do there |
+|---|---|
+| **Players** | Nickname, email, games, best points; click (or Enter) a row for the game history. **Export CSV** (`rank, nickname, email, best_score, best_points, games_played`, by best points) for prize draws; contains emails. |
+| **Speakers** | Display names and photos for the reveal ([details](clips-and-speakers.md#speaker-display-names-and-photos)); human/AI clip counts; **Merge or rename** speaker keys; **AI-only voice** flag. The tab shows a red counter and the page a banner when the speaker integrity check finds problems. Only upload photos of people who agreed to be shown. |
+| **Clips & seed packs** | Clip counts per language (human/AI) and AI model; **Export** / **Import seed pack** (clips + speaker profiles, no personal data). See [SEEDING.md](../SEEDING.md). |
+| **Danger zone** | **Reset all scores** (deletes every game and leaderboard row, keeps players and clips; asks twice) and **Download full backup** (everything incl. emails, operator use only; see [backups](backups.md)). |
 
 ## Known risks
 
@@ -103,13 +99,16 @@ remove the route or scale the deployment to zero after the event.
    4 minutes; see [INSTALLATION.md](../INSTALLATION.md#fish-speech-warm-up)).
 2. Run the smoke test in [INSTALLATION.md](../INSTALLATION.md#6-verify): clip count,
    one game, each opponent answering.
-3. Play one solo game and one battle on the booth laptop with a test nickname,
+3. **No speaker warnings.** `/admin` must show no red banner. One person = one speaker
+   key (lowercase first name); merge aliases or mark synthetic voices **AI-only voice** on
+   the Speakers tab ([why](clips-and-speakers.md#speaker-identity-one-person--one-key-hard-rule)).
+4. Play one solo game and one battle on the booth laptop with a test nickname,
    then reset scores (admin page) so the board starts empty. Battle start time
    is dominated by the slowest opponent analysing five clips.
-4. Open `/tv` on the monitor in full-screen (F11) and confirm it updates.
-5. Tell staff the prize rule: **4 of 5 correct** (default) wins, regardless of
+5. Open `/tv` on the monitor in full-screen (F11) and confirm it updates.
+6. Tell staff the prize rule: **4 of 5 correct** (default) wins, regardless of
    points or opponent.
-6. Agree how ties are handled for any end-of-day prize ([scoring](scoring.md#leaderboard-and-rank)).
+7. Agree how ties are handled for any end-of-day prize ([scoring](scoring.md#leaderboard-and-rank)).
 
 ## During the event
 
@@ -122,7 +121,7 @@ remove the route or scale the deployment to zero after the event.
 
 ## Reset between days or events
 
-Take a full backup and export the CSV first ([backups](backups.md)), then reset from `/admin` → **Reset all scores**, or:
+Take a full backup and export the CSV first ([backups](backups.md)), then reset from `/admin` → **Danger zone** → **Reset all scores**, or:
 
 ```bash
 curl -sk -X POST "https://${ROUTE}/api/admin/reset-scores" -H "Authorization: Bearer ${TOKEN}"

@@ -123,7 +123,7 @@ Hard-won facts (do not rediscover):
 - Helm: an upgrade without `-f`/`--set` reuses previous values; use `-f <values>` or
   `--reset-values`, and always pass `adminToken` again (else the public image default
   returns).
-- Clips: **seed pack** import (admin UI "Seed pack & backup" or
+- Clips: **seed pack** import (admin UI tab "Clips & seed packs" or
   `python3 apps/voice-id/tools/seedpack.py import --game URL --token T --file PACK --mode skip`).
   Low-level fallback: loop over `POST /api/admin/upload` (86 clips at first install).
   Upload does not deduplicate. All `/api/admin/*` calls need
@@ -163,7 +163,9 @@ stop, what persists and the GPU saving, then wait for "yes".
 Guide: [booth-operations.md](../../../docs/customization/booth-operations.md).
 
 - Screens: `/` game, `/tv` top 10 refreshing every 10 s, `/admin` (Bearer token):
-  players and history, Export CSV, Reset all scores, Speakers, Seed pack & backup.
+  tabs Players (history, Export CSV), Speakers (names, photos, merge/rename, AI-only flag,
+  integrity banner), Clips & seed packs (counts, export/import), Danger zone (Reset all
+  scores, full backup). Tab is in the URL hash (`/admin#speakers`).
 - Admin password: Helm value `adminToken` (env `ADMIN_TOKEN`); empty = public image
   default. Override per event.
 - Every `/api/admin/*` endpoint (incl. clips, upload, delete-clip, `POST
@@ -177,6 +179,17 @@ Guide: [booth-operations.md](../../../docs/customization/booth-operations.md).
 
 Guides: [clips-and-speakers.md](../../../docs/customization/clips-and-speakers.md),
 [backups.md](../../../docs/customization/backups.md).
+
+**Hard rule: one person = one speaker key** = lowercase first name (`jakub`), never a
+surname/login/nickname variant (`jveverka`, `kuba`); same key for human clips, AI clones,
+photo and Clone Studio name. A split key means the game never links clone and real person
+(real incident: 13 `jakub` clones vs 10 `jveverka` recordings). After ANY import (seed pack,
+Clone Studio, upload) run the integrity check and resolve every warning before the booth
+opens: `GET /api/admin/speakers/integrity` or the red banner on `/admin#speakers`; fix with
+**Merge** (`POST /api/admin/speakers/merge {"from":"jveverka","to":"jakub"}`, also renames
+when `to` is new) or, only for a synthetic voice with no real person, **AI-only voice**
+(`PUT /api/admin/speakers/<name> {"ai_only": true}`). XTTS stock voices are auto-recognised.
+Never mark a real person AI-only to silence the warning; merges need owner consent.
 
 - Game clip API (admin token, `Authorization: Bearer`): `GET /api/admin/clips`,
   `POST /api/admin/upload` (multipart `audio`, `is_ai`, `language`, `source` =
@@ -198,9 +211,12 @@ Guides: [clips-and-speakers.md](../../../docs/customization/clips-and-speakers.m
   then `--apply` with owner consent. Idempotent by filename
   (`natural/<lang>/<speaker>-sNN.wav`, `ai/<lang>/<provider>-<speaker>-sNN.wav`);
   re-recorded sentences are skipped until the old game clip is deleted. `no-voice` =
-  recording has no linked cloned voice. Warm Fish first.
-- Speakers: `PUT /api/admin/speakers/<name> {"display_name"}`, `POST|DELETE
-  /api/admin/speakers/<name>/photo` (token). Only photos of people who agreed.
+  recording has no linked cloned voice. Warm Fish first. Speaker key = Clone Studio
+  speaker name lowercased: check it is the first name. The run ends with a speaker
+  integrity report (dry run: projected state); resolve warnings before `--apply`/opening.
+- Speakers: `PUT /api/admin/speakers/<name> {"display_name", "ai_only"}`, `POST|DELETE
+  /api/admin/speakers/<name>/photo`, `POST /api/admin/speakers/merge {from, to}`,
+  `GET /api/admin/speakers/integrity` (token). Only photos of people who agreed.
 - Retraining Gary 2.0 after new speakers/engines: export with `--out-dir
   ~/voice-id-audio/training/<date>`, follow `apps/deepfake-detector/FINDINGS.md` and
   `experiment_v4.py`, new image tag, update `infra/deepfake-detector/manifests.yaml`,
@@ -220,27 +236,39 @@ hand; the tool builds and validates it.
      `natural/<cs|sk|en>/<speaker>-<desc>.<ext>`, `ai/<cs|sk|en>/<model>-<speaker>-<desc>.<ext>`
      (`<model>`: `fish` → "Fish Audio S2 Pro", `xtts` → "Coqui XTTS v2"), optional `speakers/<speaker>.jpg|png|webp`,
      optional `manifest.json` (takes precedence over filenames). Audio: wav, mp3, m4a, flac, ogg.
+   - **Speaker keys**: one person = one key = lowercase first name, identical in `natural/`, `ai/`
+     and `speakers/`. List every speaker with human/AI counts and flag surname/nickname variants
+     or AI-only speakers before packing.
    - Run (from the repo root):
      ```bash
      python3 apps/voice-id/tools/seedpack.py pack --dir <folder>
      ```
      Output goes to `~/voice-id-audio/seedpacks/` (outside Git; the tool refuses a Git tree unless the target is git-ignored).
      Exit code 1 = some files were skipped: show the skipped list and why.
+     Exit code 4 = **refused: AI-clone speaker without real recordings** (integrity report printed,
+     no pack written). Never work around it blindly: ask the user which key is the person's first
+     name, then re-run with `--alias OLD=NEW` (repeatable, e.g. `--alias jveverka=jakub`), or, only if
+     the user confirms it is a synthetic voice with no real person, `--allow-ai-only NAME` (stored in
+     the pack as `ai_only`). XTTS stock voices (claribel, daisy, ...) pass automatically.
 3. **B — from the running game** (needs the cluster's route and admin token; dedicated KUBECONFIG, never `oc login`):
    ```bash
    ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
    python3 apps/voice-id/tools/seedpack.py export --game "https://${ROUTE}" --token "$VOICEID_ADMIN_TOKEN"
    ```
-   Or tell the user: `/admin` → **Seed pack & backup** → **Export seed pack**.
+   Or tell the user: `/admin` → **Clips & seed packs** → **Export seed pack**.
+   `export` prints the live speaker integrity report first; if it shows warnings, resolve them
+   in `/admin#speakers` (merge / AI-only) and export again rather than shipping a broken pack.
 4. **Report**: full path of the zip, size, number of clips (human/AI per language), speaker profiles,
+   the integrity result (aliases applied, AI-only voices),
    skipped files, and — for source A — how it differs from the live game's clip list if a cluster is available
    (clips never played yet). Remind: contains real voices, Rule zero applies.
 5. **Offer protection + sharing** (don't do it unasked): encrypt with `age -p -o <pack>.age <pack>`
    (passphrase via a different channel); share via a Red Hat Google Drive folder with named @redhat.com
    people only (never "anyone with the link"), set an access expiry; record version/recipient/date in the owner's
    private register (needed if someone withdraws consent). Never GitHub, Quay, public Slack, external email.
-6. **Recipient side**: `/admin` → **Seed pack & backup** → **Import seed pack** (mode `skip`), or
-   `seedpack.py import --game URL --token T --file PACK --mode skip`; then delete the zip.
+6. **Recipient side**: `/admin` → **Clips & seed packs** → **Import seed pack** (mode `skip`), or
+   `seedpack.py import --game URL --token T --file PACK --mode skip` (prints the integrity report);
+   resolve any speaker warning on `/admin#speakers`; then delete the zip.
 
 ## Seeding (clips into the game)
 
@@ -260,10 +288,12 @@ python3 apps/voice-id/tools/seedpack.py import --game "https://${ROUTE}" \
 curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/clips" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))'
 ```
 
-Or admin UI: `/admin` → **Seed pack & backup** → **Import seed pack**. Modes: `skip`
+Or admin UI: `/admin` → **Clips & seed packs** → **Import seed pack**. Modes: `skip`
 (default; same filename + different content = conflict, untouched) or `replace`
 (overwrite in place). Idempotent (filename + SHA-256), all-or-nothing validation.
-Then a browser test game and a look at Speakers on `/admin`.
+Then **resolve speaker integrity warnings** (one person = one key, see "Clips, speakers and
+voice cloning"; the import output and `/admin` banner list them), a browser test game and a
+look at Speakers on `/admin`.
 
 Export / back up:
 
@@ -331,7 +361,8 @@ Never delete PVCs, reset scores or reinstall as a retry.
 
 Record each item as verified, failed or untested with evidence and time: pods ready,
 clip count, opponents answering (smoke test sends real inference but creates no
-leaderboard entry), admin password not default, Fish warm (if Clone Studio), recent
+leaderboard entry), admin password not default, speaker integrity clean
+(`GET /api/admin/speakers/integrity` → `"ok": true`), Fish warm (if Clone Studio), recent
 seed pack and full backup in `~/voice-id-audio/`, browser game and `/tv` on the booth
 devices (owner check if you cannot see them).
 

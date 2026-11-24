@@ -9,6 +9,12 @@ it, growing it, sharing it and recovering it.
 A seed pack is one file, `voice-id-seedpack-<date>.seedpack.zip`. You never zip files by hand.
 Run everything from the repo root (`cd ~/Documents/work/voice-id`).
 
+> **Hard rule: one person = one speaker key.** The key is the person's lowercase first
+> name (`jakub`), never a surname, login or nickname variant (`jveverka`, `kuba`). If a
+> person's AI clones and real recordings use different keys, the game treats them as two
+> people and never reveals the clone as "clone of Jakub". After any import, run the
+> integrity check and resolve every warning (merge or mark AI-only) before the booth opens.
+
 **From audio files on your disk** (for example `apps/voice-id/samples/`):
 
 ```bash
@@ -24,8 +30,21 @@ The folder must look like this (the tool reads metadata from paths and names):
   speakers/<speaker>.jpg                            optional photo for the reveal
 ```
 
+`pack` prints a speaker integrity report and **refuses (exit 4)** when an AI-clone speaker
+has no real recordings in the pack. Fix the key instead of forcing it:
+
+```bash
+# real recordings filed under the surname -> rewrite to the first name while packing
+python3 apps/voice-id/tools/seedpack.py pack --dir apps/voice-id/samples --alias jveverka=jakub
+# a synthetic voice with no real person behind it (Coqui XTTS stock voices are recognised automatically)
+python3 apps/voice-id/tools/seedpack.py pack --dir apps/voice-id/samples --allow-ai-only robot
+```
+
+`--alias OLD=NEW` and `--allow-ai-only NAME` are repeatable. `--allow-ai-only` is stored in
+the pack (`"ai_only": true`), so the receiving booth gets no false warning.
+
 **From the running game** (exactly the clips it plays now, incl. speaker names and photos):
-`/admin` → **Seed pack & backup** → **Export seed pack**, or
+`/admin` → **Clips & seed packs** → **Export seed pack**, or
 
 ```bash
 python3 apps/voice-id/tools/seedpack.py export --game https://<game-route> --token <admin-password>
@@ -35,7 +54,8 @@ Either way the file lands in `~/voice-id-audio/seedpacks/` (outside Git, readabl
 
 **Share it:** optionally encrypt (`age -p -o pack.zip.age pack.zip`, send the passphrase separately),
 put it in a Red Hat Google Drive folder shared with named people only, set an access expiry, and note
-who got which version. **Import it:** recipient opens `/admin` → **Seed pack & backup** → **Import seed pack**.
+who got which version. **Import it:** recipient opens `/admin` → **Clips & seed packs** → **Import seed pack**,
+then resolves any warning shown on the **Speakers** tab.
 
 ## Rule zero
 
@@ -60,7 +80,7 @@ A **seed pack** is a zip (`voice-id-seedpack-<YYYYMMDD-HHMM>.seedpack.zip`):
 ```text
 manifest.json     format "voice-id-seedpack", version 1, exported_at, app_version,
                   clips:    [{filename, is_ai, language, source, speaker, content_type, sha256, bytes, file}]
-                  speakers: [{name, display_name, photo_file, photo_type}]
+                  speakers: [{name, display_name, photo_file, photo_type, ai_only}]
 clips/...         the audio files
 speakers/...      speaker photos (only of people who agreed)
 ```
@@ -92,7 +112,7 @@ channel. Store it in `~/voice-id-audio/seedpacks/` with permissions for you only
 Prerequisite: the game is installed ([INSTALLATION.md](INSTALLATION.md), step 4) and
 you know the admin password.
 
-**Admin UI:** open `https://<route>/admin`, log in, section **Seed pack & backup** →
+**Admin UI:** open `https://<route>/admin`, log in, tab **Clips & seed packs** →
 **Import seed pack**, choose the file and the mode.
 
 **Headless:**
@@ -115,7 +135,8 @@ Import is **all or nothing**: the server validates the whole pack (zip, format a
 version, SHA-256 of every clip, real audio content, metadata, max 1 GB) before one
 write transaction. A rejected pack writes nothing and reports why. Importing the
 same pack twice adds nothing. The response counts clips added, skipped, conflicts,
-replaced and invalid, and speakers added, updated, skipped.
+replaced and invalid, and speakers added, updated, skipped, followed by the speaker
+integrity report.
 
 **Verify:**
 
@@ -126,13 +147,29 @@ c = json.load(sys.stdin)
 print(len(c), "clips"); print(collections.Counter((x["language"], "AI" if x["is_ai"] else "human") for x in c))'
 ```
 
+**Resolve speaker warnings** (mandatory before the booth opens): `/admin` shows a red
+banner and a counter on the **Speakers** tab when the check finds
+
+- an AI-clone speaker **without real recordings** that is not a Coqui XTTS stock voice:
+  the person's real recordings are missing or filed under another key. Click
+  **Merge `<alias>` → `<first name>`** (or use **Merge or rename**), or tick **AI-only voice**
+  when it really is a synthetic voice with no real person;
+- a human-only speaker that **looks like an alias** of another speaker (similar spelling,
+  prefix, display name, initial + surname): merge it.
+
+Merging moves every clip and the profile in one transaction (the target keeps its own
+display name and photo). Typing a new key renames. Headless:
+`GET /api/admin/speakers/integrity`, `POST /api/admin/speakers/merge {"from":"jveverka","to":"jakub"}`,
+`PUT /api/admin/speakers/<name> {"ai_only": true}`.
+
 Then play one test game in the browser (each game needs at least `game.size`
 clips including one AI and one human clip), check **Speakers** on `/admin` for
 display names and photos, and reset scores afterwards.
 
 ## Export a seed pack (share or back up)
 
-**Admin UI:** `/admin` → **Seed pack & backup** → **Export seed pack**.
+**Admin UI:** `/admin` → **Clips & seed packs** → **Export seed pack** (it warns when speaker
+problems are unresolved; the CLI prints the same report).
 
 **Headless:**
 
@@ -188,9 +225,11 @@ Folder layout and filename convention:
 - `<model>` maps to the display name shown in the reveal: `fish` → Fish Audio S2 Pro,
   `xtts` / `coqui` → Coqui XTTS v2, `moss` → MOSS-TTS-Nano, `qwen` → Qwen3-TTS,
   `higgs` → Higgs Audio v3 (same mapping as `apps/voice-id/load_samples.py`).
-- `<speaker>`: lower-case key. For AI clips, the person who was cloned (or the
-  built-in voice name). A speaker with at least one natural clip counts as a real
-  person, so their AI clips are revealed as "clone of <speaker>".
+- `<speaker>`: the person's **lowercase first name**, identical for their natural
+  clips, AI clips and photo (`natural/cs/jakub-1.wav`, `ai/cs/fish-jakub-1.wav`,
+  `speakers/jakub.jpg`). Never a surname or nickname variant. For AI clips of a
+  built-in TTS voice, the voice name. A speaker with at least one natural clip counts
+  as a real person, so their AI clips are revealed as "clone of <speaker>".
 - Accepted audio: wav, mp3, m4a, ogg, flac, webm. Non-WAV is transcoded to WAV by
   the game.
 

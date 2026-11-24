@@ -30,23 +30,21 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Red Hat Text', system-ui, sans-serif;
-            font-weight: 400;
-            font-size: 1rem;
-            line-height: 1.4;
-            background: var(--bg);
-            color: var(--text);
+            font-weight: 400; font-size: 1rem; line-height: 1.4;
+            background: var(--bg); color: var(--text);
         }
         h1, h2, h3 { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; line-height: 1.2; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.15rem; margin-bottom: 8px; }
         strong { font-weight: 700; }
 
         /* ---------- Header ---------- */
         .header {
             display: flex; align-items: center; justify-content: space-between; gap: 24px;
-            padding: 16px 40px;
-            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 40px; border-bottom: 1px solid var(--border-subtle);
         }
         .brand { display: flex; align-items: center; gap: 20px; min-height: 56px; }
-        .brand img { height: 64px; width: auto; display: block; }
+        .brand img { height: 56px; width: auto; display: block; }
         .wordmark { display: none; align-items: baseline; gap: 10px; }
         .wordmark.show { display: flex; }
         .wordmark .wm-main { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 1.6rem; line-height: 1.2; }
@@ -59,7 +57,7 @@
         .header-right .label { font-size: 0.9rem; color: var(--text-muted); }
         .header-right .conf { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 1.2rem; line-height: 1.2; }
 
-        main { max-width: 1280px; margin: 0 auto; padding: 32px 40px 64px; }
+        main { max-width: 1280px; margin: 0 auto; padding: 24px 40px 64px; }
 
         /* ---------- Login ---------- */
         .auth-form {
@@ -80,21 +78,70 @@
 
         .admin-content { display: none; }
 
-        /* ---------- Sections ---------- */
-        .section { margin-bottom: 48px; }
-        .section h2 { font-size: 1.75rem; margin-bottom: 8px; }
-        .section-lead { color: var(--text-muted); margin-bottom: 16px; max-width: 900px; }
-        .section-note {
-            color: var(--text-muted); margin: 0 0 16px; max-width: 900px;
-            padding: 12px 16px; background: var(--surface); border-left: 4px solid var(--border); border-radius: 0 4px 4px 0;
+        /* ---------- Tabs ---------- */
+        .tabs {
+            display: flex; gap: 4px; border-bottom: 1px solid var(--border);
+            overflow-x: auto; scrollbar-width: none; margin-bottom: 28px;
         }
-        .section-note strong { color: var(--text); }
-        .warn-box {
-            margin-bottom: 20px; padding: 16px 20px; max-width: 900px;
-            border: 1px solid var(--rh-red-dark); border-left: 6px solid var(--rh-red); border-radius: 4px;
-            background: var(--bg); color: var(--text);
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab {
+            flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px;
+            min-height: 52px; padding: 12px 20px;
+            font: inherit; font-weight: 700; color: var(--text-muted);
+            background: none; border: none; border-bottom: 3px solid transparent; border-radius: 0;
+            margin-bottom: -1px; cursor: pointer;
         }
-        .warn-box strong { color: var(--rh-red-dark); }
+        .tab:hover { color: var(--text); background: var(--surface); }
+        .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--rh-red); }
+        .tab:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+        .tab.danger-tab[aria-selected="true"] { border-bottom-color: var(--rh-red-dark); }
+        .badge {
+            display: inline-block; min-width: 22px; padding: 1px 7px; border-radius: 11px;
+            font-size: 0.8rem; line-height: 1.4; text-align: center;
+            background: var(--rh-red-dark); color: #ffffff;
+        }
+        .badge[hidden] { display: none; }
+        .panel[hidden] { display: none; }
+        .panel-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        .panel-head .stat { margin-left: auto; color: var(--text-muted); }
+        .block { margin-bottom: 36px; }
+
+        /* ---------- Help "?" ---------- */
+        .help { display: inline-block; position: relative; }
+        .help summary {
+            list-style: none; cursor: pointer;
+            width: 28px; height: 28px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.9rem; color: var(--text-muted);
+            border: 1px solid var(--border); background: var(--bg);
+        }
+        .help summary::-webkit-details-marker { display: none; }
+        .help summary:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+        .help[open] summary { color: var(--text); border-color: var(--text); }
+        .help .help-body {
+            position: absolute; z-index: 5; top: 36px; left: 0; width: min(420px, 80vw);
+            padding: 12px 16px; background: var(--bg); color: var(--text);
+            border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            font-size: 0.95rem; font-weight: 400;
+        }
+        .hint { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px; }
+
+        /* ---------- Integrity banner ---------- */
+        .integrity-banner {
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+            margin-bottom: 20px; padding: 12px 16px;
+            border: 1px solid var(--rh-red-dark); border-left: 6px solid var(--rh-red-dark); border-radius: 4px;
+        }
+        .integrity-banner[hidden] { display: none; }
+        .integrity-banner strong { color: var(--rh-red-dark); }
+        .integrity-banner .ib-text { flex: 1 1 320px; }
+        .issue-list { list-style: none; margin: 0 0 24px; border: 1px solid var(--rh-red-dark); border-radius: 4px; }
+        .issue-list[hidden] { display: none; }
+        .issue-list li { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 12px 16px; border-top: 1px solid var(--border-subtle); }
+        .issue-list li:first-child { border-top: none; }
+        .issue-list .issue-who { font-weight: 700; min-width: 110px; }
+        .issue-list .issue-msg { flex: 1 1 300px; color: var(--text-muted); }
+        .issue-list .issue-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
         /* ---------- Buttons ---------- */
         button, .btn-sm {
@@ -106,79 +153,107 @@
         button:hover, .btn-sm:hover { background: var(--surface); }
         button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
         button:disabled { color: var(--text-muted); border-color: var(--border); cursor: default; background: var(--surface); }
-        /* single primary call to action (login); red stays a restrained accent */
         .auth-form button { background: var(--rh-red); border-color: var(--rh-red); color: #ffffff; }
         .auth-form button:hover { background: var(--rh-red-dark); border-color: var(--rh-red-dark); }
+        button.primary { background: var(--text); border-color: var(--text); color: #ffffff; }
+        button.primary:hover { background: #383838; }
         button.danger, .btn-sm.danger { color: var(--rh-red-dark); border-color: var(--rh-red-dark); background: var(--bg); }
         button.danger:hover, .btn-sm.danger:hover { background: var(--rh-red-dark); color: #ffffff; }
-        .btn-sm { min-height: 40px; padding: 8px 14px; font-size: 0.9rem; margin-right: 8px; }
-
-        .toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
-        .stat { color: var(--text-muted); margin-left: auto; }
+        .btn-sm { min-height: 40px; padding: 8px 14px; font-size: 0.9rem; }
+        .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
         /* ---------- Tables ---------- */
+        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
         th {
             text-align: left; padding: 12px; font-weight: 700; color: var(--text);
             background: var(--bg); border-bottom: 2px solid var(--text);
-            position: sticky; top: 0; z-index: 1;
+            white-space: nowrap;
         }
-        td { padding: 12px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
         tbody tr:hover td { background: var(--surface); }
+        td.num, th.num { text-align: right; }
         .player-row { cursor: pointer; }
+        .player-row:focus-visible td { outline: 2px solid var(--text); outline-offset: -2px; }
         .player-row .expand-icon { transition: transform 0.2s; display: inline-block; margin-right: 8px; color: var(--text-muted); font-size: 0.8rem; }
         .player-row.expanded .expand-icon { transform: rotate(90deg); }
         .player-row.expanded td { background: var(--surface); }
         .score { font-weight: 700; color: var(--text); }
         .games-detail { display: none; }
         .games-detail td { font-size: 0.9rem; color: var(--text-muted); }
-        .games-detail table th { position: static; font-size: 0.9rem; border-bottom: 1px solid var(--border); background: var(--surface); }
+        .games-detail table th { font-size: 0.9rem; border-bottom: 1px solid var(--border); background: var(--surface); }
         .email { color: var(--text); }
         .no-email { color: var(--text-muted); font-style: italic; }
+        .empty { color: var(--text-muted); padding: 24px 12px; }
 
         /* ---------- Speakers ---------- */
-        .spk-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; border: 1px solid var(--border); }
+        .spk-thumb { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block; border: 1px solid var(--border); }
         .spk-initials {
-            width: 48px; height: 48px; border-radius: 50%;
+            width: 44px; height: 44px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             background: var(--surface); border: 1px solid var(--border);
             font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; color: var(--text-muted);
         }
-        .spk-key { color: var(--text-muted); }
-        .spk-input {
-            min-height: 40px; padding: 8px 10px; width: 220px; margin-right: 6px;
+        .spk-key { color: var(--text-muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; }
+        .spk-name { display: flex; gap: 6px; align-items: center; }
+        .spk-input, .field {
+            min-height: 40px; padding: 8px 10px; width: 200px;
             font: inherit; color: var(--text); background: var(--bg);
             border: 1px solid var(--border); border-radius: 4px;
         }
-        .spk-input:focus { outline: 2px solid var(--text); outline-offset: 1px; border-color: var(--text); }
+        .spk-input:focus, .field:focus { outline: 2px solid var(--text); outline-offset: 1px; border-color: var(--text); }
         .count-human { color: var(--human); font-weight: 700; }
         .count-ai { color: var(--ai); font-weight: 700; }
         th.th-human { color: var(--human); }
         th.th-ai { color: var(--ai); }
-        .spk-status { font-size: 0.9rem; color: var(--text-muted); margin-left: 4px; }
+        .spk-status { font-size: 0.85rem; color: var(--text-muted); }
         .spk-status.err { color: var(--rh-red-dark); font-weight: 700; }
+        .tag {
+            display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; white-space: nowrap;
+            border: 1px solid var(--border); color: var(--text-muted); background: var(--bg);
+        }
+        .tag.real { border-color: var(--human); color: var(--human); }
+        .tag.warn { border-color: var(--rh-red-dark); color: var(--rh-red-dark); font-weight: 700; }
+        .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; min-height: 40px; }
+        .chk input { width: 18px; height: 18px; accent-color: var(--text); }
+        tr.spk-flagged td { background: #f2f2f2; }
+        .merge-box { padding: 16px 20px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 28px; }
+        .merge-box .row label { font-weight: 700; }
+        .merge-box select { min-width: 200px; }
 
-        /* ---------- Seed pack & backup ---------- */
-        .sp-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
-        .sp-row select, .sp-row input[type=file] {
+        /* ---------- Clips & seed packs ---------- */
+        .stat-tiles { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+        .tile { flex: 1 1 160px; padding: 16px 20px; border: 1px solid var(--border-subtle); border-radius: 4px; }
+        .tile .tile-n { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 2rem; line-height: 1.2; }
+        .tile .tile-l { color: var(--text-muted); font-size: 0.9rem; }
+        #clipSummary table { max-width: 640px; }
+        .card { padding: 20px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; }
+        .card h3 { display: flex; align-items: center; gap: 10px; }
+        .card select, .card input[type=file] {
             min-height: 44px; padding: 8px 10px; font: inherit; font-size: 0.95rem;
             color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
         }
-        .sp-label { font-weight: 700; min-width: 120px; }
+        .sensitive { color: var(--rh-red-dark); font-weight: 700; font-size: 0.95rem; margin-bottom: 12px; }
         .sp-status { color: var(--text-muted); }
         .sp-status.err { color: var(--rh-red-dark); font-weight: 700; }
         .sp-status.ok { color: var(--text); font-weight: 700; }
-        .backup-row { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-subtle); }
-        #seedResult table { max-width: 760px; margin: 8px 0 16px; }
+        #seedResult table { max-width: 760px; margin: 12px 0; }
         #seedErrors {
             margin: 8px 0 16px; padding: 12px; max-width: 900px; max-height: 220px; overflow: auto; white-space: pre-wrap;
             font-size: 0.9rem; color: var(--rh-red-dark); background: var(--surface); border-radius: 4px;
         }
 
-        @media (max-width: 800px) {
+        /* ---------- Danger zone ---------- */
+        .danger-card { border-color: var(--rh-red-dark); }
+        .danger-card p { color: var(--text-muted); margin-bottom: 12px; }
+
+        @media (max-width: 900px) {
             .header, main { padding-left: 16px; padding-right: 16px; }
             .header-right { display: none; }
-            .stat { margin-left: 0; width: 100%; }
+            .tab { padding: 12px 14px; }
+            .spk-input { width: 120px; }
+            .spk-thumb, .spk-initials { width: 36px; height: 36px; }
+            td, th { padding-left: 8px; padding-right: 8px; }
         }
     </style>
 </head>
@@ -210,15 +285,32 @@
     </div>
 
     <div class="admin-content" id="adminContent">
-        <section class="section" id="players">
-            <h2>Players</h2>
-            <p class="section-lead">Best result per player. Click a row to see the game history.</p>
-            <div class="toolbar">
-                <button onclick="exportCSV()">Export CSV</button>
-                <button onclick="loadPlayers()">Refresh</button>
-                <button class="danger" onclick="resetScores()">Reset all scores</button>
+        <div class="integrity-banner" id="integrityBanner" role="alert" hidden>
+            <span class="ib-text"><strong id="integrityTitle">Speaker check</strong> &mdash; <span id="integrityText"></span></span>
+            <button class="btn-sm" onclick="showTab('speakers')">Review speakers</button>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Admin sections">
+            <button class="tab" role="tab" id="tab-players" aria-controls="panel-players" data-tab="players">Players</button>
+            <button class="tab" role="tab" id="tab-speakers" aria-controls="panel-speakers" data-tab="speakers">Speakers <span class="badge" id="speakerBadge" hidden></span></button>
+            <button class="tab" role="tab" id="tab-clips" aria-controls="panel-clips" data-tab="clips">Clips &amp; seed packs</button>
+            <button class="tab danger-tab" role="tab" id="tab-danger" aria-controls="panel-danger" data-tab="danger">Danger zone</button>
+        </div>
+
+        <!-- ================= Players ================= -->
+        <section class="panel" role="tabpanel" id="panel-players" aria-labelledby="tab-players" tabindex="0">
+            <div class="panel-head">
+                <h2>Players</h2>
+                <details class="help"><summary aria-label="Help: players">?</summary>
+                    <div class="help-body">Best result per player. Click a row (or press Enter on it) to see the game history. Export CSV includes emails &mdash; handle it as personal data.</div>
+                </details>
                 <span class="stat" id="playerCount"></span>
             </div>
+            <div class="row" style="margin-bottom:16px;">
+                <button onclick="loadPlayers()">Refresh</button>
+                <button onclick="exportCSV()">Export CSV</button>
+            </div>
+            <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -232,65 +324,122 @@
                 </thead>
                 <tbody id="playerTable"></tbody>
             </table>
+            </div>
         </section>
 
-        <section class="section">
-            <h2 id="speakers">Speakers</h2>
-            <div class="section-note">
-                Shown to players after each guess (photo or initials, and whether an AI clip is a clone of a real person).
-                <strong>Only upload photos of people who explicitly agreed to be shown on the booth screen.</strong>
-                JPEG, PNG or WebP, max 5 MB (downscaled to 512 px).
-            </div>
-            <div class="toolbar">
-                <button onclick="loadSpeakers()">Refresh speakers</button>
+        <!-- ================= Speakers ================= -->
+        <section class="panel" role="tabpanel" id="panel-speakers" aria-labelledby="tab-speakers" tabindex="0" hidden>
+            <div class="panel-head">
+                <h2>Speakers</h2>
+                <details class="help"><summary aria-label="Help: speakers">?</summary>
+                    <div class="help-body">
+                        <p><strong>One person = one speaker key</strong> (lowercase first name, e.g. <code>jakub</code> &mdash; never a surname or nickname variant). Otherwise the game cannot link a clone to the real person.</p>
+                        <p style="margin-top:8px;">Photo and name are shown after each guess. <strong>Only upload photos of people who agreed to be shown.</strong> JPEG/PNG/WebP, max 5 MB.</p>
+                    </div>
+                </details>
                 <span class="stat" id="speakerCount"></span>
             </div>
+
+            <ul class="issue-list" id="integrityList" aria-label="Speaker problems" hidden></ul>
+
+            <div class="merge-box" id="mergeBox">
+                <h3>Merge or rename</h3>
+                <div class="row">
+                    <label for="mergeFrom">Move all clips of</label>
+                    <select class="field" id="mergeFrom"></select>
+                    <label for="mergeTo">into</label>
+                    <input class="field" id="mergeTo" list="speakerKeys" maxlength="64" placeholder="e.g. jakub" autocomplete="off" spellcheck="false">
+                    <datalist id="speakerKeys"></datalist>
+                    <button class="primary" id="mergeBtn" onclick="mergeSpeakers()">Merge</button>
+                    <span class="sp-status" id="mergeStatus"></span>
+                </div>
+                <p class="hint" style="margin:8px 0 0;">A new name renames the speaker. Use the person's lowercase first name.</p>
+            </div>
+
+            <div class="row" style="margin-bottom:12px;">
+                <button onclick="loadSpeakers()">Refresh speakers</button>
+            </div>
+            <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
                         <th>Photo</th>
                         <th>Speaker key</th>
                         <th>Display name</th>
-                        <th class="th-human">Human clips</th>
-                        <th class="th-ai">AI clips</th>
+                        <th class="th-human num">Human</th>
+                        <th class="th-ai num">AI</th>
+                        <th>Identity</th>
                         <th>Photo actions</th>
                     </tr>
                 </thead>
                 <tbody id="speakerTable"></tbody>
             </table>
+            </div>
             <input type="file" id="speakerPhotoInput" accept="image/jpeg,image/png,image/webp" style="display:none">
         </section>
 
-        <section class="section">
-            <h2 id="seedpack">Seed pack &amp; backup</h2>
-            <div class="warn-box">
-                <strong>Seed packs contain voice recordings of real people. Share them privately &mdash; never commit them to git or post them publicly.</strong><br>
-                A seed pack holds all clips and speaker profiles (names, photos) &mdash; no players, scores or emails.
+        <!-- ================= Clips & seed packs ================= -->
+        <section class="panel" role="tabpanel" id="panel-clips" aria-labelledby="tab-clips" tabindex="0" hidden>
+            <div class="panel-head">
+                <h2>Clips &amp; seed packs</h2>
+                <details class="help"><summary aria-label="Help: seed packs">?</summary>
+                    <div class="help-body">A seed pack holds all clips and speaker profiles (names, photos, AI-only flags) &mdash; no players, scores or emails. Use it to copy the game content to another booth. After every import, resolve speaker warnings before the booth opens.</div>
+                </details>
+                <button class="btn-sm" onclick="loadClipSummary()" style="margin-left:auto;">Refresh</button>
             </div>
-            <div class="sp-row">
-                <span class="sp-label">Export</span>
-                <button id="seedExportBtn" onclick="exportSeedpack()">Export seed pack</button>
-                <span class="sp-status" id="seedExportStatus"></span>
+
+            <div class="block" id="clipSummary">
+                <div class="stat-tiles" id="clipTiles"></div>
+                <div class="table-wrap"><table id="clipTable"></table></div>
             </div>
-            <div class="sp-row">
-                <span class="sp-label">Import</span>
-                <input type="file" id="seedFile" accept=".zip,application/zip">
-                <select id="seedMode">
-                    <option value="skip">Skip &mdash; keep existing clips on conflict</option>
-                    <option value="replace">Replace &mdash; overwrite conflicting clips</option>
-                </select>
-                <button id="seedImportBtn" onclick="importSeedpack()">Import seed pack</button>
-                <span class="sp-status" id="seedImportStatus"></span>
+
+            <p class="sensitive">Seed packs contain real people's voices. Share privately &mdash; never in git or public places.</p>
+
+            <div class="card">
+                <h3>Export seed pack</h3>
+                <div class="row">
+                    <button id="seedExportBtn" onclick="exportSeedpack()">Export seed pack</button>
+                    <span class="sp-status" id="seedExportStatus"></span>
+                </div>
             </div>
-            <div id="seedResult"></div>
-            <div class="sp-row backup-row">
-                <span class="sp-label">Full backup</span>
-                <button class="danger" id="backupBtn" onclick="downloadBackup()">Download full backup (contains personal data)</button>
-                <span class="sp-status" id="backupStatus"></span>
+
+            <div class="card">
+                <h3>Import seed pack
+                    <details class="help"><summary aria-label="Help: import modes">?</summary>
+                        <div class="help-body"><strong>Skip</strong> keeps existing clips when the same filename has different audio. <strong>Replace</strong> overwrites them. Identical clips are always skipped. A pack with any invalid entry is rejected completely.</div>
+                    </details>
+                </h3>
+                <div class="row">
+                    <input type="file" id="seedFile" accept=".zip,application/zip" aria-label="Seed pack file">
+                    <select id="seedMode" aria-label="Conflict mode">
+                        <option value="skip">Skip conflicts</option>
+                        <option value="replace">Replace conflicts</option>
+                    </select>
+                    <button id="seedImportBtn" onclick="importSeedpack()">Import seed pack</button>
+                    <span class="sp-status" id="seedImportStatus"></span>
+                </div>
+                <div id="seedResult"></div>
             </div>
-            <div class="section-note">
-                Complete SQLite snapshot for disaster recovery <strong>including player nicknames and emails</strong>.
-                Store it securely, never share or distribute it &mdash; use a seed pack for that.
+            <p class="hint">Full database backup: see <a href="#danger" onclick="showTab('danger');return false;" style="color:var(--text);">Danger zone</a>.</p>
+        </section>
+
+        <!-- ================= Danger zone ================= -->
+        <section class="panel" role="tabpanel" id="panel-danger" aria-labelledby="tab-danger" tabindex="0" hidden>
+            <div class="panel-head"><h2>Danger zone</h2></div>
+
+            <div class="card danger-card">
+                <h3>Reset all scores</h3>
+                <p>Deletes every game and score. Players and clips stay. Cannot be undone.</p>
+                <button class="danger" onclick="resetScores()">Reset all scores</button>
+            </div>
+
+            <div class="card danger-card">
+                <h3>Full backup</h3>
+                <p>Complete database snapshot <strong>including player nicknames and emails</strong>. Store securely, never share &mdash; use a seed pack for that.</p>
+                <div class="row">
+                    <button class="danger" id="backupBtn" onclick="downloadBackup()">Download full backup</button>
+                    <span class="sp-status" id="backupStatus"></span>
+                </div>
             </div>
         </section>
     </div>
@@ -298,6 +447,8 @@
 
     <script>
         var token = '';
+        var speakerList = [];
+        var integrity = null;
 
         function saveToken(t) {
             var expires = new Date(Date.now() + 8 * 60 * 60 * 1000).toUTCString();
@@ -307,6 +458,15 @@
         function loadToken() {
             var match = document.cookie.match(/(?:^|; )admin_token=([^;]*)/);
             return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        function enterAdmin() {
+            document.getElementById('authForm').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            showTab(tabFromHash(), true);
+            loadPlayers();
+            loadSpeakers();
+            loadClipSummary();
         }
 
         async function authenticate() {
@@ -320,10 +480,7 @@
                     return;
                 }
                 saveToken(token);
-                document.getElementById('authForm').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
-                loadPlayers();
-                loadSpeakers();
+                enterAdmin();
             } catch (e) {
                 document.getElementById('authError').textContent = 'Connection error';
             }
@@ -338,17 +495,59 @@
                 });
                 if (resp.ok) {
                     token = saved;
-                    document.getElementById('authForm').style.display = 'none';
-                    document.getElementById('adminContent').style.display = 'block';
-                    loadPlayers();
-                    loadSpeakers();
+                    enterAdmin();
                 }
             } catch (e) {}
         })();
 
+        // --- Tabs (selected tab lives in the URL hash) ---
+        var TABS = ['players', 'speakers', 'clips', 'danger'];
+        var HASH_ALIASES = {seedpack: 'clips', backup: 'danger'};
+
+        function tabFromHash() {
+            var h = (location.hash || '').replace('#', '');
+            h = HASH_ALIASES[h] || h;
+            return TABS.indexOf(h) >= 0 ? h : 'players';
+        }
+
+        function showTab(name, noHash) {
+            TABS.forEach(function(t) {
+                var on = t === name;
+                var tab = document.getElementById('tab-' + t);
+                tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                tab.tabIndex = on ? 0 : -1;
+                document.getElementById('panel-' + t).hidden = !on;
+            });
+            if (!noHash && location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+            if (name === 'clips') loadClipSummary();
+        }
+
+        document.querySelectorAll('.tab').forEach(function(tab) {
+            tab.addEventListener('click', function() { showTab(tab.dataset.tab); });
+            tab.addEventListener('keydown', function(e) {
+                var i = TABS.indexOf(tab.dataset.tab), j = null;
+                if (e.key === 'ArrowRight') j = (i + 1) % TABS.length;
+                else if (e.key === 'ArrowLeft') j = (i - 1 + TABS.length) % TABS.length;
+                else if (e.key === 'Home') j = 0;
+                else if (e.key === 'End') j = TABS.length - 1;
+                if (j === null) return;
+                e.preventDefault();
+                showTab(TABS[j]);
+                document.getElementById('tab-' + TABS[j]).focus();
+            });
+        });
+        window.addEventListener('hashchange', function() { showTab(tabFromHash(), true); });
+        // Close an open "?" popover with Escape or a click elsewhere.
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') document.querySelectorAll('details.help[open]').forEach(function(d) { d.open = false; });
+        });
+        document.addEventListener('click', function(e) {
+            document.querySelectorAll('details.help[open]').forEach(function(d) { if (!d.contains(e.target)) d.open = false; });
+        });
+
         function escHtml(s) {
             var d = document.createElement('div');
-            d.textContent = s || '';
+            d.textContent = s == null ? '' : String(s);
             return d.innerHTML;
         }
 
@@ -358,18 +557,34 @@
             return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         }
 
+        async function adminJSON(url, opts) {
+            opts = opts || {};
+            opts.headers = Object.assign({'Authorization': 'Bearer ' + token}, opts.headers || {});
+            var resp = await fetch(url, opts);
+            var data = {};
+            try { data = await resp.json(); } catch (e) {}
+            if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+            return data;
+        }
+
+        // --- Players ---
         async function loadPlayers() {
             try {
                 var resp = await fetch('/api/admin/players', {
                     headers: {'Authorization': 'Bearer ' + token}
                 });
                 var data = await resp.json();
-                document.getElementById('playerCount').textContent = data.players.length + ' players registered';
+                document.getElementById('playerCount').textContent = data.players.length + (data.players.length === 1 ? ' player' : ' players') + ' registered';
 
                 var tbody = document.getElementById('playerTable');
+                if (!data.players.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty">No players yet.</td></tr>';
+                    return;
+                }
                 tbody.innerHTML = data.players.map(function(p, i) {
                     var emailCell = p.email ? '<span class="email">' + escHtml(p.email) + '</span>' : '<span class="no-email">not provided</span>';
-                    return '<tr class="player-row" onclick="toggleGames(this, ' + p.id + ')" id="player-' + p.id + '">' +
+                    return '<tr class="player-row" tabindex="0" aria-expanded="false" onclick="toggleGames(this, ' + p.id + ')" ' +
+                        'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleGames(this, ' + p.id + ');}" id="player-' + p.id + '">' +
                         '<td>' + (i + 1) + '</td>' +
                         '<td><span class="expand-icon">&#9654;</span><strong>' + escHtml(p.nickname) + '</strong></td>' +
                         '<td>' + emailCell + '</td>' +
@@ -392,11 +607,13 @@
 
             if (isExpanded) {
                 row.classList.remove('expanded');
+                row.setAttribute('aria-expanded', 'false');
                 detailRow.style.display = 'none';
                 return;
             }
 
             row.classList.add('expanded');
+            row.setAttribute('aria-expanded', 'true');
             detailRow.style.display = 'table-row';
 
             try {
@@ -425,7 +642,7 @@
                             '<td class="score" style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);">' + (g.points || 0) + ' pts</td>' +
                             '<td style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);color:var(--gray);">' + g.score + '/' + g.total + '</td>' +
                             '<td style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);color:var(--gray);">' + dur + '</td>' +
-                            '<td style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);color:var(--gray);font-size:0.8rem;">' + (g.completed_at || '') + '</td>' +
+                            '<td style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);color:var(--gray);font-size:0.8rem;">' + escHtml(g.completed_at || '') + '</td>' +
                         '</tr>';
                     }).join('') +
                     '</table></td>';
@@ -492,6 +709,8 @@
         }
 
         function exportSeedpack() {
+            var n = integrity && integrity.warnings ? integrity.warnings.length : 0;
+            if (n && !confirm(n + ' speaker identity warning(s) are unresolved (see Speakers). Export anyway?')) return;
             downloadAuthed('/api/admin/seedpack', 'seedExportStatus', 'seedExportBtn');
         }
 
@@ -520,8 +739,11 @@
                 try { data = await resp.json(); } catch (e) { data = {error: 'HTTP ' + resp.status}; }
                 renderSeedResult(data);
                 if (resp.ok) {
-                    setStatus('seedImportStatus', 'Imported (' + mode + ' mode)', 'ok');
+                    var w = data.integrity && data.integrity.warnings ? data.integrity.warnings.length : 0;
+                    setStatus('seedImportStatus', 'Imported (' + mode + ' mode)' +
+                        (w ? ' - ' + w + ' speaker warning(s), resolve them in Speakers' : ''), w ? 'err' : 'ok');
                     loadSpeakers();
+                    loadClipSummary();
                 } else {
                     setStatus('seedImportStatus', 'Rejected - nothing was imported' + (data.error ? ': ' + data.error : ''), 'err');
                 }
@@ -549,6 +771,42 @@
             box.innerHTML = html;
         }
 
+        // --- Clip summary (metadata only, no audio) ---
+        async function loadClipSummary() {
+            if (!token) return;
+            try {
+                var clips = await adminJSON('/api/admin/clips');
+                var langs = {}, tot = {h: 0, a: 0}, sources = {}, speakers = {};
+                clips.forEach(function(c) {
+                    var l = c.language || '?';
+                    langs[l] = langs[l] || {h: 0, a: 0};
+                    if (c.is_ai) { langs[l].a++; tot.a++; sources[c.source || 'unknown'] = (sources[c.source || 'unknown'] || 0) + 1; }
+                    else { langs[l].h++; tot.h++; }
+                    var k = (c.speaker || '').trim().toLowerCase();
+                    if (k) speakers[k] = 1;
+                });
+                document.getElementById('clipTiles').innerHTML = [
+                    [clips.length, 'clips in the game'],
+                    [tot.h, 'human recordings'],
+                    [tot.a, 'AI clips'],
+                    [Object.keys(speakers).length, 'speakers']
+                ].map(function(t) {
+                    return '<div class="tile"><div class="tile-n">' + t[0] + '</div><div class="tile-l">' + t[1] + '</div></div>';
+                }).join('');
+                var rows = Object.keys(langs).sort().map(function(l) {
+                    return '<tr><td><strong>' + escHtml(l) + '</strong></td><td class="num count-human">' + langs[l].h +
+                        '</td><td class="num count-ai">' + langs[l].a + '</td><td class="num">' + (langs[l].h + langs[l].a) + '</td></tr>';
+                }).join('');
+                var src = Object.keys(sources).sort().map(function(s) { return escHtml(s) + ': ' + sources[s]; }).join(' &middot; ');
+                document.getElementById('clipTable').innerHTML =
+                    '<thead><tr><th>Language</th><th class="num th-human">Human</th><th class="num th-ai">AI</th><th class="num">Total</th></tr></thead>' +
+                    '<tbody>' + (rows || '<tr><td colspan="4" class="empty">No clips yet &mdash; import a seed pack below.</td></tr>') + '</tbody>' +
+                    (src ? '<caption style="caption-side:bottom;text-align:left;padding-top:8px;color:var(--text-muted);font-size:0.9rem;">AI models &mdash; ' + src + '</caption>' : '');
+            } catch (e) {
+                console.error('Clip summary error:', e);
+            }
+        }
+
         // --- Speakers ---
         var photoTarget = null;
 
@@ -569,42 +827,191 @@
 
         async function loadSpeakers() {
             try {
-                var resp = await fetch('/api/speakers');
-                var list = await resp.json();
-                document.getElementById('speakerCount').textContent = list.length + ' speakers, ' +
-                    list.filter(function(s) { return s.has_photo; }).length + ' with photo';
-                var tbody = document.getElementById('speakerTable');
-                tbody.innerHTML = '';
-                list.forEach(function(s) {
-                    var tr = document.createElement('tr');
-                    tr.id = spkId(s.name);
-                    var photo = s.has_photo
-                        ? '<img class="spk-thumb" alt="" src="' + escHtml(s.photo_url) + '?v=' + Date.now() + '">'
-                        : '<div class="spk-initials">' + escHtml(initials(s.display_name)) + '</div>';
-                    tr.innerHTML =
-                        '<td>' + photo + '</td>' +
-                        '<td class="spk-key">' + escHtml(s.name) + '</td>' +
-                        '<td><input class="spk-input" maxlength="80" value="' + escHtml(s.display_name) + '"> ' +
-                            '<button class="btn-sm" data-act="save">Save</button>' +
-                            '<span class="spk-status" id="' + spkId(s.name) + '-status"></span></td>' +
-                        '<td class="count-human">' + s.human_clips + '</td>' +
-                        '<td class="count-ai">' + s.ai_clips + '</td>' +
-                        '<td><button class="btn-sm" data-act="upload">' + (s.has_photo ? 'Replace' : 'Upload') + '</button>' +
-                            (s.has_photo ? '<button class="btn-sm danger" data-act="remove">Remove</button>' : '') + '</td>';
-                    tr.querySelector('[data-act="save"]').onclick = function() {
-                        saveDisplayName(s.name, tr.querySelector('.spk-input').value);
-                    };
-                    tr.querySelector('.spk-input').addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') saveDisplayName(s.name, this.value);
-                    });
-                    tr.querySelector('[data-act="upload"]').onclick = function() { pickPhoto(s.name); };
-                    var rm = tr.querySelector('[data-act="remove"]');
-                    if (rm) rm.onclick = function() { removePhoto(s.name); };
-                    tbody.appendChild(tr);
-                });
+                var results = await Promise.all([
+                    fetch('/api/speakers').then(function(r) { return r.json(); }),
+                    adminJSON('/api/admin/speakers/integrity').catch(function(e) { console.error('Integrity error:', e); return null; })
+                ]);
+                speakerList = results[0];
+                integrity = results[1];
+                renderIntegrity();
+                renderMergeForm();
+                renderSpeakerTable();
             } catch (e) {
                 console.error('Speakers load error:', e);
             }
+        }
+
+        function warningFor(name) {
+            if (!integrity) return null;
+            return integrity.warnings.filter(function(w) { return w.speaker === name; })[0] || null;
+        }
+
+        function renderIntegrity() {
+            var banner = document.getElementById('integrityBanner');
+            var list = document.getElementById('integrityList');
+            var badge = document.getElementById('speakerBadge');
+            var ws = integrity ? integrity.warnings : [];
+            if (!ws.length) {
+                banner.hidden = true; list.hidden = true; badge.hidden = true; list.innerHTML = '';
+                return;
+            }
+            var orphans = ws.filter(function(w) { return w.kind === 'ai_without_human'; }).length;
+            document.getElementById('integrityTitle').textContent = ws.length + ' speaker problem' + (ws.length > 1 ? 's' : '');
+            document.getElementById('integrityText').textContent = (orphans
+                ? orphans + ' AI voice' + (orphans > 1 ? 's are' : ' is') + ' not linked to a real person'
+                : 'possible duplicate speakers') + '. Merge or mark as AI-only before the booth opens.';
+            badge.textContent = ws.length;
+            badge.hidden = false;
+            banner.hidden = false;
+            list.hidden = false;
+            list.innerHTML = '';
+            ws.forEach(function(w) {
+                var li = document.createElement('li');
+                var acts = '';
+                (w.suggestions || []).forEach(function(s) {
+                    // Merge the longer key (surname / nickname variant) into the shorter one (first name).
+                    var pair = [w.speaker, s.speaker].sort(function(a, b) { return a.length - b.length || a.localeCompare(b); });
+                    acts += '<button class="btn-sm" data-from="' + escHtml(pair[1]) + '" data-to="' + escHtml(pair[0]) + '" title="' +
+                        escHtml(s.reason) + '">Merge ' + escHtml(pair[1]) + ' &rarr; ' + escHtml(pair[0]) + '&hellip;</button>';
+                });
+                if (w.kind === 'ai_without_human') {
+                    acts += '<button class="btn-sm" data-aionly="' + escHtml(w.speaker) + '">Mark AI-only voice</button>';
+                    if (!(w.suggestions || []).length) acts += '<button class="btn-sm" data-to="' + escHtml(w.speaker) + '">Merge into ' + escHtml(w.speaker) + '&hellip;</button>';
+                }
+                li.innerHTML = '<span class="issue-who">' + escHtml(w.speaker) + '</span>' +
+                    '<span class="issue-msg">' + escHtml(w.message) + '</span><span class="issue-actions">' + acts + '</span>';
+                li.querySelectorAll('[data-to]').forEach(function(b) {
+                    b.onclick = function() { prefillMerge(b.dataset.from || '', b.dataset.to); };
+                });
+                li.querySelectorAll('[data-aionly]').forEach(function(b) {
+                    b.onclick = function() { setAiOnly(b.dataset.aionly, true); };
+                });
+                list.appendChild(li);
+            });
+        }
+
+        function renderMergeForm() {
+            var sel = document.getElementById('mergeFrom');
+            var cur = sel.value;
+            sel.innerHTML = '<option value="">Choose speaker</option>' + speakerList.map(function(s) {
+                return '<option value="' + escHtml(s.name) + '">' + escHtml(s.name) + ' (' + s.human_clips + ' human, ' + s.ai_clips + ' AI)</option>';
+            }).join('');
+            if (cur && speakerList.some(function(s) { return s.name === cur; })) sel.value = cur;
+            document.getElementById('speakerKeys').innerHTML = speakerList.map(function(s) {
+                return '<option value="' + escHtml(s.name) + '">' + escHtml(s.display_name) + '</option>';
+            }).join('');
+        }
+
+        function prefillMerge(from, to) {
+            document.getElementById('mergeFrom').value = from;
+            document.getElementById('mergeTo').value = to;
+            setStatus('mergeStatus', '', '');
+            var box = document.getElementById('mergeBox');
+            box.scrollIntoView({behavior: 'smooth', block: 'center'});
+            (from ? document.getElementById('mergeBtn') : document.getElementById('mergeFrom')).focus({preventScroll: true});
+        }
+
+        async function mergeSpeakers() {
+            var from = document.getElementById('mergeFrom').value;
+            var to = document.getElementById('mergeTo').value.trim().toLowerCase();
+            if (!from || !to) { setStatus('mergeStatus', 'Choose both speakers', 'err'); return; }
+            if (from === to) { setStatus('mergeStatus', 'Same speaker', 'err'); return; }
+            if (!/^[^\s\/\\]{1,64}$/.test(to)) { setStatus('mergeStatus', 'Key: one word, no spaces or slashes', 'err'); return; }
+            var src = speakerList.filter(function(s) { return s.name === from; })[0];
+            var dst = speakerList.filter(function(s) { return s.name === to; })[0];
+            var n = src ? src.human_clips + src.ai_clips : 0;
+            var msg = dst
+                ? 'Merge "' + from + '" into "' + to + '"?\n\n' + n + ' clips move to "' + to + '". "' + from + '" disappears; ' +
+                  to + ' keeps its own name/photo (takes ' + from + '\'s only where empty).\n\nThere is no undo.'
+                : 'Rename "' + from + '" to "' + to + '"?\n\n' + n + ' clips and the profile move to the new key.';
+            if (!confirm(msg)) return;
+            var btn = document.getElementById('mergeBtn');
+            btn.disabled = true;
+            try {
+                var r = await adminJSON('/api/admin/speakers/merge', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({from: from, to: to})
+                });
+                document.getElementById('mergeTo').value = '';
+                await loadSpeakers();
+                document.getElementById('mergeFrom').value = '';
+                setStatus('mergeStatus', (dst ? 'Merged ' : 'Renamed ') + r.from + ' → ' + r.to + ': ' + r.clips_moved + ' clips moved', 'ok');
+                loadClipSummary();
+            } catch (e) {
+                setStatus('mergeStatus', 'Failed: ' + e.message, 'err');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function setAiOnly(name, value) {
+            if (value && !confirm('Mark "' + name + '" as an AI-only voice (no real person)?\n\nOnly do this for built-in/synthetic TTS voices. If ' + name + ' is a real person, merge their recordings instead.')) {
+                renderSpeakerTable();
+                return;
+            }
+            try {
+                await speakerRequest(name, '', {
+                    method: 'PUT', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ai_only: value})
+                });
+                await loadSpeakers();
+                setSpkStatus(name, value ? 'Marked AI-only' : 'Flag removed', false);
+            } catch (e) {
+                setSpkStatus(name, e.message, true);
+            }
+        }
+
+        function identityCell(s) {
+            if (s.human_clips > 0) return '<span class="tag real">Real person</span>';
+            if (!s.ai_clips) return '<span class="tag">No clips</span>';
+            var stock = integrity && integrity.stock_voices.indexOf(s.name) >= 0;
+            if (stock) return '<span class="tag" title="Built-in Coqui XTTS voice">XTTS stock voice</span>';
+            var w = warningFor(s.name);
+            return (w ? '<span class="tag warn">No real recordings</span><br>' : '') +
+                '<label class="chk"><input type="checkbox" data-act="aionly"' + (s.ai_only ? ' checked' : '') + '> AI-only voice</label>';
+        }
+
+        function renderSpeakerTable() {
+            var list = speakerList;
+            document.getElementById('speakerCount').textContent = list.length + ' speakers, ' +
+                list.filter(function(s) { return s.has_photo; }).length + ' with photo';
+            var tbody = document.getElementById('speakerTable');
+            tbody.innerHTML = '';
+            if (!list.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty">No speakers yet.</td></tr>';
+                return;
+            }
+            list.forEach(function(s) {
+                var tr = document.createElement('tr');
+                tr.id = spkId(s.name);
+                if (warningFor(s.name)) tr.className = 'spk-flagged';
+                var photo = s.has_photo
+                    ? '<img class="spk-thumb" alt="" src="' + escHtml(s.photo_url) + '?v=' + Date.now() + '">'
+                    : '<div class="spk-initials">' + escHtml(initials(s.display_name)) + '</div>';
+                tr.innerHTML =
+                    '<td>' + photo + '</td>' +
+                    '<td class="spk-key">' + escHtml(s.name) + '</td>' +
+                    '<td><div class="spk-name"><input class="spk-input" maxlength="80" aria-label="Display name for ' + escHtml(s.name) + '" value="' + escHtml(s.display_name) + '">' +
+                        '<button class="btn-sm" data-act="save">Save</button></div>' +
+                        '<span class="spk-status" id="' + spkId(s.name) + '-status"></span></td>' +
+                    '<td class="num count-human">' + s.human_clips + '</td>' +
+                    '<td class="num count-ai">' + s.ai_clips + '</td>' +
+                    '<td>' + identityCell(s) + '</td>' +
+                    '<td><div class="row" style="gap:8px;"><button class="btn-sm" data-act="upload">' + (s.has_photo ? 'Replace' : 'Upload') + '</button>' +
+                        (s.has_photo ? '<button class="btn-sm danger" data-act="remove">Remove</button>' : '') + '</div></td>';
+                tr.querySelector('[data-act="save"]').onclick = function() {
+                    saveDisplayName(s.name, tr.querySelector('.spk-input').value);
+                };
+                tr.querySelector('.spk-input').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') saveDisplayName(s.name, this.value);
+                });
+                tr.querySelector('[data-act="upload"]').onclick = function() { pickPhoto(s.name); };
+                var rm = tr.querySelector('[data-act="remove"]');
+                if (rm) rm.onclick = function() { removePhoto(s.name); };
+                var ao = tr.querySelector('[data-act="aionly"]');
+                if (ao) ao.onchange = function() { setAiOnly(s.name, ao.checked); };
+                tbody.appendChild(tr);
+            });
         }
 
         async function speakerRequest(name, path, opts) {
@@ -666,6 +1073,9 @@
             }
         }
 
+        document.getElementById('mergeTo').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') mergeSpeakers();
+        });
         document.getElementById('adminToken').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') authenticate();
         });

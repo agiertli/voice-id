@@ -14,6 +14,15 @@ speakers/<name>.<ext>, manifest.json):
 
   seedpack.py unpack --file PACK [--out DIR] [--force]          (default DIR: ~/voice-id-audio/samples/)
   seedpack.py pack   --dir DIR   [--out DIR] [--force]          (default out: ~/voice-id-audio/seedpacks/)
+                     [--alias OLD=NEW ...] [--allow-ai-only NAME ...]
+
+Speaker identity: one person = one speaker key = their lowercase first name (jakub, not
+jveverka / kuba). Every command prints a speaker integrity report. `pack` REFUSES (exit 4)
+to build a pack containing an AI-clone speaker without real recordings, because the game
+could never link that clone to the real person. Fix it with --alias OLD=NEW (rewrite a
+speaker key while packing, e.g. --alias jveverka=jakub) or, for a synthetic voice with no
+real person behind it, --allow-ai-only NAME (or "ai_only": true on the speaker in
+manifest.json). Known Coqui XTTS stock voices (claribel, daisy, ...) are recognised.
 
 The token can also come from $VOICEID_ADMIN_TOKEN. Stdlib only. TLS verification is
 off by default (self-signed demo routes); pass --verify-tls to enable it.
@@ -27,6 +36,7 @@ import ssl
 import subprocess
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.request
 import uuid
@@ -101,6 +111,139 @@ AUDIO_EXT = {"audio/wav": ".wav", "audio/mpeg": ".mp3", "audio/mp4": ".m4a",
              "audio/ogg": ".ogg", "audio/flac": ".flac", "audio/webm": ".webm"}
 IMAGE_EXT = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 LANG_RE = re.compile(r"[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})?")
+
+
+# --- Speaker identity integrity (keep in sync with speaker_integrity() in src/app.py) ---
+
+XTTS_STOCK_VOICES = frozenset("""
+aaron abrahan adde alexandra alison alma ana andrew annmarie asya badr baldur barbora brenda
+camilla chandra claribel craig daisy damien damjan dionisio eugenio ferran filip gilberto gitta
+gracie henriette ige ilkin kazuhiko kumar lidiya lilya ludvig luis maja marcos narelle nova
+rosemary royston sofia suad szofi tammie tammy tanja torcull uta viktor vjollca wulf xavier
+zacharie zofija
+""".split())
+
+
+def _fold(s):
+    s = unicodedata.normalize("NFKD", (s or "").lower())
+    return "".join(ch for ch in s if ch.isalnum() and not unicodedata.combining(ch))
+
+
+def _levenshtein(a, b):
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
+def _alias_reason(key, other, other_display, loose=False):
+    a, b = _fold(key), _fold(other)
+    if not a or not b:
+        return None
+    if a == b:
+        return "same name without accents"
+    if len(a) >= 3 and len(b) >= 3 and (a.startswith(b) or b.startswith(a)):
+        return "prefix match"
+    if _levenshtein(a, b) <= max(1, min(len(a), len(b)) // 4):
+        return "similar spelling"
+    for tok in (other_display or "").split():
+        t = _fold(tok)
+        if len(t) >= 3 and t != b and (t in a or a in t):
+            return f"matches display name '{other_display}'"
+    if loose and len(a) >= 5 and a[0] == b[0] and len(a) > len(b) and not a.startswith(b):
+        return "same initial, surname-style key"
+    return None
+
+
+def _plural(n, word):
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def speaker_integrity(speakers):
+    """speakers: {key: {human, ai, sources:set, ai_only:bool, display:str}} -> report dict."""
+    def is_stock(k, v):
+        return k in XTTS_STOCK_VOICES and v["sources"] and all("xtts" in (s or "").lower() for s in v["sources"])
+
+    def reason(x, y, loose=False):
+        return (_alias_reason(x, y, speakers[y]["display"], loose)
+                or _alias_reason(y, x, speakers[x]["display"], loose))
+
+    warnings, stock, flagged, covered = [], [], [], set()
+    for k in sorted(speakers):
+        v = speakers[k]
+        if not (v["ai"] and not v["human"]):
+            continue
+        if v["ai_only"]:
+            flagged.append(k)
+        elif is_stock(k, v):
+            stock.append(k)
+        else:
+            sugg = [{"speaker": o, "reason": r} for o in sorted(speakers)
+                    if o != k and speakers[o]["human"] and not speakers[o]["ai"] for r in [reason(o, k, True)] if r]
+            covered.update(s["speaker"] for s in sugg)
+            msg = f"{_plural(v['ai'], 'AI clip')}, no real recordings."
+            msg += (" Possibly the same person as " + ", ".join(f"{s['speaker']} ({s['reason']})" for s in sugg)
+                    + " - merge." if sugg else f" Merge the person's real recordings into '{k}', or mark it AI-only voice.")
+            warnings.append({"speaker": k, "kind": "ai_without_human", "human_clips": 0, "ai_clips": v["ai"],
+                             "message": msg, "suggestions": sugg})
+    for k in sorted(speakers):
+        v = speakers[k]
+        if not (v["human"] and not v["ai"]) or k in covered:
+            continue
+        # AI-only voices that are resolved (stock / flagged) are not real people -> no alias targets
+        sugg = [{"speaker": o, "reason": r} for o in sorted(speakers)
+                if o != k and speakers[o]["ai"] and o not in stock and o not in flagged
+                for r in [reason(k, o)] if r]
+        if sugg:
+            warnings.append({
+                "speaker": k, "kind": "human_without_ai_match", "human_clips": v["human"], "ai_clips": 0,
+                "message": f"{_plural(v['human'], 'real recording')}, no AI clips. Possibly the same person as "
+                           + ", ".join(f"{s['speaker']} ({s['reason']})" for s in sugg) + ".",
+                "suggestions": sugg})
+    return {"ok": not warnings, "warnings": warnings, "stock_voices": stock, "ai_only": flagged}
+
+
+def integrity_from_clips(clips, speaker_meta=None, extra_ai_only=()):
+    """clips: [{is_ai, speaker, source}], speaker_meta: {key: {display_name, ai_only}}."""
+    speaker_meta = speaker_meta or {}
+    sp = {}
+    for c in clips:
+        k = (c.get("speaker") or "").strip().lower()
+        if not k:
+            continue
+        v = sp.setdefault(k, {"human": 0, "ai": 0, "sources": set(), "ai_only": False, "display": ""})
+        if c.get("is_ai"):
+            v["ai"] += 1
+            v["sources"].add(c.get("source") or "")
+        else:
+            v["human"] += 1
+    extra = {n.strip().lower() for n in extra_ai_only}
+    for k, v in sp.items():
+        m = speaker_meta.get(k) or {}
+        v["display"] = m.get("display_name") or ""
+        v["ai_only"] = bool(m.get("ai_only")) or k in extra
+    return speaker_integrity(sp)
+
+
+def print_integrity(report, out=sys.stdout):
+    """Human-readable speaker integrity report. Returns the number of warnings."""
+    ws = report.get("warnings") or []
+    print("\nSpeaker integrity check (one person = one speaker key, lowercase first name):", file=out)
+    if report.get("stock_voices"):
+        print(f"  ok  XTTS stock voices (no real person): {', '.join(report['stock_voices'])}", file=out)
+    if report.get("ai_only"):
+        print(f"  ok  marked AI-only voice: {', '.join(report['ai_only'])}", file=out)
+    if not ws:
+        print("  ok  every AI clone is linked to a real person's recordings.", file=out)
+        return 0
+    for w in ws:
+        print(f"  WARNING {w['speaker']}: {w['message']}", file=out)
+    print("  Resolve before the booth opens: merge aliases (admin > Speakers > Merge, or pack --alias OLD=NEW)\n"
+          "  or mark synthetic voices AI-only (admin checkbox, or pack --allow-ai-only NAME).", file=out)
+    return len(ws)
 
 
 def sniff_audio(data):
@@ -309,6 +452,15 @@ def cmd_pack(args):
     rc = refuse_in_git(out, args.force)
     if rc:
         return rc
+    aliases = {}
+    for a in args.alias or []:
+        old, sep, new = a.partition("=")
+        old, new = old.strip().lower(), new.strip().lower()
+        if not sep or not old or not new or old == new or "/" in new or "\\" in new or len(new) > 64:
+            print(f"Invalid --alias {a!r}: use OLD=NEW, e.g. --alias jveverka=jakub", file=sys.stderr)
+            return 2
+        aliases[old] = new
+    alias = lambda k: aliases.get((k or "").strip().lower(), (k or "").strip().lower())  # noqa: E731
     meta, spk_meta = {}, {}
     mpath = src / "manifest.json"
     if mpath.is_file():
@@ -316,9 +468,19 @@ def cmd_pack(args):
         for c in m.get("clips", []):
             if c.get("local_path"):
                 meta[c["local_path"]] = c
+        aliased = []
         for sp in m.get("speakers", []):
             if isinstance(sp.get("name"), str):
-                spk_meta[sp["name"].strip().lower()] = sp
+                key = alias(sp["name"])
+                if key != sp["name"].strip().lower():
+                    aliased.append(dict(sp, name=key))
+                else:
+                    spk_meta[key] = dict(sp, name=key)
+        for sp in aliased:  # target keeps its own display name/photo; gaps filled from the alias
+            cur = spk_meta.setdefault(sp["name"], {"name": sp["name"]})
+            for k, v in sp.items():
+                if v and not cur.get(k):
+                    cur[k] = v
         print(f"Using metadata from {mpath} ({len(meta)} clips, {len(spk_meta)} speakers)")
     else:
         print("No manifest.json - deriving metadata from the path convention (like load_samples.py)")
@@ -339,6 +501,8 @@ def cmd_pack(args):
     dest = out / f"voice-id-seedpack-{time.strftime('%Y%m%d-%H%M')}.seedpack.zip"
     part = dest.with_name(dest.name + ".part")
     speakers = []
+    renamed = {}
+    allow = {n.strip().lower() for n in (args.allow_ai_only or [])}
     with zipfile.ZipFile(part, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1) as zf:
         for i, (cat, lang, f) in enumerate(files):
             rel = f.relative_to(src).as_posix()
@@ -361,6 +525,9 @@ def cmd_pack(args):
             entry["is_ai"] = int(bool(entry["is_ai"]))
             entry["source"] = entry.get("source") or ""
             entry["speaker"] = entry.get("speaker") or ""
+            if entry["speaker"].strip().lower() in aliases:
+                entry["speaker"] = aliases[entry["speaker"].strip().lower()]
+                renamed[entry["speaker"]] = renamed.get(entry["speaker"], 0) + 1
             if not LANG_RE.fullmatch(entry.get("language") or ""):
                 errors.append(f"{rel}: invalid language {entry.get('language')!r}, skipped")
                 continue
@@ -375,7 +542,10 @@ def cmd_pack(args):
         if sdir.is_dir():
             for f in sorted(sdir.iterdir()):
                 if f.is_file() and not f.is_symlink() and f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
-                    photos[f.stem.strip().lower()] = f
+                    stem = f.stem.strip().lower()
+                    if stem in aliases and aliases[stem] in photos:
+                        continue  # the target's own photo wins
+                    photos[alias(stem)] = f
         for sp in spk_meta.values():
             lp = sp.get("local_path")
             if lp:
@@ -383,7 +553,7 @@ def cmd_pack(args):
                     p = inside(src, lp)
                     for k in [k for k, v in photos.items() if v.resolve() == p]:
                         del photos[k]  # file is claimed by this manifest speaker, not by its stem
-                    photos[sp["name"].strip().lower()] = p
+                    photos[sp["name"]] = p
                 except ValueError:
                     errors.append(f"speaker {sp['name']}: unsafe photo path {lp!r}")
         for j, name in enumerate(sorted(set(spk_meta) | set(photos))):
@@ -391,7 +561,8 @@ def cmd_pack(args):
                 errors.append(f"speaker {name!r}: invalid name, skipped")
                 continue
             entry = {"name": name, "display_name": (spk_meta.get(name) or {}).get("display_name"),
-                     "photo_file": None, "photo_type": None}
+                     "photo_file": None, "photo_type": None,
+                     "ai_only": bool((spk_meta.get(name) or {}).get("ai_only")) or name in allow}
             p = photos.get(name)
             if p and p.is_file():
                 data = p.read_bytes()
@@ -402,20 +573,37 @@ def cmd_pack(args):
                     zf.writestr(entry["photo_file"], data)
                 else:
                     errors.append(f"speaker {name}: photo is not JPEG/PNG/WebP or > 5 MB, skipped")
-            if entry["display_name"] or entry["photo_file"]:
+            if entry["display_name"] or entry["photo_file"] or entry["ai_only"]:
                 speakers.append(entry)
+        for name in sorted(allow - {s["name"] for s in speakers}):
+            speakers.append({"name": name, "display_name": None, "photo_file": None, "photo_type": None,
+                             "ai_only": True})
         zf.writestr("manifest.json", json.dumps({
             "format": SEEDPACK_FORMAT, "version": SEEDPACK_VERSION,
             "exported_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
             "app_version": None, "packed_from": "folder",
             "clips": clips, "speakers": speakers,
         }, indent=2, ensure_ascii=False))
+    for old, new in aliases.items():
+        print(f"Alias {old} -> {new}")
+    if renamed:
+        print("  rewritten clips: " + ", ".join(f"{k}={v}" for k, v in sorted(renamed.items())))
+    report = integrity_from_clips(clips, {s["name"]: s for s in speakers})
+    print_integrity(report)
+    blocking = [w["speaker"] for w in report["warnings"] if w["kind"] == "ai_without_human"]
+    if blocking:
+        part.unlink(missing_ok=True)
+        print(f"\nREFUSING to pack: AI clone speaker(s) without real recordings in this pack: {', '.join(blocking)}.\n"
+              "The game would show these clones as unrelated to any real person. Either add/alias the person's\n"
+              "real recordings (--alias SURNAME=firstname) or, if it is a synthetic voice with no real person,\n"
+              f"pass --allow-ai-only {blocking[0]} (repeatable). No pack was written.", file=sys.stderr)
+        return 4
     os.replace(part, dest)
     try:
         os.chmod(dest, 0o600)
     except OSError:
         pass
-    print(f"Packed {len(clips)} clips, {len(speakers)} speaker profiles -> {dest}")
+    print(f"\nPacked {len(clips)} clips, {len(speakers)} speaker profiles -> {dest}")
     for e in errors[:50]:
         print(f"  - {e}")
     print("Contains real voice recordings: share privately, never commit or publish.")
@@ -440,6 +628,14 @@ def cmd_export(args):
     if rc:
         return rc
     out_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        ireq = urllib.request.Request(args.game.rstrip("/") + "/api/admin/speakers/integrity",
+                                      headers={"Authorization": f"Bearer {args.token}"})
+        with urllib.request.urlopen(ireq, timeout=60, context=ssl_ctx(args.verify_tls)) as resp:
+            if print_integrity(json.loads(resp.read())):
+                print("  -> Exporting anyway; the receiving booth will see the same warnings.\n")
+    except (urllib.error.URLError, OSError, ValueError):
+        print("(Speaker integrity report unavailable on this server version.)")
     req = urllib.request.Request(args.game.rstrip("/") + "/api/admin/seedpack",
                                  headers={"Authorization": f"Bearer {args.token}"})
     t0 = time.time()
@@ -518,6 +714,11 @@ def cmd_import(args):
         print(f"  - {e}")
     if len(errs) > 50:
         print(f"  ... and {len(errs) - 50} more")
+    if isinstance(result.get("integrity"), dict):
+        if print_integrity(result["integrity"]):
+            print("  -> Fix these in the game admin (/admin#speakers) before the booth opens.")
+    elif code == 200:
+        print("\n(Server too old to report speaker integrity - check /admin#speakers manually.)")
     return 0 if code == 200 else 1
 
 
@@ -543,6 +744,10 @@ def main(argv=None):
                     help="allow a non-ignored git working tree and overwrite differing files")
     sp = sub.add_parser("pack", help="offline: samples/ folder layout -> pack")
     sp.add_argument("--dir", required=True, help="folder with ai/ natural/ [speakers/] [manifest.json]")
+    sp.add_argument("--alias", action="append", metavar="OLD=NEW",
+                    help="rewrite speaker key OLD to NEW while packing (repeatable), e.g. jveverka=jakub")
+    sp.add_argument("--allow-ai-only", action="append", metavar="NAME",
+                    help="speaker NAME is a synthetic voice with no real person (repeatable)")
     sp.add_argument("--out", default=str(DEFAULT_OUT), help=f"output dir (default {DEFAULT_OUT})")
     sp.add_argument("--force", action="store_true", help="allow writing inside a git working tree")
     args = ap.parse_args(argv)

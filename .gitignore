@@ -56,7 +56,7 @@ feedback-*/
 samples/
 apps/voice-id/samples/
 
-# Model weights / training checkpoints: huge (>1 GB) and trained on real voices — never in git (Rule Zero)
+# Model weights / training checkpoints: huge (>1 GB, GitHub rejects >100 MB) — keep out of git, publish via container images
 apps/deepfake-detector/models/
 **/checkpoint-*/
 *.safetensors
