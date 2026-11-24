@@ -45,6 +45,10 @@ spec:
         - name: AI_JUDGE2_MODEL
           value: "{{ .Values.aiJudge2.model }}"
         {{- end }}
+        - name: GAME_MIN_CLONE_CLIPS
+          value: {{ .Values.game.minCloneClips | default 1 | quote }}
+        - name: GAME_MAX_OTHER_AI_CLIPS
+          value: {{ .Values.game.maxOtherAiClips | default 1 | quote }}
         - name: APP_VERSION
           value: {{ .Values.image.tag | quote }}
         {{- if .Values.adminToken }}

@@ -352,6 +352,47 @@ def player_lookup():
     })
 
 
+
+# --- Balanced clip selection ---
+# Per game: the human/AI split stays RANDOM (a fixed split would let players deduce answers),
+# but every game contains at least GAME_MIN_CLONE_CLIPS AI clones of real people (the "real vs
+# clone of the same person" story) and at most GAME_MAX_OTHER_AI_CLIPS other AI voices
+# (XTTS stock voices, public-dataset voices) so they stay a minority.
+GAME_MIN_CLONE_CLIPS = int(os.environ.get("GAME_MIN_CLONE_CLIPS", "1"))
+GAME_MAX_OTHER_AI_CLIPS = int(os.environ.get("GAME_MAX_OTHER_AI_CLIPS", "1"))
+
+
+def select_game_clips(db):
+    rows = [dict(r) for r in db.execute("SELECT id, language, is_ai, speaker FROM clips").fetchall()]
+    human = [r for r in rows if not r["is_ai"]]
+    real_people = {(r["speaker"] or "").strip().lower() for r in human if r["speaker"]}
+    clones = [r for r in rows if r["is_ai"] and (r["speaker"] or "").strip().lower() in real_people]
+    other = [r for r in rows if r["is_ai"] and (r["speaker"] or "").strip().lower() not in real_people]
+    n_ai_pool = len(clones) + len(other)
+    if not human or not n_ai_pool:
+        return None, "Need at least 1 AI and 1 human clip"
+    if len(human) + n_ai_pool < GAME_SIZE:
+        return None, f"Not enough clips ({len(human) + n_ai_pool}/{GAME_SIZE})"
+
+    max_other = min(GAME_MAX_OTHER_AI_CLIPS, len(other))
+    min_clone = min(GAME_MIN_CLONE_CLIPS, len(clones))
+    max_ai = min(GAME_SIZE - 1, len(clones) + max_other)
+    min_ai = max(1, min_clone, GAME_SIZE - len(human))
+    if min_ai > max_ai:            # pools too small for the rules: fall back to plain random
+        max_other, min_clone = len(other), 0
+        max_ai = min(GAME_SIZE - 1, n_ai_pool)
+        min_ai = max(1, GAME_SIZE - len(human))
+    num_ai = random.randint(min_ai, max_ai)
+    num_human = GAME_SIZE - num_ai
+    # how many "other AI" this game: 0..max_other, but leave room for the clone minimum
+    hi_other = min(max_other, num_ai - min_clone)
+    lo_other = max(0, num_ai - len(clones))
+    num_other = random.randint(lo_other, max(lo_other, hi_other))
+    num_clone = num_ai - num_other
+    selected = random.sample(human, num_human) + random.sample(clones, num_clone) + random.sample(other, num_other)
+    random.shuffle(selected)
+    return [{"id": r["id"], "language": r["language"]} for r in selected], None
+
 @app.route("/api/game/start", methods=["POST"])
 def start_game():
     data = request.get_json(force=True)
@@ -370,21 +411,9 @@ def start_game():
         db.execute("INSERT INTO players (nickname, email, created_at) VALUES (?, ?, ?)",
                    (player_name, email, time.time()))
         db.commit()
-    ai_clips = [dict(c) for c in db.execute("SELECT id, language FROM clips WHERE is_ai = 1").fetchall()]
-    human_clips = [dict(c) for c in db.execute("SELECT id, language FROM clips WHERE is_ai = 0").fetchall()]
-
-    if len(ai_clips) < 1 or len(human_clips) < 1:
-        return jsonify({"error": "Need at least 1 AI and 1 human clip"}), 500
-    if len(ai_clips) + len(human_clips) < GAME_SIZE:
-        return jsonify({"error": f"Not enough clips ({len(ai_clips) + len(human_clips)}/{GAME_SIZE})"}), 500
-
-    max_ai = min(GAME_SIZE - 1, len(ai_clips))
-    min_ai = max(1, GAME_SIZE - len(human_clips))
-    num_ai = random.randint(min_ai, max_ai)
-    num_human = GAME_SIZE - num_ai
-
-    selected = random.sample(ai_clips, num_ai) + random.sample(human_clips, num_human)
-    random.shuffle(selected)
+    selected, err = select_game_clips(db)
+    if err:
+        return jsonify({"error": err}), 500
     clip_ids = [c["id"] for c in selected]
 
     game_id = str(uuid.uuid4())[:8]

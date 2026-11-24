@@ -1,6 +1,6 @@
 image:
   repository: quay.io/agiertli/voice-id
-  tag: "v3.2.0"
+  tag: "v3.3.0"
   pullPolicy: IfNotPresent
 
 replicas: 1
@@ -15,6 +15,10 @@ game:
   size: 5
   prizeThreshold: 4
   defaultLang: "en"
+  # Balance per game (human/AI split stays random): at least N AI clones of real people,
+  # at most M other AI voices (XTTS stock + public-dataset voices).
+  minCloneClips: 1
+  maxOtherAiClips: 1
 
 aiJudge:
   enabled: true
