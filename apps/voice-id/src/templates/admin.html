@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Voice ID</title>
+    <style>
+        /* Red Hat brand: palette values only, Red Hat Display/Text Regular+Bold, sentence case. */
+        @font-face { font-family: 'Red Hat Display'; font-weight: 400; font-display: swap; src: url('/static/fonts/RedHatDisplay-Regular.ttf') format('truetype'); }
+        @font-face { font-family: 'Red Hat Display'; font-weight: 700; font-display: swap; src: url('/static/fonts/RedHatDisplay-Bold.ttf') format('truetype'); }
+        @font-face { font-family: 'Red Hat Text'; font-weight: 400; font-display: swap; src: url('/static/fonts/RedHatText-Regular.ttf') format('truetype'); }
+        @font-face { font-family: 'Red Hat Text'; font-weight: 700; font-display: swap; src: url('/static/fonts/RedHatText-Bold.ttf') format('truetype'); }
+
+        :root {
+            --rh-red: #ee0000;
+            --rh-red-dark: #a60000;
+            --bg: #ffffff;
+            --surface: #f2f2f2;
+            --border: #c7c7c7;
+            --border-subtle: #e0e0e0;
+            --text: #151515;
+            --text-muted: #4d4d4d;
+            --human: #147878;
+            --ai: #5e40be;
+            /* aliases used by inline styles in the JS (game history rows) */
+            --bg-darker: var(--surface);
+            --gray: var(--text-muted);
+            --magenta: var(--rh-red-dark);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Red Hat Text', system-ui, sans-serif;
+            font-weight: 400;
+            font-size: 1rem;
+            line-height: 1.4;
+            background: var(--bg);
+            color: var(--text);
+        }
+        h1, h2, h3 { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; line-height: 1.2; }
+        strong { font-weight: 700; }
+
+        /* ---------- Header ---------- */
+        .header {
+            display: flex; align-items: center; justify-content: space-between; gap: 24px;
+            padding: 16px 40px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .brand { display: flex; align-items: center; gap: 20px; min-height: 56px; }
+        .brand img { height: 64px; width: auto; display: block; }
+        .wordmark { display: none; align-items: baseline; gap: 10px; }
+        .wordmark.show { display: flex; }
+        .wordmark .wm-main { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 1.6rem; line-height: 1.2; }
+        .wordmark .wm-sub { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 1.2rem; color: var(--rh-red); line-height: 1.2; }
+        .brand .admin-tag {
+            font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 1.5rem; line-height: 1.2;
+            padding-left: 20px; border-left: 1px solid var(--border);
+        }
+        .header-right { text-align: right; }
+        .header-right .label { font-size: 0.9rem; color: var(--text-muted); }
+        .header-right .conf { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 1.2rem; line-height: 1.2; }
+
+        main { max-width: 1280px; margin: 0 auto; padding: 32px 40px 64px; }
+
+        /* ---------- Login ---------- */
+        .auth-form {
+            max-width: 420px; margin: 64px auto; padding: 32px;
+            border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+        }
+        .auth-form h1 { font-size: 1.75rem; margin-bottom: 8px; }
+        .auth-form .auth-sub { color: var(--text-muted); margin-bottom: 24px; }
+        .auth-form label { display: block; font-weight: 700; margin-bottom: 6px; }
+        .auth-form input {
+            width: 100%; min-height: 44px; padding: 10px 12px; margin-bottom: 16px;
+            font: inherit; color: var(--text); background: var(--bg);
+            border: 1px solid var(--border); border-radius: 4px;
+        }
+        .auth-form input:focus { outline: 2px solid var(--text); outline-offset: 1px; border-color: var(--text); }
+        .auth-form button { width: 100%; }
+        .auth-error { color: var(--rh-red-dark); font-weight: 700; margin-bottom: 12px; min-height: 1.4em; }
+
+        .admin-content { display: none; }
+
+        /* ---------- Sections ---------- */
+        .section { margin-bottom: 48px; }
+        .section h2 { font-size: 1.75rem; margin-bottom: 8px; }
+        .section-lead { color: var(--text-muted); margin-bottom: 16px; max-width: 900px; }
+        .section-note {
+            color: var(--text-muted); margin: 0 0 16px; max-width: 900px;
+            padding: 12px 16px; background: var(--surface); border-left: 4px solid var(--border); border-radius: 0 4px 4px 0;
+        }
+        .section-note strong { color: var(--text); }
+        .warn-box {
+            margin-bottom: 20px; padding: 16px 20px; max-width: 900px;
+            border: 1px solid var(--rh-red-dark); border-left: 6px solid var(--rh-red); border-radius: 4px;
+            background: var(--bg); color: var(--text);
+        }
+        .warn-box strong { color: var(--rh-red-dark); }
+
+        /* ---------- Buttons ---------- */
+        button, .btn-sm {
+            font: inherit; font-weight: 700; line-height: 1.2;
+            min-height: 44px; padding: 10px 20px;
+            color: var(--text); background: var(--bg);
+            border: 1px solid var(--text); border-radius: 4px; cursor: pointer;
+        }
+        button:hover, .btn-sm:hover { background: var(--surface); }
+        button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+        button:disabled { color: var(--text-muted); border-color: var(--border); cursor: default; background: var(--surface); }
+        .auth-form button, #seedImportBtn, #seedExportBtn {
+            background: var(--rh-red); border-color: var(--rh-red); color: #ffffff;
+        }
+        .auth-form button:hover, #seedImportBtn:hover, #seedExportBtn:hover { background: var(--rh-red-dark); border-color: var(--rh-red-dark); }
+        button.danger, .btn-sm.danger { color: var(--rh-red-dark); border-color: var(--rh-red-dark); background: var(--bg); }
+        button.danger:hover, .btn-sm.danger:hover { background: var(--rh-red-dark); color: #ffffff; }
+        .btn-sm { min-height: 40px; padding: 8px 14px; font-size: 0.9rem; margin-right: 8px; }
+
+        .toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+        .stat { color: var(--text-muted); margin-left: auto; }
+
+        /* ---------- Tables ---------- */
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        th {
+            text-align: left; padding: 12px; font-weight: 700; color: var(--text);
+            background: var(--bg); border-bottom: 2px solid var(--text);
+            position: sticky; top: 0; z-index: 1;
+        }
+        td { padding: 12px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
+        tbody tr:hover td { background: var(--surface); }
+        .player-row { cursor: pointer; }
+        .player-row .expand-icon { transition: transform 0.2s; display: inline-block; margin-right: 8px; color: var(--text-muted); font-size: 0.8rem; }
+        .player-row.expanded .expand-icon { transform: rotate(90deg); }
+        .player-row.expanded td { background: var(--surface); }
+        .score { font-weight: 700; color: var(--text); }
+        .games-detail { display: none; }
+        .games-detail td { font-size: 0.9rem; color: var(--text-muted); }
+        .games-detail table th { position: static; font-size: 0.9rem; border-bottom: 1px solid var(--border); background: var(--surface); }
+        .email { color: var(--text); }
+        .no-email { color: var(--text-muted); font-style: italic; }
+
+        /* ---------- Speakers ---------- */
+        .spk-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; border: 1px solid var(--border); }
+        .spk-initials {
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--surface); border: 1px solid var(--border);
+            font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; color: var(--text-muted);
+        }
+        .spk-key { color: var(--text-muted); }
+        .spk-input {
+            min-height: 40px; padding: 8px 10px; width: 220px; margin-right: 6px;
+            font: inherit; color: var(--text); background: var(--bg);
+            border: 1px solid var(--border); border-radius: 4px;
+        }
+        .spk-input:focus { outline: 2px solid var(--text); outline-offset: 1px; border-color: var(--text); }
+        .count-human { color: var(--human); font-weight: 700; }
+        .count-ai { color: var(--ai); font-weight: 700; }
+        th.th-human { color: var(--human); }
+        th.th-ai { color: var(--ai); }
+        .spk-status { font-size: 0.9rem; color: var(--text-muted); margin-left: 4px; }
+        .spk-status.err { color: var(--rh-red-dark); font-weight: 700; }
+
+        /* ---------- Seed pack & backup ---------- */
+        .sp-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+        .sp-row select, .sp-row input[type=file] {
+            min-height: 44px; padding: 8px 10px; font: inherit; font-size: 0.95rem;
+            color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+        }
+        .sp-label { font-weight: 700; min-width: 120px; }
+        .sp-status { color: var(--text-muted); }
+        .sp-status.err { color: var(--rh-red-dark); font-weight: 700; }
+        .sp-status.ok { color: var(--text); font-weight: 700; }
+        .backup-row { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-subtle); }
+        #seedResult table { max-width: 760px; margin: 8px 0 16px; }
+        #seedErrors {
+            margin: 8px 0 16px; padding: 12px; max-width: 900px; max-height: 220px; overflow: auto; white-space: pre-wrap;
+            font-size: 0.9rem; color: var(--rh-red-dark); background: var(--surface); border-radius: 4px;
+        }
+
+        @media (max-width: 800px) {
+            .header, main { padding-left: 16px; padding-right: 16px; }
+            .header-right { display: none; }
+            .stat { margin-left: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="brand">
+            <img id="logo" src="/static/logo-light-compact.png" alt="Voice ID: AI or Alive?"
+                 onerror="this.style.display='none';document.getElementById('wordmark').classList.add('show');">
+            <div class="wordmark" id="wordmark" aria-label="Voice ID: AI or Alive?">
+                <span class="wm-main">Voice ID</span>
+                <span class="wm-sub">AI or Alive?</span>
+            </div>
+            <span class="admin-tag">Admin</span>
+        </div>
+        <div class="header-right">
+            <div class="label">Booth administration</div>
+            <div class="conf">{{ conference_name }}</div>
+        </div>
+    </header>
+
+    <main>
+    <div class="auth-form" id="authForm">
+        <h1>Sign in</h1>
+        <p class="auth-sub">Booth staff only.</p>
+        <div class="auth-error" id="authError"></div>
+        <label for="adminToken">Admin password</label>
+        <input type="password" id="adminToken" placeholder="Enter admin password" autocomplete="current-password">
+        <button onclick="authenticate()">Log in</button>
+    </div>
+
+    <div class="admin-content" id="adminContent">
+        <section class="section" id="players">
+            <h2>Players</h2>
+            <p class="section-lead">Best result per player. Click a row to see the game history.</p>
+            <div class="toolbar">
+                <button onclick="exportCSV()">Export CSV</button>
+                <button onclick="loadPlayers()">Refresh</button>
+                <button class="danger" onclick="resetScores()">Reset all scores</button>
+                <span class="stat" id="playerCount"></span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Nickname</th>
+                        <th>Email</th>
+                        <th>Best points</th>
+                        <th>Games</th>
+                        <th>Registered</th>
+                    </tr>
+                </thead>
+                <tbody id="playerTable"></tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <h2 id="speakers">Speakers</h2>
+            <div class="section-note">
+                Shown to players after each guess (photo or initials, and whether an AI clip is a clone of a real person).
+                <strong>Only upload photos of people who explicitly agreed to be shown on the booth screen.</strong>
+                JPEG, PNG or WebP, max 5 MB (downscaled to 512 px).
+            </div>
+            <div class="toolbar">
+                <button onclick="loadSpeakers()">Refresh speakers</button>
+                <span class="stat" id="speakerCount"></span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>Speaker key</th>
+                        <th>Display name</th>
+                        <th class="th-human">Human clips</th>
+                        <th class="th-ai">AI clips</th>
+                        <th>Photo actions</th>
+                    </tr>
+                </thead>
+                <tbody id="speakerTable"></tbody>
+            </table>
+            <input type="file" id="speakerPhotoInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+        </section>
+
+        <section class="section">
+            <h2 id="seedpack">Seed pack &amp; backup</h2>
+            <div class="warn-box">
+                <strong>Seed packs contain voice recordings of real people. Share them privately &mdash; never commit them to git or post them publicly.</strong><br>
+                A seed pack holds all clips and speaker profiles (names, photos) &mdash; no players, scores or emails.
+            </div>
+            <div class="sp-row">
+                <span class="sp-label">Export</span>
+                <button id="seedExportBtn" onclick="exportSeedpack()">Export seed pack</button>
+                <span class="sp-status" id="seedExportStatus"></span>
+            </div>
+            <div class="sp-row">
+                <span class="sp-label">Import</span>
+                <input type="file" id="seedFile" accept=".zip,application/zip">
+                <select id="seedMode">
+                    <option value="skip">Skip &mdash; keep existing clips on conflict</option>
+                    <option value="replace">Replace &mdash; overwrite conflicting clips</option>
+                </select>
+                <button id="seedImportBtn" onclick="importSeedpack()">Import seed pack</button>
+                <span class="sp-status" id="seedImportStatus"></span>
+            </div>
+            <div id="seedResult"></div>
+            <div class="sp-row backup-row">
+                <span class="sp-label">Full backup</span>
+                <button class="danger" id="backupBtn" onclick="downloadBackup()">Download full backup (contains personal data)</button>
+                <span class="sp-status" id="backupStatus"></span>
+            </div>
+            <div class="section-note">
+                Complete SQLite snapshot for disaster recovery <strong>including player nicknames and emails</strong>.
+                Store it securely, never share or distribute it &mdash; use a seed pack for that.
+            </div>
+        </section>
+    </div>
+    </main>
+
+    <script>
+        var token = '';
+
+        function saveToken(t) {
+            var expires = new Date(Date.now() + 8 * 60 * 60 * 1000).toUTCString();
+            document.cookie = 'admin_token=' + encodeURIComponent(t) + '; expires=' + expires + '; path=/admin; SameSite=Strict';
+        }
+
+        function loadToken() {
+            var match = document.cookie.match(/(?:^|; )admin_token=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        async function authenticate() {
+            token = document.getElementById('adminToken').value;
+            try {
+                var resp = await fetch('/api/admin/players', {
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                if (resp.status === 403) {
+                    document.getElementById('authError').textContent = 'Invalid password';
+                    return;
+                }
+                saveToken(token);
+                document.getElementById('authForm').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                loadPlayers();
+                loadSpeakers();
+            } catch (e) {
+                document.getElementById('authError').textContent = 'Connection error';
+            }
+        }
+
+        (async function tryAutoLogin() {
+            var saved = loadToken();
+            if (!saved) return;
+            try {
+                var resp = await fetch('/api/admin/players', {
+                    headers: {'Authorization': 'Bearer ' + saved}
+                });
+                if (resp.ok) {
+                    token = saved;
+                    document.getElementById('authForm').style.display = 'none';
+                    document.getElementById('adminContent').style.display = 'block';
+                    loadPlayers();
+                    loadSpeakers();
+                }
+            } catch (e) {}
+        })();
+
+        function escHtml(s) {
+            var d = document.createElement('div');
+            d.textContent = s || '';
+            return d.innerHTML;
+        }
+
+        function formatDate(ts) {
+            if (!ts) return '';
+            var d = new Date(ts * 1000);
+            return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        }
+
+        async function loadPlayers() {
+            try {
+                var resp = await fetch('/api/admin/players', {
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                var data = await resp.json();
+                document.getElementById('playerCount').textContent = data.players.length + ' players registered';
+
+                var tbody = document.getElementById('playerTable');
+                tbody.innerHTML = data.players.map(function(p, i) {
+                    var emailCell = p.email ? '<span class="email">' + escHtml(p.email) + '</span>' : '<span class="no-email">not provided</span>';
+                    return '<tr class="player-row" onclick="toggleGames(this, ' + p.id + ')" id="player-' + p.id + '">' +
+                        '<td>' + (i + 1) + '</td>' +
+                        '<td><span class="expand-icon">&#9654;</span><strong>' + escHtml(p.nickname) + '</strong></td>' +
+                        '<td>' + emailCell + '</td>' +
+                        '<td class="score">' + (p.best_points ? p.best_points + ' pts' : '--') + '</td>' +
+                        '<td>' + p.games_played + '</td>' +
+                        '<td>' + formatDate(p.created_at) + '</td>' +
+                    '</tr>' +
+                    '<tr class="games-detail" id="games-' + p.id + '">' +
+                        '<td colspan="6">Loading...</td>' +
+                    '</tr>';
+                }).join('');
+            } catch (e) {
+                console.error('Load error:', e);
+            }
+        }
+
+        async function toggleGames(row, playerId) {
+            var detailRow = document.getElementById('games-' + playerId);
+            var isExpanded = row.classList.contains('expanded');
+
+            if (isExpanded) {
+                row.classList.remove('expanded');
+                detailRow.style.display = 'none';
+                return;
+            }
+
+            row.classList.add('expanded');
+            detailRow.style.display = 'table-row';
+
+            try {
+                var resp = await fetch('/api/admin/players/' + playerId + '/games', {
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                var data = await resp.json();
+
+                if (!data.games || data.games.length === 0) {
+                    detailRow.innerHTML = '<td colspan="6" style="padding-left:50px;background:var(--bg-darker);color:var(--gray);">No completed games</td>';
+                    return;
+                }
+
+                var header = '<td colspan="6" style="padding:0;background:transparent;border:none;">' +
+                    '<table style="width:100%;border-collapse:collapse;">' +
+                    '<tr><th style="width:60px;padding:6px 12px 6px 50px;">#</th>' +
+                    '<th style="padding:6px 12px;">Points</th>' +
+                    '<th style="padding:6px 12px;">Score</th>' +
+                    '<th style="padding:6px 12px;">Time</th>' +
+                    '<th style="padding:6px 12px;">Played at</th></tr>' +
+                    data.games.map(function(g, j) {
+                        var dur = g.duration ? g.duration.toFixed(1) + 's' : '--';
+                        var bg = j === 0 ? 'var(--bg)' : 'var(--bg-darker)';
+                        return '<tr style="background:' + bg + ';">' +
+                            '<td style="padding:6px 12px 6px 50px;color:var(--gray);border-bottom:1px solid var(--border-subtle);">' + (j + 1) + '</td>' +
+                            '<td class="score" style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);">' + (g.points || 0) + ' pts</td>' +
+                            '<td style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);color:var(--gray);">' + g.score + '/' + g.total + '</td>' +
+                            '<td style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);color:var(--gray);">' + dur + '</td>' +
+                            '<td style="padding:6px 12px;border-bottom:1px solid var(--border-subtle);color:var(--gray);font-size:0.8rem;">' + (g.completed_at || '') + '</td>' +
+                        '</tr>';
+                    }).join('') +
+                    '</table></td>';
+                detailRow.innerHTML = header;
+            } catch (e) {
+                detailRow.innerHTML = '<td colspan="6" style="padding-left:50px;background:var(--bg-darker);color:var(--magenta);">Failed to load games</td>';
+            }
+        }
+
+        function exportCSV() {
+            window.open('/api/admin/export?token=' + encodeURIComponent(token), '_blank');
+        }
+
+        async function resetScores() {
+            if (!confirm('Delete ALL games and scores? Players will be kept.')) return;
+            if (!confirm('FINAL WARNING: This cannot be undone. Proceed?')) return;
+            try {
+                var resp = await fetch('/api/admin/reset-scores', {
+                    method: 'POST',
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                var data = await resp.json();
+                alert(data.message || 'Scores reset');
+                loadPlayers();
+            } catch (e) {
+                alert('Reset failed: ' + e.message);
+            }
+        }
+
+        // --- Seed pack & backup ---
+        function setStatus(id, msg, cls) {
+            var el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = 'sp-status' + (cls ? ' ' + cls : '');
+        }
+
+        // Download via fetch + Authorization header (keeps the token out of URLs / router logs).
+        async function downloadAuthed(url, statusId, btnId) {
+            var btn = document.getElementById(btnId);
+            btn.disabled = true;
+            setStatus(statusId, 'Preparing download...', '');
+            try {
+                var resp = await fetch(url, {headers: {'Authorization': 'Bearer ' + token}});
+                if (!resp.ok) {
+                    var err = {};
+                    try { err = await resp.json(); } catch (e) {}
+                    throw new Error(err.error || ('HTTP ' + resp.status));
+                }
+                var cd = resp.headers.get('Content-Disposition') || '';
+                var m = cd.match(/filename="?([^";]+)"?/);
+                var blob = await resp.blob();
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = m ? m[1] : 'download';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                setStatus(statusId, 'Downloaded ' + a.download + ' (' + (blob.size / 1e6).toFixed(1) + ' MB)', 'ok');
+            } catch (e) {
+                setStatus(statusId, 'Failed: ' + e.message, 'err');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function exportSeedpack() {
+            downloadAuthed('/api/admin/seedpack', 'seedExportStatus', 'seedExportBtn');
+        }
+
+        function downloadBackup() {
+            if (!confirm('The full backup contains PERSONAL DATA (player nicknames and emails). Store it securely and never share it. Continue?')) return;
+            downloadAuthed('/api/admin/backup', 'backupStatus', 'backupBtn');
+        }
+
+        async function importSeedpack() {
+            var file = document.getElementById('seedFile').files[0];
+            var mode = document.getElementById('seedMode').value;
+            if (!file) { setStatus('seedImportStatus', 'Choose a .seedpack.zip first', 'err'); return; }
+            if (mode === 'replace' && !confirm('Replace mode overwrites existing clips with the same filename. Continue?')) return;
+            var fd = new FormData();
+            fd.append('mode', mode);
+            fd.append('seedpack', file);
+            var btn = document.getElementById('seedImportBtn');
+            btn.disabled = true;
+            setStatus('seedImportStatus', 'Uploading and importing ' + (file.size / 1e6).toFixed(1) + ' MB...', '');
+            document.getElementById('seedResult').innerHTML = '';
+            try {
+                var resp = await fetch('/api/admin/seedpack', {
+                    method: 'POST', headers: {'Authorization': 'Bearer ' + token}, body: fd
+                });
+                var data = {};
+                try { data = await resp.json(); } catch (e) { data = {error: 'HTTP ' + resp.status}; }
+                renderSeedResult(data);
+                if (resp.ok) {
+                    setStatus('seedImportStatus', 'Imported (' + mode + ' mode)', 'ok');
+                    loadSpeakers();
+                } else {
+                    setStatus('seedImportStatus', 'Rejected - nothing was imported' + (data.error ? ': ' + data.error : ''), 'err');
+                }
+            } catch (e) {
+                setStatus('seedImportStatus', 'Failed: ' + e.message, 'err');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function renderSeedResult(d) {
+            var box = document.getElementById('seedResult');
+            if (!d.clips && !d.speakers) { box.innerHTML = ''; return; }
+            var cols = ['added', 'skipped', 'conflicts', 'replaced', 'updated', 'invalid'];
+            var row = function(label, obj) {
+                return '<tr><td><strong>' + label + '</strong></td>' + cols.map(function(c) {
+                    return '<td>' + (obj && c in obj ? obj[c] : '&ndash;') + '</td>';
+                }).join('') + '</tr>';
+            };
+            var html = '<table><thead><tr><th></th>' + cols.map(function(c) { return '<th>' + c + '</th>'; }).join('') +
+                '</tr></thead><tbody>' + row('Clips', d.clips) + row('Speakers', d.speakers) + '</tbody></table>';
+            if (d.errors && d.errors.length) {
+                html += '<div id="seedErrors">' + d.errors.map(escHtml).join('\n') + '</div>';
+            }
+            box.innerHTML = html;
+        }
+
+        // --- Speakers ---
+        var photoTarget = null;
+
+        function initials(s) {
+            var parts = (s || '').trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return '?';
+            return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+        }
+
+        function spkId(name) { return 'spk-' + encodeURIComponent(name).replace(/[^A-Za-z0-9_-]/g, '_'); }
+
+        function setSpkStatus(name, msg, isErr) {
+            var el = document.getElementById(spkId(name) + '-status');
+            if (!el) return;
+            el.textContent = msg;
+            el.className = 'spk-status' + (isErr ? ' err' : '');
+        }
+
+        async function loadSpeakers() {
+            try {
+                var resp = await fetch('/api/speakers');
+                var list = await resp.json();
+                document.getElementById('speakerCount').textContent = list.length + ' speakers, ' +
+                    list.filter(function(s) { return s.has_photo; }).length + ' with photo';
+                var tbody = document.getElementById('speakerTable');
+                tbody.innerHTML = '';
+                list.forEach(function(s) {
+                    var tr = document.createElement('tr');
+                    tr.id = spkId(s.name);
+                    var photo = s.has_photo
+                        ? '<img class="spk-thumb" alt="" src="' + escHtml(s.photo_url) + '?v=' + Date.now() + '">'
+                        : '<div class="spk-initials">' + escHtml(initials(s.display_name)) + '</div>';
+                    tr.innerHTML =
+                        '<td>' + photo + '</td>' +
+                        '<td class="spk-key">' + escHtml(s.name) + '</td>' +
+                        '<td><input class="spk-input" maxlength="80" value="' + escHtml(s.display_name) + '"> ' +
+                            '<button class="btn-sm" data-act="save">Save</button>' +
+                            '<span class="spk-status" id="' + spkId(s.name) + '-status"></span></td>' +
+                        '<td class="count-human">' + s.human_clips + '</td>' +
+                        '<td class="count-ai">' + s.ai_clips + '</td>' +
+                        '<td><button class="btn-sm" data-act="upload">' + (s.has_photo ? 'Replace' : 'Upload') + '</button>' +
+                            (s.has_photo ? '<button class="btn-sm danger" data-act="remove">Remove</button>' : '') + '</td>';
+                    tr.querySelector('[data-act="save"]').onclick = function() {
+                        saveDisplayName(s.name, tr.querySelector('.spk-input').value);
+                    };
+                    tr.querySelector('.spk-input').addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') saveDisplayName(s.name, this.value);
+                    });
+                    tr.querySelector('[data-act="upload"]').onclick = function() { pickPhoto(s.name); };
+                    var rm = tr.querySelector('[data-act="remove"]');
+                    if (rm) rm.onclick = function() { removePhoto(s.name); };
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error('Speakers load error:', e);
+            }
+        }
+
+        async function speakerRequest(name, path, opts) {
+            opts.headers = Object.assign({'Authorization': 'Bearer ' + token}, opts.headers || {});
+            var resp = await fetch('/api/admin/speakers/' + encodeURIComponent(name) + path, opts);
+            var data = {};
+            try { data = await resp.json(); } catch (e) {}
+            if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+            return data;
+        }
+
+        async function saveDisplayName(name, value) {
+            try {
+                await speakerRequest(name, '', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({display_name: value})
+                });
+                await loadSpeakers();
+                setSpkStatus(name, 'Saved', false);
+            } catch (e) {
+                setSpkStatus(name, e.message, true);
+            }
+        }
+
+        function pickPhoto(name) {
+            photoTarget = name;
+            var input = document.getElementById('speakerPhotoInput');
+            input.value = '';
+            input.click();
+        }
+
+        document.getElementById('speakerPhotoInput').addEventListener('change', async function() {
+            var file = this.files[0];
+            var name = photoTarget;
+            if (!file || !name) return;
+            if (file.size > 5 * 1024 * 1024) { setSpkStatus(name, 'Max 5 MB', true); return; }
+            if (!confirm('Has ' + name + ' agreed to have this photo shown on the booth screen?')) return;
+            var fd = new FormData();
+            fd.append('photo', file);
+            setSpkStatus(name, 'Uploading...', false);
+            try {
+                await speakerRequest(name, '/photo', {method: 'POST', body: fd});
+                await loadSpeakers();
+                setSpkStatus(name, 'Photo saved', false);
+            } catch (e) {
+                setSpkStatus(name, e.message, true);
+            }
+        });
+
+        async function removePhoto(name) {
+            if (!confirm('Remove photo of ' + name + '?')) return;
+            try {
+                await speakerRequest(name, '/photo', {method: 'DELETE'});
+                await loadSpeakers();
+                setSpkStatus(name, 'Photo removed', false);
+            } catch (e) {
+                setSpkStatus(name, e.message, true);
+            }
+        }
+
+        document.getElementById('adminToken').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') authenticate();
+        });
+    </script>
+</body>
+</html>

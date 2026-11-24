@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: voice-clone-studio
+spec:
+  selector:
+    app: voice-clone-studio
+  ports:
+  - port: 8080
+    targetPort: 8080

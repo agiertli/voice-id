@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voice-clone-studio
+  labels:
+    app: voice-clone-studio
+spec:
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: voice-clone-studio
+  template:
+    metadata:
+      labels:
+        app: voice-clone-studio
+    spec:
+      containers:
+      - name: voice-clone-studio
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DATA_DIR
+          value: /tmp/voice-data
+        - name: DEFAULT_LANG
+          value: "{{ .Values.defaultLanguage }}"
+        {{- if and .Values.providers.xtts.enabled .Values.providers.xtts.url }}
+        - name: XTTS_URL
+          value: "{{ .Values.providers.xtts.url }}"
+        {{- end }}
+        {{- if and .Values.providers.fish.enabled .Values.providers.fish.url }}
+        - name: FISH_URL
+          value: "{{ .Values.providers.fish.url }}"
+        {{- end }}
+        volumeMounts:
+        - name: voice-data
+          mountPath: /tmp/voice-data
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 30
+      volumes:
+      - name: voice-data
+        persistentVolumeClaim:
+          claimName: voice-clone-studio-data

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice ID — Leaderboard</title>
+    <!--
+        Fonts: Red Hat Display / Red Hat Text, SIL Open Font License (see /static/fonts/OFL.txt).
+        Icons: Red Hat standard icons, CC BY 4.0, https://github.com/RedHat-UX/red-hat-icons
+        (files in /static/icons/ are unmodified; see /static/icons/ICON-LICENSE).
+        Trophy/medal glyphs are simple custom one-colour SVGs, not Red Hat icons.
+    -->
+    <style>
+        @font-face { font-family: 'Red Hat Display'; font-weight: 400; font-display: swap; src: url('/static/fonts/RedHatDisplay-Regular.ttf') format('truetype'); }
+        @font-face { font-family: 'Red Hat Display'; font-weight: 700; font-display: swap; src: url('/static/fonts/RedHatDisplay-Bold.ttf') format('truetype'); }
+        @font-face { font-family: 'Red Hat Text'; font-weight: 400; font-display: swap; src: url('/static/fonts/RedHatText-Regular.ttf') format('truetype'); }
+        @font-face { font-family: 'Red Hat Text'; font-weight: 700; font-display: swap; src: url('/static/fonts/RedHatText-Bold.ttf') format('truetype'); }
+
+        :root {
+            --rh-red: #ee0000;
+            --rh-red-dark: #a60000;
+            --bg: #ffffff;
+            --surface: #f2f2f2;
+            --border: #c7c7c7;
+            --border-subtle: #e0e0e0;
+            --text: #151515;
+            --text-muted: #4d4d4d;
+            --ai: #5e40be;
+            --human: #147878;
+            --correct: #151515;
+            --wrong: #a60000;
+            --easy: #8c8c8c;
+            --medium: #4d4d4d;
+            --hard: #ee0000;
+            --boss: #a60000;
+            --silver: #707070;
+            --bronze: #a3a3a3;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Red Hat Text', system-ui, sans-serif;
+            font-weight: 400;
+            line-height: 1.25;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, .display { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; }
+
+        /* ---------- Header ---------- */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 3.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+        .brand { display: flex; align-items: center; gap: 1.5rem; min-height: 88px; }
+        .brand img { height: 112px; width: auto; display: block; }
+        .wordmark { display: none; align-items: baseline; gap: 1rem; }
+        .wordmark.show { display: flex; }
+        .wordmark .wm-main { font-size: 3.4rem; color: var(--text); line-height: 1.2; }
+        .wordmark .wm-sub { font-size: 2.4rem; color: var(--rh-red); line-height: 1.2; }
+        .header-right { text-align: right; }
+        .header-right .label { font-size: 1.3rem; color: var(--text-muted); }
+        .header-right .conf { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 2.1rem; color: var(--text); line-height: 1.2; }
+
+        /* ---------- Layout ---------- */
+        .main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 520px;
+            gap: 3rem;
+            padding: 1.5rem 3.5rem 1.5rem;
+            min-height: 0;
+        }
+
+        /* ---------- Board ---------- */
+        .board { display: flex; flex-direction: column; min-height: 0; }
+        .board-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.6rem; }
+        .board-title h2 { font-size: 2.4rem; line-height: 1.2; }
+        .board-title .updated { font-size: 1.1rem; color: var(--text-muted); }
+
+        .board-header, .row {
+            display: grid;
+            grid-template-columns: 84px 1fr 120px 180px 250px 100px;
+            align-items: center;
+            column-gap: 1rem;
+        }
+        .board-header {
+            padding: 0.5rem 1.5rem;
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            font-weight: 700;
+            border-bottom: 2px solid var(--text);
+        }
+        .board-header .c-correct, .board-header .c-points, .board-header .c-time { text-align: right; }
+
+        #rows { flex: 1; min-height: 0; overflow: hidden; }
+
+        .row {
+            padding: 0 1.5rem;
+            height: 62px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 1.6rem;
+            transition: background-color 0.3s;
+        }
+        .row.top {
+            height: 88px;
+            font-size: 2rem;
+            background: var(--surface);
+            border-bottom: 4px solid var(--bg);
+            border-left: 8px solid var(--border);
+            padding-left: calc(1.5rem - 8px);
+        }
+        .row.r1 { border-left-color: var(--rh-red); }
+        .row.r2 { border-left-color: var(--silver); }
+        .row.r3 { border-left-color: var(--bronze); }
+
+        .c-rank { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; }
+        .c-rank svg { display: block; }
+        .c-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row.top .c-name { font-family: 'Red Hat Display', system-ui, sans-serif; }
+        .c-correct { text-align: right; color: var(--correct); font-weight: 700; display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
+        .c-points { text-align: right; font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; }
+        .c-points small { font-family: 'Red Hat Text', system-ui, sans-serif; font-weight: 400; font-size: 0.6em; color: var(--text-muted); margin-left: 0.3rem; }
+        .row.r1 .c-points { color: var(--rh-red); }
+        .c-opp { display: flex; align-items: center; gap: 0.7rem; white-space: nowrap; }
+        .c-opp .opp-name { font-weight: 700; font-size: 0.85em; }
+        .c-opp.solo .opp-name { font-weight: 400; color: var(--text-muted); }
+        .c-time { text-align: right; color: var(--text-muted); font-size: 0.85em; }
+
+        .badge {
+            display: inline-block;
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.2;
+            padding: 0.25rem 0.7rem;
+            border-radius: 4px;
+            color: #ffffff;
+        }
+        .badge.easy { background: var(--easy); color: var(--text); }
+        .badge.medium { background: var(--medium); }
+        .badge.hard { background: var(--hard); }
+        .badge.boss { background: var(--boss); }
+
+        .empty {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            text-align: center;
+        }
+        .empty .big { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 3rem; }
+        .empty .small { font-size: 1.8rem; color: var(--text-muted); }
+
+        /* ---------- Side panel ---------- */
+        .side { display: flex; flex-direction: column; gap: 1.2rem; min-height: 0; }
+
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .stat { background: var(--surface); padding: 1.1rem 1.6rem; }
+        .stat .icon { width: 40px; height: 40px; display: block; margin-bottom: 0.3rem; }
+        .stat .val { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 3rem; line-height: 1.2; }
+        .stat .lbl { font-size: 1.3rem; color: var(--text-muted); }
+
+        .cta {
+            border: 2px solid var(--text);
+            padding: 1.4rem 1.8rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .cta h3 { font-size: 2.6rem; line-height: 1.2; }
+        .cta h3 em { font-style: normal; color: var(--rh-red); }
+        .cta p { font-size: 1.4rem; color: var(--text-muted); }
+        .cta .play { margin-top: 0.4rem; align-self: flex-start; background: var(--rh-red); color: #ffffff; font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; font-size: 1.6rem; padding: 0.6rem 1.4rem; border-radius: 4px; }
+
+        .ladder { background: var(--surface); padding: 1.4rem 1.6rem; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        .ladder h3 { font-size: 1.6rem; line-height: 1.2; margin-bottom: 0.6rem; }
+        .ladder ul { list-style: none; display: flex; flex-direction: column; flex: 1; justify-content: space-around; }
+        .ladder li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 1.4rem; padding: 0.2rem 0; border-bottom: 1px solid var(--border-subtle); }
+        .ladder li:last-child { border-bottom: none; }
+        .ladder li .n { font-weight: 700; }
+        .ladder li .m { color: var(--text-muted); font-size: 1.15rem; display: block; font-weight: 400; }
+
+        /* ---------- Footer ---------- */
+        .footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 3.5rem;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 1.3rem;
+            color: var(--text-muted);
+        }
+        .footer .tag { font-family: 'Red Hat Display', system-ui, sans-serif; font-weight: 700; color: var(--text); }
+        .footer .tag span { color: var(--rh-red-dark); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="brand">
+            <img id="logo" src="/static/logo-light-compact.png" alt="Voice ID: AI or Alive?"
+                 onerror="this.style.display='none';document.getElementById('wordmark').classList.add('show');">
+            <div class="wordmark" id="wordmark" aria-label="Voice ID: AI or Alive?">
+                <span class="wm-main display">Voice ID</span>
+                <span class="wm-sub display">AI or Alive?</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="label">Live leaderboard</div>
+            <div class="conf">{{ conference_name }}</div>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="board" id="board">
+            <div class="board-title">
+                <h2>Top players</h2>
+                <span class="updated" id="updated"></span>
+            </div>
+            <div class="board-header">
+                <span class="c-rank">Rank</span>
+                <span class="c-name">Player</span>
+                <span class="c-correct">Correct</span>
+                <span class="c-points">Points</span>
+                <span class="c-opp">Opponent</span>
+                <span class="c-time">Time</span>
+            </div>
+            <div id="rows">
+                <div class="empty">
+                    <div class="big">No scores yet</div>
+                    <div class="small">Be the first on the board. Play at the booth!</div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="side">
+            <div class="stats">
+                <div class="stat">
+                    <img class="icon" src="/static/icons/user.svg" alt="" onerror="this.style.visibility='hidden'">
+                    <div class="val" id="tvPlayers">0</div>
+                    <div class="lbl">Players</div>
+                </div>
+                <div class="stat">
+                    <img class="icon" src="/static/icons/target.svg" alt="" onerror="this.style.visibility='hidden'">
+                    <div class="val" id="tvTopScore">--</div>
+                    <div class="lbl">Top points</div>
+                </div>
+            </div>
+
+            <div class="cta">
+                <h3>Can you beat <em>the AI?</em></h3>
+                <p>Listen to voice clips and decide: real human or AI clone. Go head to head with an AI detector.</p>
+                <span class="play">Play at the booth</span>
+            </div>
+
+            <div class="ladder">
+                <h3>Choose your opponent</h3>
+                <ul id="ladder"></ul>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="footer">
+        <span class="tag">Trust your ears. <span>Unmask the machine.</span></span>
+        <span>Refreshes automatically</span>
+    </footer>
+
+<script>
+var OPPONENTS = {
+    'qwen':           { name: 'Teddy',    level: 'Easy',   cls: 'easy',   desc: 'Listens to the raw audio' },
+    'gemma':          { name: 'Iris',     level: 'Medium', cls: 'medium', desc: 'Reads the spectrogram' },
+    'gary-base':      { name: 'Gary',     level: 'Hard',   cls: 'hard',   desc: 'Waveform classifier' },
+    'gary-finetuned': { name: 'Gary 2.0', level: 'Boss',   cls: 'boss',   desc: 'Fine-tuned deepfake detector' }
+};
+var LADDER_ORDER = ['qwen', 'gemma', 'gary-base', 'gary-finetuned'];
+var MAX_ROWS = 10;
+
+function escHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+}
+
+function trophySvg(size, color) {
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 48 48" aria-label="1st place" role="img">' +
+        '<path fill="' + color + '" d="M14 6h20v4h8v5c0 5.5-4 10-9.3 10.8A11 11 0 0 1 26 31.7V36h6v4H16v-4h6v-4.3a11 11 0 0 1-6.7-5.9C10 25 6 20.5 6 15v-5h8V6zm-4 8v1c0 3 1.9 5.6 4.6 6.6A11 11 0 0 1 14 18v-4h-4zm24 0v4c0 1.3-.2 2.5-.6 3.6 2.7-1 4.6-3.6 4.6-6.6v-1h-4z"/>' +
+        '<rect fill="' + color + '" x="12" y="41" width="24" height="3"/></svg>';
+}
+
+function medalSvg(size, color, n) {
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 48 48" aria-label="' + n + (n === 2 ? 'nd' : 'rd') + ' place" role="img">' +
+        '<path fill="' + color + '" d="M12 2h9l5 12h-9zM36 2h-9l-2.2 5.3 3.6 8.7z"/>' +
+        '<circle cx="24" cy="30" r="15" fill="' + color + '"/>' +
+        '<text x="24" y="36.5" text-anchor="middle" font-family="Red Hat Display, sans-serif" font-weight="700" font-size="18" fill="#ffffff">' + n + '</text></svg>';
+}
+
+function opponentHtml(id) {
+    var o = id ? OPPONENTS[id] : null;
+    if (!id) return '<span class="c-opp solo"><span class="opp-name">Solo</span></span>';
+    if (!o) return '<span class="c-opp"><span class="opp-name">' + escHtml(id) + '</span></span>';
+    return '<span class="c-opp"><span class="opp-name">' + escHtml(o.name) + '</span>' +
+        '<span class="badge ' + o.cls + '">' + o.level + '</span></span>';
+}
+
+function renderLadder() {
+    document.getElementById('ladder').innerHTML = LADDER_ORDER.map(function(id) {
+        var o = OPPONENTS[id];
+        return '<li><span><span class="n">' + o.name + '</span><span class="m">' + o.desc + '</span></span>' +
+            '<span class="badge ' + o.cls + '">' + o.level + '</span></li>';
+    }).join('');
+}
+
+async function refresh() {
+    try {
+        var res = await fetch('/api/leaderboard');
+        var data = await res.json();
+        var entries = data.leaderboard || [];
+        var $rows = document.getElementById('rows');
+
+        document.getElementById('tvPlayers').textContent = data.total_players || 0;
+        var now = new Date();
+        document.getElementById('updated').textContent = 'Updated ' +
+            now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+        if (entries.length === 0) {
+            $rows.innerHTML = '<div class="empty"><div class="big">No scores yet</div>' +
+                '<div class="small">Be the first on the board. Play at the booth!</div></div>';
+            document.getElementById('tvTopScore').textContent = '--';
+            return;
+        }
+
+        document.getElementById('tvTopScore').textContent = entries[0].points || 0;
+
+        var html = entries.slice(0, MAX_ROWS).map(function(r, i) {
+            var rank;
+            if (i === 0) rank = trophySvg(52, 'var(--rh-red)');
+            else if (i === 1) rank = medalSvg(48, 'var(--silver)', 2);
+            else if (i === 2) rank = medalSvg(48, 'var(--bronze)', 3);
+            else rank = (i + 1);
+            var t = r.duration_sec ? Number(r.duration_sec).toFixed(1) + ' s' : '';
+            var correct = (r.score || 0) + '/' + (r.total || 5);
+            var cls = 'row' + (i < 3 ? ' top r' + (i + 1) : '');
+            return '<div class="' + cls + '">' +
+                '<span class="c-rank">' + rank + '</span>' +
+                '<span class="c-name">' + escHtml(r.player_name) + '</span>' +
+                '<span class="c-correct">' + correct + '</span>' +
+                '<span class="c-points">' + (r.points || 0) + '<small>pts</small></span>' +
+                opponentHtml(r.opponent) +
+                '<span class="c-time">' + t + '</span>' +
+            '</div>';
+        }).join('');
+
+        $rows.innerHTML = html;
+    } catch (e) {
+        console.error('TV refresh error:', e);
+    }
+}
+
+renderLadder();
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

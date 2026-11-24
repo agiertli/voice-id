@@ -1,0 +1,74 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xtts-v2
+  namespace: voice-id
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xtts-v2
+  template:
+    metadata:
+      labels:
+        app: xtts-v2
+    spec:
+      containers:
+      - name: xtts
+        image: ghcr.io/coqui-ai/xtts-streaming-server:latest-cuda121
+        workingDir: /tmp
+        command: ["uvicorn"]
+        args: ["main:app", "--host", "0.0.0.0", "--port", "8080", "--app-dir", "/app"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: COQUI_TOS_AGREED
+          value: "1"
+        - name: NUMBA_CACHE_DIR
+          value: /tmp/numba_cache
+        - name: MPLCONFIGDIR
+          value: /tmp/matplotlib
+        - name: HOME
+          value: /tmp
+        - name: TMPDIR
+          value: /tmp
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "4"
+            memory: 8Gi
+            nvidia.com/gpu: "1"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xtts-v2
+  namespace: voice-id
+spec:
+  selector:
+    app: xtts-v2
+  ports:
+  - port: 80
+    targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: xtts-v2
+  namespace: voice-id
+spec:
+  to:
+    kind: Service
+    name: xtts-v2
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge

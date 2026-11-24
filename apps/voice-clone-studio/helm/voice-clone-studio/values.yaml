@@ -1,0 +1,29 @@
+image:
+  repository: quay.io/agiertli/voice-clone-studio
+  tag: "v2.1.0"
+  pullPolicy: IfNotPresent
+
+replicas: 1
+
+providers:
+  xtts:
+    enabled: true
+    name: "XTTS v2"
+    url: "http://xtts-v2.voice-id.svc.cluster.local"
+  fish:
+    enabled: true
+    name: "Fish Speech S2 Pro"
+    url: "http://fish-native.voice-id.svc.cluster.local:8080"
+
+defaultLanguage: "cs"
+
+storage:
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"

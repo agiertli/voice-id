@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Clone Studio</title>
+    <style>
+        :root {
+            --bg: #17394a;
+            --bg-deep: #0f2a38;
+            --bg-card: #1c4456;
+            --bg-card-border: rgba(93,230,200,0.1);
+            --cyan: #5de6c8;
+            --cyan-glow: rgba(93,230,200,0.25);
+            --cyan-dim: #3aaa8e;
+            --magenta: #d94fa0;
+            --light: #e8f4f0;
+            --muted: #8ab0c0;
+            --green: #4ade80;
+            --red-err: #f87171;
+            --gold: #f0ab00;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Red Hat Display', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-top: 1rem;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(93,230,200,0.04) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(217,79,160,0.04) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 660px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* --- Toast --- */
+        .toast {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(-300%);
+            opacity: 0;
+            background: #4a1828;
+            color: var(--red-err);
+            border: 1px solid var(--red-err);
+            border-radius: 12px;
+            padding: 0.8rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            max-width: 90vw;
+            text-align: center;
+        }
+        .toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        /* --- Headings --- */
+        .app-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .app-subtitle {
+            text-align: center;
+            color: var(--muted);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+            letter-spacing: 1px;
+        }
+
+        /* --- Language Toggle --- */
+        .lang-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin-top: 1rem;
+        }
+        .lang-btn {
+            padding: 0.4rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            font-family: inherit;
+            border: 2px solid var(--cyan-dim);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .lang-btn:first-child { border-radius: 8px 0 0 8px; }
+        .lang-btn:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+        .lang-btn.active {
+            background: var(--cyan);
+            color: var(--bg-deep);
+            border-color: var(--cyan);
+        }
+        .lang-btn.active + .lang-btn { border-left-color: var(--cyan); }
+
+        /* --- Inputs --- */
+        .name-input {
+            margin-top: 1.2rem;
+            background: var(--bg-deep);
+            border: 2px solid rgba(93,230,200,0.2);
+            color: var(--light);
+            font-size: 1.1rem;
+            padding: 0.8rem 1.2rem;
+            border-radius: 12px;
+            width: 100%;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .name-input:focus { border-color: var(--cyan); }
+        .name-input::placeholder { color: var(--muted); opacity: 0.5; }
+
+        .text-area {
+            background: var(--bg-deep);
+            border: 2px solid rgba(93,230,200,0.2);
+            color: var(--light);
+            font-size: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+            resize: vertical;
+            line-height: 1.5;
+        }
+        .text-area:focus { border-color: var(--cyan); }
+        .text-area::placeholder { color: var(--muted); opacity: 0.5; }
+
+        /* --- Buttons --- */
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: inherit;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary {
+            background: var(--cyan);
+            color: var(--bg-deep);
+        }
+        .btn-primary:hover { background: #4dd4b4; }
+        .btn-primary:disabled {
+            background: #1e4050;
+            color: #456;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--cyan);
+            border: 2px solid var(--cyan-dim);
+        }
+        .btn-secondary:hover { border-color: var(--cyan); }
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        /* --- Cards --- */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--bg-card-border);
+            margin-top: 1.2rem;
+        }
+        .card-label {
+            font-size: 0.75rem;
+            color: var(--cyan-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+        }
+
+        /* --- Prompt Card --- */
+        .prompt-text {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            color: var(--light);
+            font-style: italic;
+        }
+        .prompt-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.8rem;
+        }
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: color 0.15s;
+        }
+        .refresh-btn:hover { color: var(--cyan); }
+
+        /* --- Record Button --- */
+        .record-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 1rem;
+        }
+        .record-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid var(--magenta);
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .record-btn:hover { border-color: #e06bb0; box-shadow: 0 0 20px rgba(217,79,160,0.3); }
+        .record-btn .inner {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--magenta);
+            transition: all 0.2s;
+        }
+        .record-btn.recording .inner {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--red-err);
+        }
+        .record-btn.recording {
+            border-color: var(--red-err);
+            animation: pulse-ring 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-ring {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(248,113,113,0); }
+        }
+
+        .record-timer {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .record-timer.active { color: var(--red-err); }
+
+        .record-hint {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        /* --- Review Area --- */
+        .review-area {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .review-area.visible { display: flex; }
+
+        .review-play-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: var(--cyan);
+            color: var(--bg-deep);
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .review-play-btn:hover { background: #4dd4b4; box-shadow: 0 0 16px var(--cyan-glow); }
+
+        .review-actions {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        /* --- Provider Select --- */
+        .select-wrap {
+            position: relative;
+            margin-top: 0.8rem;
+        }
+        .select-wrap select {
+            width: 100%;
+            appearance: none;
+            background: var(--bg-deep);
+            border: 2px solid rgba(93,230,200,0.2);
+            color: var(--light);
+            font-size: 1rem;
+            padding: 0.7rem 2.5rem 0.7rem 1rem;
+            border-radius: 12px;
+            outline: none;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .select-wrap select:focus { border-color: var(--cyan); }
+        .select-wrap::after {
+            content: "\25BC";
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            pointer-events: none;
+            font-size: 0.7rem;
+        }
+
+        /* --- Spinner --- */
+        .spinner-overlay {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .spinner-overlay.visible { display: flex; }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--bg-card-border);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .spinner-text {
+            color: var(--muted);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .spinner-elapsed {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+            color: var(--cyan-dim);
+        }
+
+        /* --- Clip Cards --- */
+        .clips-list {
+            margin-top: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .clip-card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 1rem 1.2rem;
+            border: 1px solid var(--bg-card-border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: border-color 0.2s;
+        }
+        .clip-card:hover { border-color: rgba(93,230,200,0.25); }
+
+        .clip-play-btn {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--cyan);
+            color: var(--bg-deep);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .clip-play-btn:hover { background: #4dd4b4; }
+        .clip-play-btn.playing { background: var(--magenta); color: #fff; }
+
+        .clip-action-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+        .clip-action-btn:hover { color: var(--cyan); background: rgba(93,230,200,0.1); }
+        .clip-action-btn.delete:hover { color: var(--magenta); background: rgba(255,90,120,0.1); }
+
+        .clip-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .clip-info { flex: 1; min-width: 0; }
+        .clip-text {
+            font-size: 0.85rem;
+            color: var(--light);
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .clip-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.3rem;
+        }
+
+        .provider-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0.15rem 0.5rem;
+            border-radius: 100px;
+            background: rgba(93,230,200,0.15);
+            color: var(--cyan);
+        }
+        .provider-badge.fish { background: rgba(217,79,160,0.15); color: var(--magenta); }
+
+        .clip-duration {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* --- Voice Badge --- */
+        .voice-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--bg-deep);
+            border: 1px solid var(--bg-card-border);
+            border-radius: 100px;
+            padding: 0.3rem 1rem;
+            font-size: 0.85rem;
+            color: var(--cyan);
+            font-weight: 600;
+            margin-top: 0.8rem;
+        }
+        .voice-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        /* --- Section Heading --- */
+        .section-heading {
+            font-size: 0.8rem;
+            color: var(--cyan-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* --- Generate Row --- */
+        .generate-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 0.8rem;
+        }
+        .generate-row .btn { flex: 1; }
+
+        /* --- Screens --- */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* --- Back link --- */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-family: inherit;
+            margin-top: 1.5rem;
+            transition: color 0.15s;
+        }
+        .back-link:hover { color: var(--cyan); }
+
+        /* --- Voice action row --- */
+        .voice-action-row {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.3rem;
+        }
+
+        /* --- Mode switch + segmented toggles (not .lang-btn: those switch UI language) --- */
+        .seg-toggle { display: flex; justify-content: center; margin-top: 1rem; }
+        .seg-btn {
+            padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 700; font-family: inherit;
+            border: 2px solid var(--cyan-dim); background: transparent; color: var(--muted);
+            cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px;
+        }
+        .seg-btn + .seg-btn { border-left: none; }
+        .seg-btn:first-child { border-radius: 8px 0 0 8px; }
+        .seg-btn:last-child { border-radius: 0 8px 8px 0; }
+        .seg-btn.active { background: var(--cyan); color: var(--bg-deep); border-color: var(--cyan); }
+        .mode-toggle { margin-top: 1.4rem; }
+        .mode-toggle .seg-btn { flex: 1; padding: 0.8rem 0.6rem; font-size: 0.95rem; }
+        .mode-hint { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 0.6rem; }
+
+        /* --- Sentence list --- */
+        .sent-progress { text-align: center; color: var(--muted); font-size: 0.9rem; margin: 1rem 0 0.6rem; }
+        .sent-progress b { color: var(--cyan); }
+        .sent-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .sent-item {
+            background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: 10px;
+            padding: 0.8rem 0.9rem; cursor: pointer; transition: border-color 0.15s;
+        }
+        .sent-item:hover { border-color: var(--cyan-dim); }
+        .sent-item.active { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan-glow); cursor: default; }
+        .sent-row { display: flex; align-items: flex-start; gap: 0.7rem; }
+        .sent-num { color: var(--muted); font-weight: 700; min-width: 1.6rem; font-variant-numeric: tabular-nums; }
+        .sent-text { flex: 1; color: var(--light); line-height: 1.45; }
+        .sent-item.active .sent-text { font-size: 1.15rem; font-weight: 600; }
+        .sent-status { color: var(--green); font-size: 0.8rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .sent-play {
+            background: transparent; border: 1px solid var(--cyan-dim); color: var(--cyan); border-radius: 50%;
+            width: 30px; height: 30px; cursor: pointer; flex-shrink: 0; font-size: 0.8rem;
+        }
+        .sent-panel { display: none; margin-top: 0.9rem; text-align: center; }
+        .sent-item.active .sent-panel { display: block; }
+        .sent-panel .record-btn { margin: 0 auto; }
+        .sent-panel .record-timer { margin-top: 0.4rem; }
+        .sent-panel .review-actions { justify-content: center; margin-top: 0.6rem; }
+
+        /* --- Responsive --- */
+        @media (max-width: 500px) {
+            .container { padding: 1rem; }
+            .app-title { font-size: 1.6rem; }
+            .generate-row { flex-direction: column; }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<div class="container">
+
+    <!-- ========== SCREEN: RECORD ========== -->
+    <div id="screen-record" class="screen active">
+        <h1 class="app-title">Voice Clone Studio</h1>
+        <p class="app-subtitle" id="app-subtitle">Klonuj svůj hlas pomocí AI</p>
+
+        <div class="lang-toggle" id="lang-toggle">
+            <button class="lang-btn active" data-lang="cs">Čeština</button>
+            <button class="lang-btn" data-lang="en">English</button>
+        </div>
+
+        <input type="text" class="name-input" id="speaker-name" placeholder="Zadejte své jméno" maxlength="30" autocomplete="off">
+
+        <div class="seg-toggle mode-toggle" id="mode-toggle">
+            <button class="seg-btn active" data-mode="clone" id="mode-btn-clone">Klonovat hlas</button>
+            <button class="seg-btn" data-mode="sentences" id="mode-btn-sentences">Nahrát věty</button>
+        </div>
+        <div class="mode-hint" id="mode-hint"></div>
+
+        <div id="mode-clone">
+        <div class="card" id="prompt-card">
+            <div class="card-label" id="prompt-label">Přečtěte nahlas</div>
+            <p class="prompt-text" id="prompt-text">Načítám text...</p>
+            <div class="prompt-actions">
+                <button class="refresh-btn" id="btn-refresh-prompt">&#x21bb; <span id="refresh-label">Jiný text</span></button>
+            </div>
+        </div>
+
+        <div class="record-area" id="record-area">
+            <div class="record-hint" id="record-hint">Stiskněte pro zahájení nahrávání</div>
+            <button class="record-btn" id="btn-record">
+                <div class="inner"></div>
+            </button>
+            <div class="record-timer" id="record-timer">0:00 / 0:30</div>
+        </div>
+
+        <div class="review-area" id="review-area">
+            <div class="card-label" id="review-label">Nahrávka</div>
+            <button class="review-play-btn" id="btn-review-play">&#9654;</button>
+            <div id="review-duration" style="font-size:0.85rem; color:var(--muted); font-variant-numeric:tabular-nums;"></div>
+            <div class="review-actions">
+                <button class="btn btn-secondary btn-sm" id="btn-rerecord">Znovu nahrát</button>
+                <button class="btn btn-primary btn-sm" id="btn-save-voice" disabled>Uložit a pokračovat</button>
+            </div>
+        </div>
+
+        <div id="existing-voices-section" style="display:none; margin-top:1.5rem;">
+            <div class="section-heading" id="existing-voices-heading">Existující hlasy</div>
+            <div id="voice-picker-list" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
+        </div>
+        </div><!-- /mode-clone -->
+
+        <div id="mode-sentences" style="display:none;">
+            <div class="seg-toggle" id="sent-lang-toggle">
+                <button class="seg-btn active" data-slang="cs">CS</button>
+                <button class="seg-btn" data-slang="sk">SK</button>
+                <button class="seg-btn" data-slang="en">EN</button>
+            </div>
+            <div class="sent-progress" id="sent-progress"></div>
+            <div class="sent-list" id="sent-list"></div>
+        </div>
+    </div>
+
+    <!-- ========== SCREEN: GENERATE ========== -->
+    <div id="screen-generate" class="screen">
+        <h1 class="app-title">Voice Clone Studio</h1>
+        <div style="text-align:center;">
+            <div class="voice-badge" id="voice-badge">
+                <span class="voice-dot"></span>
+                <span id="voice-name">—</span>
+            </div>
+            <div class="voice-action-row">
+                <button class="back-link" id="btn-download-voice" style="margin-top:0.3rem;">&#x2913; <span id="download-voice-label">Stáhnout nahrávku</span></button>
+                <button class="back-link" id="btn-rerecord-voice" style="margin-top:0.3rem;">&#x21bb; <span id="rerecord-label">Přenahrát hlas</span></button>
+                <button class="back-link" id="btn-delete-voice" style="margin-top:0.3rem; color:var(--magenta);">&#x2715; <span id="delete-voice-label">Smazat hlas</span></button>
+                <button class="back-link" id="btn-voice-sentences" style="margin-top:0.3rem;">&#x1F3A4; <span id="voice-sentences-label">Nahrát věty</span></button>
+            </div>
+        </div>
+
+        <div class="section-heading" id="gen-heading">Co má AI říct vaším hlasem?</div>
+        <textarea class="text-area" id="gen-text" rows="3" placeholder="Napište text ke generování...">Umělá inteligence mění způsob, jakým vyvíjíme software a automatizujeme procesy.</textarea>
+
+        <div class="select-wrap">
+            <select id="gen-provider"></select>
+        </div>
+
+        <div class="generate-row">
+            <button class="btn btn-primary" id="btn-generate">Generovat</button>
+        </div>
+
+        <div class="spinner-overlay" id="gen-spinner">
+            <div class="spinner"></div>
+            <div class="spinner-text">
+                <span id="spinner-msg">Generuji... může to trvat až 2 minuty</span><br>
+                <span class="spinner-elapsed" id="gen-elapsed">0:00</span>
+            </div>
+        </div>
+
+        <div class="section-heading" id="clips-heading" style="display:none;">Vygenerované klipy</div>
+        <div class="clips-list" id="clips-list"></div>
+
+        <button class="back-link" id="btn-back-record">&#8592; <span id="back-record-label">Nahrát nový hlas</span></button>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    var currentLang = '{{ default_lang }}' || 'cs';
+
+    var UI = {
+        cs: {
+            subtitle: 'Klonuj svůj hlas pomocí AI',
+            namePlaceholder: 'Zadejte své jméno',
+            promptLabel: 'Přečtěte nahlas',
+            refreshBtn: 'Jiný text',
+            recordHint: 'Stiskněte pro zahájení nahrávání',
+            recording: 'Nahrávání...',
+            reviewLabel: 'Nahrávka',
+            rerecordBtn: 'Znovu nahrát',
+            saveBtn: 'Uložit a pokračovat',
+            savingBtn: 'Ukládám...',
+            existingVoices: 'Existující hlasy',
+            downloadVoice: 'Stáhnout nahrávku',
+            rerecordVoice: 'Přenahrát hlas',
+            deleteVoice: 'Smazat hlas',
+            genHeading: 'Co má AI říct vaším hlasem?',
+            genPlaceholder: 'Napište text ke generování...',
+            genDefaultText: 'Umělá inteligence mění způsob, jakým vyvíjíme software a automatizujeme procesy.',
+            generateBtn: 'Generovat',
+            spinnerMsg: 'Generuji... může to trvat až 2 minuty',
+            clipsHeading: 'Vygenerované klipy',
+            backRecord: 'Nahrát nový hlas',
+            errorPrefix: 'Chyba: ',
+            nameRequired: 'Zadejte své jméno',
+            textRequired: 'Zadejte text ke generování',
+            voiceRequired: 'Nejprve nahrajte hlas',
+            voiceReplaced: 'Hlas přenahrán',
+            voiceDeleted: 'Hlas smazán',
+            deleteConfirm: 'Smazat hlas "{name}" a všechny jeho klipy?',
+            cannotDelete: 'Nelze smazat hlas',
+            cannotDeleteClip: 'Nelze smazat klip',
+            cannotPlayAudio: 'Nelze přehrát audio',
+            micError: 'Nelze přistoupit k mikrofonu: ',
+            timeoutError: 'Generování trvalo příliš dlouho',
+            deleteClipTitle: 'Smazat',
+            downloadClipTitle: 'Stáhnout',
+            modeClone: 'Klonovat hlas',
+            modeSentences: 'Nahrát věty',
+            modeCloneHint: 'Přečtěte text (max. 30 s) — AI pak bude mluvit vaším hlasem.',
+            modeSentencesHint: 'Klikněte na větu a nahrajte ji. Vaše věty se použijí jako lidské nahrávky ve hře.',
+            sentProgress: 'Nahráno {done} z {total}',
+            sentRecordHint: 'Stiskněte a přečtěte větu',
+            sentSave: 'Uložit',
+            sentSaved: 'Věta uložena',
+            sentRerecord: 'Znovu',
+            sentDelete: 'Smazat',
+            sentDeleteConfirm: 'Smazat nahrávku této věty?',
+            voiceSentences: 'Nahrát věty',
+        },
+        en: {
+            subtitle: 'Clone your voice with AI',
+            namePlaceholder: 'Enter your name',
+            promptLabel: 'Read aloud',
+            refreshBtn: 'Different text',
+            recordHint: 'Press to start recording',
+            recording: 'Recording...',
+            reviewLabel: 'Recording',
+            rerecordBtn: 'Re-record',
+            saveBtn: 'Save and continue',
+            savingBtn: 'Saving...',
+            existingVoices: 'Existing voices',
+            downloadVoice: 'Download recording',
+            rerecordVoice: 'Re-record voice',
+            deleteVoice: 'Delete voice',
+            genHeading: 'What should AI say with your voice?',
+            genPlaceholder: 'Enter text to generate...',
+            genDefaultText: 'Artificial intelligence is changing how we develop software and automate processes.',
+            generateBtn: 'Generate',
+            spinnerMsg: 'Generating... may take up to 2 minutes',
+            clipsHeading: 'Generated clips',
+            backRecord: 'Record new voice',
+            errorPrefix: 'Error: ',
+            nameRequired: 'Enter your name',
+            textRequired: 'Enter text to generate',
+            voiceRequired: 'Record your voice first',
+            voiceReplaced: 'Voice re-recorded',
+            voiceDeleted: 'Voice deleted',
+            deleteConfirm: 'Delete voice "{name}" and all its clips?',
+            cannotDelete: 'Cannot delete voice',
+            cannotDeleteClip: 'Cannot delete clip',
+            cannotPlayAudio: 'Cannot play audio',
+            micError: 'Cannot access microphone: ',
+            timeoutError: 'Generation took too long',
+            deleteClipTitle: 'Delete',
+            downloadClipTitle: 'Download',
+            modeClone: 'Clone voice',
+            modeSentences: 'Record sentences',
+            modeCloneHint: 'Read the text (max 30 s) — AI will then speak with your voice.',
+            modeSentencesHint: 'Click a sentence and record it. Your sentences are used as human clips in the game.',
+            sentProgress: 'Recorded {done} of {total}',
+            sentRecordHint: 'Press and read the sentence',
+            sentSave: 'Save',
+            sentSaved: 'Sentence saved',
+            sentRerecord: 'Again',
+            sentDelete: 'Delete',
+            sentDeleteConfirm: 'Delete the recording of this sentence?',
+            voiceSentences: 'Record sentences',
+        }
+    };
+
+    function t(key) { return (UI[currentLang] || UI.cs)[key] || UI.cs[key] || key; }
+
+    // --- State ---
+    var mediaRecorder = null;
+    var recordedChunks = [];
+    var recordedBlob = null;
+    var recordingTimer = null;
+    var recordingSeconds = 0;
+    var MAX_RECORD_SECONDS = 30;
+
+    var currentVoiceId = null;
+    var currentVoiceName = null;
+    var rerecordMode = false;
+    var prompts = [];
+    var providers = [];
+    var clips = [];
+    var currentAudio = null;
+    var currentPlayingBtn = null;
+    var genTimerInterval = null;
+
+    // --- DOM ---
+    var $ = function(id) { return document.getElementById(id); };
+
+    // --- Toast ---
+    function showToast(msg, duration) {
+        duration = duration || 4000;
+        var el = $('toast');
+        el.textContent = msg;
+        el.classList.add('visible');
+        setTimeout(function() { el.classList.remove('visible'); }, duration);
+    }
+
+    // --- Screen ---
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+        $(id).classList.add('active');
+    }
+
+    // --- Language ---
+    function applyLang() {
+        $('app-subtitle').textContent = t('subtitle');
+        $('speaker-name').placeholder = t('namePlaceholder');
+        $('prompt-label').textContent = t('promptLabel');
+        $('refresh-label').textContent = t('refreshBtn');
+        $('record-hint').textContent = t('recordHint');
+        $('review-label').textContent = t('reviewLabel');
+        $('btn-rerecord').textContent = t('rerecordBtn');
+        $('btn-save-voice').textContent = t('saveBtn');
+        $('existing-voices-heading').textContent = t('existingVoices');
+        $('download-voice-label').textContent = t('downloadVoice');
+        $('rerecord-label').textContent = t('rerecordVoice');
+        $('delete-voice-label').textContent = t('deleteVoice');
+        $('gen-heading').textContent = t('genHeading');
+        $('gen-text').placeholder = t('genPlaceholder');
+        $('btn-generate').textContent = t('generateBtn');
+        $('spinner-msg').textContent = t('spinnerMsg');
+        $('clips-heading').textContent = t('clipsHeading');
+        $('back-record-label').textContent = t('backRecord');
+        $('mode-btn-clone').textContent = t('modeClone');
+        $('mode-btn-sentences').textContent = t('modeSentences');
+        $('mode-hint').textContent = t(currentMode === 'clone' ? 'modeCloneHint' : 'modeSentencesHint');
+        $('voice-sentences-label').textContent = t('voiceSentences');
+        if (currentMode === 'sentences') renderSentences();
+
+        document.querySelectorAll('.lang-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.lang === currentLang);
+        });
+    }
+
+    function switchLang(lang) {
+        currentLang = lang;
+        applyLang();
+        loadPrompts();
+    }
+
+    // --- API helpers ---
+    async function api(path, opts) {
+        opts = opts || {};
+        try {
+            var resp = await fetch(path, opts);
+            if (!resp.ok) {
+                var body = await resp.text();
+                var msg;
+                try { msg = JSON.parse(body).error; } catch(_) { msg = body; }
+                throw new Error(msg || ('HTTP ' + resp.status));
+            }
+            return resp;
+        } catch (err) {
+            if (err.name === 'AbortError') throw err;
+            showToast(t('errorPrefix') + err.message);
+            throw err;
+        }
+    }
+
+    // --- Prompts ---
+    async function loadPrompts() {
+        try {
+            var resp = await api('/api/prompts?lang=' + currentLang);
+            prompts = await resp.json();
+            showRandomPrompt();
+        } catch(_) {
+            $('prompt-text').textContent = 'Red Hat OpenShift simplifies application deployment in hybrid cloud.';
+        }
+    }
+
+    function showRandomPrompt() {
+        if (!prompts.length) return;
+        var p = prompts[Math.floor(Math.random() * prompts.length)];
+        $('prompt-text').textContent = p;
+    }
+
+    // --- Providers ---
+    async function loadProviders() {
+        try {
+            var resp = await api('/api/providers');
+            providers = await resp.json();
+            var sel = $('gen-provider');
+            sel.innerHTML = '';
+            providers.forEach(function(p) {
+                var opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
+            });
+        } catch(_) {}
+    }
+
+    // --- Recording ---
+    function formatTime(sec) {
+        var m = Math.floor(sec / 60);
+        var s = sec % 60;
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    async function startRecording() {
+        var name = $('speaker-name').value.trim();
+        if (!name) {
+            showToast(t('nameRequired'));
+            $('speaker-name').focus();
+            return;
+        }
+
+        try {
+            var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            recordedChunks = [];
+            recordedBlob = null;
+            recordingSeconds = 0;
+
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = function(e) {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+            mediaRecorder.onstop = function() {
+                stream.getTracks().forEach(function(t) { t.stop(); });
+                recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+                showReview();
+            };
+
+            mediaRecorder.start(250);
+
+            $('btn-record').classList.add('recording');
+            $('record-hint').textContent = t('recording');
+            $('record-timer').classList.add('active');
+            $('review-area').classList.remove('visible');
+            updateRecordTimer();
+
+            recordingTimer = setInterval(function() {
+                recordingSeconds++;
+                updateRecordTimer();
+                if (recordingSeconds >= MAX_RECORD_SECONDS) {
+                    stopRecording();
+                }
+            }, 1000);
+
+        } catch (err) {
+            showToast(t('micError') + err.message);
+        }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        clearInterval(recordingTimer);
+        $('btn-record').classList.remove('recording');
+        $('record-hint').textContent = t('recordHint');
+        $('record-timer').classList.remove('active');
+    }
+
+    function updateRecordTimer() {
+        $('record-timer').textContent = formatTime(recordingSeconds) + ' / ' + formatTime(MAX_RECORD_SECONDS);
+    }
+
+    function showReview() {
+        if (!recordedBlob) return;
+        $('record-area').style.display = 'none';
+        $('review-area').classList.add('visible');
+        $('btn-save-voice').disabled = false;
+
+        var dur = (recordingSeconds) + 's';
+        $('review-duration').textContent = dur;
+    }
+
+    function reviewPlay() {
+        if (!recordedBlob) return;
+        if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+
+        var url = URL.createObjectURL(recordedBlob);
+        currentAudio = new Audio(url);
+        var btn = $('btn-review-play');
+
+        currentAudio.onplay = function() { btn.textContent = '⏸'; };
+        currentAudio.onended = function() { btn.textContent = '▶'; currentAudio = null; };
+        currentAudio.onpause = function() { btn.textContent = '▶'; };
+
+        currentAudio.play();
+    }
+
+    function resetRecording() {
+        recordedBlob = null;
+        recordedChunks = [];
+        recordingSeconds = 0;
+        $('record-area').style.display = '';
+        $('review-area').classList.remove('visible');
+        $('record-timer').classList.remove('active');
+        updateRecordTimer();
+    }
+
+    async function saveVoice() {
+        if (!recordedBlob) return;
+        var name = $('speaker-name').value.trim();
+        if (!name) { showToast(t('nameRequired')); return; }
+
+        $('btn-save-voice').disabled = true;
+        $('btn-save-voice').textContent = t('savingBtn');
+
+        try {
+            var fd = new FormData();
+            fd.append('audio', recordedBlob, 'recording.webm');
+
+            if (rerecordMode && currentVoiceId) {
+                var resp = await api('/api/voices/' + currentVoiceId, { method: 'PUT', body: fd });
+                await resp.json();
+                showToast(t('voiceReplaced'));
+            } else {
+                fd.append('name', name);
+                var resp = await api('/api/voices', { method: 'POST', body: fd });
+                var data = await resp.json();
+                currentVoiceId = data.voice_id;
+                currentVoiceName = name;
+                clips = [];
+                renderClips();
+            }
+
+            $('voice-name').textContent = currentVoiceName || name;
+            rerecordMode = false;
+            showScreen('screen-generate');
+        } catch(_) {
+            $('btn-save-voice').disabled = false;
+        } finally {
+            $('btn-save-voice').textContent = t('saveBtn');
+        }
+    }
+
+    // --- Generation ---
+    async function generateSpeech() {
+        var text = $('gen-text').value.trim();
+        if (!text) { showToast(t('textRequired')); return; }
+        if (!currentVoiceId) { showToast(t('voiceRequired')); return; }
+
+        var provider = $('gen-provider').value;
+        $('btn-generate').disabled = true;
+        $('gen-spinner').classList.add('visible');
+
+        var elapsed = 0;
+        $('gen-elapsed').textContent = '0:00';
+        genTimerInterval = setInterval(function() {
+            elapsed++;
+            $('gen-elapsed').textContent = formatTime(elapsed);
+        }, 1000);
+
+        try {
+            var controller = new AbortController();
+            var timeout = setTimeout(function() { controller.abort(); }, 300000);
+
+            var resp = await api('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    voice_id: currentVoiceId,
+                    text: text,
+                    provider_id: provider,
+                    language: currentLang
+                }),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeout);
+            var raw = await resp.json();
+            clips.unshift({
+                id: raw.clip_id,
+                text: raw.text,
+                provider: raw.provider_id,
+                provider_name: raw.provider_name
+            });
+            renderClips();
+
+        } catch(err) {
+            if (err.name === 'AbortError') {
+                showToast(t('timeoutError'));
+            }
+        } finally {
+            clearInterval(genTimerInterval);
+            $('btn-generate').disabled = false;
+            $('gen-spinner').classList.remove('visible');
+        }
+    }
+
+    // --- Clips ---
+    function renderClips() {
+        var list = $('clips-list');
+        var heading = $('clips-heading');
+
+        if (!clips.length) {
+            list.innerHTML = '';
+            heading.style.display = 'none';
+            return;
+        }
+
+        heading.style.display = '';
+        heading.textContent = t('clipsHeading');
+        list.innerHTML = '';
+
+        clips.forEach(function(clip) {
+            var card = document.createElement('div');
+            card.className = 'clip-card';
+
+            var providerClass = (clip.provider || '').toLowerCase().includes('fish') ? 'fish' : '';
+
+            card.innerHTML =
+                '<button class="clip-play-btn" data-clip-id="' + clip.id + '">&#9654;</button>' +
+                '<div class="clip-info">' +
+                    '<div class="clip-text">' + escapeHtml(clip.text) + '</div>' +
+                    '<div class="clip-meta-row">' +
+                        '<span class="provider-badge ' + providerClass + '">' + escapeHtml(clip.provider_name || clip.provider) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="clip-actions">' +
+                    '<button class="clip-action-btn download" title="' + t('downloadClipTitle') + '">&#x2913;</button>' +
+                    '<button class="clip-action-btn delete" title="' + t('deleteClipTitle') + '">&times;</button>' +
+                '</div>';
+
+            var playBtn = card.querySelector('.clip-play-btn');
+            playBtn.addEventListener('click', function() { playClip(clip.id, playBtn); });
+
+            card.querySelector('.clip-action-btn.download').addEventListener('click', function() {
+                downloadClip(clip.id);
+            });
+
+            card.querySelector('.clip-action-btn.delete').addEventListener('click', async function() {
+                try {
+                    await api('/api/clips/' + clip.id, { method: 'DELETE' });
+                    clips = clips.filter(function(c) { return c.id !== clip.id; });
+                    renderClips();
+                } catch(_) {
+                    showToast(t('cannotDeleteClip'));
+                }
+            });
+
+            list.appendChild(card);
+        });
+    }
+
+    function downloadClip(clipId) {
+        var a = document.createElement('a');
+        a.href = '/api/clips/' + clipId + '/audio';
+        a.download = 'clip-' + clipId + '.wav';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function downloadVoiceAudio() {
+        if (!currentVoiceId) return;
+        var a = document.createElement('a');
+        a.href = '/api/voices/' + currentVoiceId + '/audio';
+        a.download = (currentVoiceName || 'voice') + '-reference.wav';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    async function playClip(clipId, btn) {
+        if (currentAudio) {
+            currentAudio.pause();
+            if (currentPlayingBtn) {
+                currentPlayingBtn.classList.remove('playing');
+                currentPlayingBtn.innerHTML = '&#9654;';
+            }
+            if (currentPlayingBtn === btn) {
+                currentAudio = null;
+                currentPlayingBtn = null;
+                return;
+            }
+        }
+
+        btn.classList.add('playing');
+        btn.innerHTML = '&#9646;&#9646;';
+
+        try {
+            var resp = await fetch('/api/clips/' + clipId + '/audio');
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            var blob = await resp.blob();
+            var url = URL.createObjectURL(blob);
+            var audio = new Audio(url);
+            currentAudio = audio;
+            currentPlayingBtn = btn;
+
+            audio.onended = function() {
+                btn.classList.remove('playing');
+                btn.innerHTML = '&#9654;';
+                URL.revokeObjectURL(url);
+                currentAudio = null;
+                currentPlayingBtn = null;
+            };
+            audio.onerror = function() {
+                btn.classList.remove('playing');
+                btn.innerHTML = '&#9654;';
+                URL.revokeObjectURL(url);
+                showToast(t('cannotPlayAudio'));
+                currentAudio = null;
+                currentPlayingBtn = null;
+            };
+
+            await audio.play();
+        } catch(err) {
+            btn.classList.remove('playing');
+            btn.innerHTML = '&#9654;';
+            showToast(t('cannotPlayAudio'));
+            currentAudio = null;
+            currentPlayingBtn = null;
+        }
+    }
+
+    function escapeHtml(str) {
+        var d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    // --- Mode: clone voice vs. record sentences ---
+    var currentMode = 'clone';
+    var sentLang = (currentLang === 'en') ? 'en' : 'cs';
+    var sentences = [];
+    var sentRecs = {};          // sentence_idx -> recording metadata
+    var sentActive = null;      // active sentence idx
+    var sentVoiceId = null;     // link to cloned voice (pairs real + AI clips)
+    var sentRecorder = null, sentChunks = [], sentBlob = null, sentTimer = null, sentSeconds = 0;
+    var MAX_SENTENCE_SECONDS = 15;
+
+    function setMode(mode) {
+        if (sentRecorder && sentRecorder.state === 'recording') stopSentenceRecording();
+        if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
+        currentMode = mode;
+        document.querySelectorAll('#mode-toggle .seg-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.mode === mode);
+        });
+        $('mode-clone').style.display = mode === 'clone' ? '' : 'none';
+        $('mode-sentences').style.display = mode === 'sentences' ? '' : 'none';
+        $('mode-hint').textContent = t(mode === 'clone' ? 'modeCloneHint' : 'modeSentencesHint');
+        if (mode === 'sentences') loadSentences();
+    }
+
+    function setSentLang(lang) {
+        sentLang = lang;
+        sentActive = null;
+        document.querySelectorAll('#sent-lang-toggle .seg-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.slang === lang);
+        });
+        loadSentences();
+    }
+
+    async function loadSentences() {
+        try {
+            var resp = await api('/api/sentences?lang=' + sentLang);
+            sentences = await resp.json();
+        } catch(_) { sentences = []; }
+        await loadSentenceRecordings();
+    }
+
+    async function loadSentenceRecordings() {
+        sentRecs = {};
+        var name = $('speaker-name').value.trim();
+        if (name) {
+            try {
+                var resp = await api('/api/recordings?speaker=' + encodeURIComponent(name) + '&language=' + sentLang);
+                (await resp.json()).forEach(function(r) { sentRecs[r.sentence_idx] = r; });
+            } catch(_) {}
+        }
+        renderSentences();
+    }
+
+    function renderSentences() {
+        var list = $('sent-list');
+        list.innerHTML = '';
+        var done = Object.keys(sentRecs).length;
+        $('sent-progress').innerHTML = escapeHtml(t('sentProgress'))
+            .replace('{done}', '<b>' + done + '</b>').replace('{total}', String(sentences.length));
+
+        sentences.forEach(function(s) {
+            var rec = sentRecs[s.idx];
+            var item = document.createElement('div');
+            item.className = 'sent-item' + (sentActive === s.idx ? ' active' : '');
+            var status = rec ? '<span class="sent-status">&#10003; ' + rec.duration_s.toFixed(1) + 's</span>' : '';
+            var play = rec ? '<button class="sent-play" title="Play">&#9654;</button>' : '';
+            item.innerHTML =
+                '<div class="sent-row">' +
+                    '<span class="sent-num">' + (s.idx + 1) + '.</span>' +
+                    '<span class="sent-text">' + escapeHtml(s.text) + '</span>' +
+                    status + play +
+                '</div>';
+            if (rec) {
+                item.querySelector('.sent-play').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    playClipUrl('/api/recordings/' + rec.recording_id + '/audio', e.currentTarget);
+                });
+            }
+            if (sentActive === s.idx) item.appendChild(buildSentencePanel(s, rec));
+            item.addEventListener('click', function() {
+                if (sentActive === s.idx) return;
+                if (!$('speaker-name').value.trim()) { showToast(t('nameRequired')); $('speaker-name').focus(); return; }
+                if (sentRecorder && sentRecorder.state === 'recording') return;
+                sentActive = s.idx;
+                sentBlob = null;
+                renderSentences();
+            });
+            list.appendChild(item);
+        });
+    }
+
+    function buildSentencePanel(s, rec) {
+        var panel = document.createElement('div');
+        panel.className = 'sent-panel';
+        var recording = sentRecorder && sentRecorder.state === 'recording';
+        if (!sentBlob) {
+            panel.innerHTML =
+                '<div class="record-hint">' + escapeHtml(recording ? t('recording') : t('sentRecordHint')) + '</div>' +
+                '<button class="record-btn' + (recording ? ' recording' : '') + '"><div class="inner"></div></button>' +
+                '<div class="record-timer' + (recording ? ' active' : '') + '">' +
+                    formatTime(sentSeconds) + ' / ' + formatTime(MAX_SENTENCE_SECONDS) + '</div>' +
+                (rec && !recording ? '<div class="review-actions"><button class="btn btn-secondary btn-sm" data-act="delete">' + escapeHtml(t('sentDelete')) + '</button></div>' : '');
+            panel.querySelector('.record-btn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (sentRecorder && sentRecorder.state === 'recording') stopSentenceRecording();
+                else startSentenceRecording();
+            });
+        } else {
+            panel.innerHTML =
+                '<div class="review-actions">' +
+                    '<button class="btn btn-secondary btn-sm" data-act="play">&#9654; ' + sentSeconds + 's</button>' +
+                    '<button class="btn btn-secondary btn-sm" data-act="again">' + escapeHtml(t('sentRerecord')) + '</button>' +
+                    '<button class="btn btn-primary btn-sm" data-act="save">' + escapeHtml(t('sentSave')) + '</button>' +
+                '</div>';
+        }
+        panel.querySelectorAll('[data-act]').forEach(function(b) {
+            b.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var act = b.dataset.act;
+                if (act === 'play') playClipUrl(URL.createObjectURL(sentBlob), b);
+                if (act === 'again') { sentBlob = null; sentSeconds = 0; renderSentences(); }
+                if (act === 'save') saveSentence(s.idx, b);
+                if (act === 'delete') deleteSentence(rec);
+            });
+        });
+        return panel;
+    }
+
+    async function startSentenceRecording() {
+        try {
+            var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            sentChunks = []; sentBlob = null; sentSeconds = 0;
+            sentRecorder = new MediaRecorder(stream);
+            sentRecorder.ondataavailable = function(e) { if (e.data.size > 0) sentChunks.push(e.data); };
+            sentRecorder.onstop = function() {
+                stream.getTracks().forEach(function(tr) { tr.stop(); });
+                sentBlob = new Blob(sentChunks, { type: sentRecorder.mimeType });
+                renderSentences();
+            };
+            sentRecorder.start(250);
+            renderSentences();
+            sentTimer = setInterval(function() {
+                sentSeconds++;
+                var timer = document.querySelector('.sent-item.active .record-timer');
+                if (timer) timer.textContent = formatTime(sentSeconds) + ' / ' + formatTime(MAX_SENTENCE_SECONDS);
+                if (sentSeconds >= MAX_SENTENCE_SECONDS) stopSentenceRecording();
+            }, 1000);
+        } catch (err) {
+            showToast(t('micError') + err.message);
+        }
+    }
+
+    function stopSentenceRecording() {
+        clearInterval(sentTimer);
+        if (sentRecorder && sentRecorder.state !== 'inactive') sentRecorder.stop();
+    }
+
+    async function saveSentence(idx, btn) {
+        var name = $('speaker-name').value.trim();
+        if (!name || !sentBlob) return;
+        btn.disabled = true;
+        btn.textContent = t('savingBtn');
+        try {
+            var fd = new FormData();
+            fd.append('audio', sentBlob, 'sentence.webm');
+            fd.append('speaker', name);
+            fd.append('language', sentLang);
+            fd.append('sentence_idx', String(idx));
+            if (sentVoiceId) fd.append('voice_id', sentVoiceId);
+            var resp = await api('/api/recordings', { method: 'POST', body: fd });
+            var rec = await resp.json();
+            sentRecs[idx] = rec;
+            sentBlob = null; sentSeconds = 0;
+            // advance to next unrecorded sentence
+            var next = null;
+            for (var i = 1; i <= sentences.length; i++) {
+                var cand = sentences[(idx + i) % sentences.length].idx;
+                if (!sentRecs[cand]) { next = cand; break; }
+            }
+            sentActive = next;
+            showToast(t('sentSaved'), 1500);
+            renderSentences();
+        } catch(_) {
+            btn.disabled = false;
+            btn.textContent = t('sentSave');
+        }
+    }
+
+    async function deleteSentence(rec) {
+        if (!rec || !confirm(t('sentDeleteConfirm'))) return;
+        try {
+            await api('/api/recordings/' + rec.recording_id, { method: 'DELETE' });
+            delete sentRecs[rec.sentence_idx];
+            renderSentences();
+        } catch(_) {}
+    }
+
+    function playClipUrl(url, btn) {
+        if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+        currentAudio = new Audio(url);
+        var label = btn.innerHTML;
+        currentAudio.onended = currentAudio.onpause = function() { btn.innerHTML = label; };
+        btn.innerHTML = '&#9208;';
+        currentAudio.play().catch(function() { btn.innerHTML = label; showToast(t('cannotPlayAudio')); });
+    }
+
+    document.querySelectorAll('#mode-toggle .seg-btn').forEach(function(b) {
+        b.addEventListener('click', function() { setMode(b.dataset.mode); });
+    });
+    document.querySelectorAll('#sent-lang-toggle .seg-btn').forEach(function(b) {
+        b.addEventListener('click', function() { setSentLang(b.dataset.slang); });
+    });
+    var nameDebounce = null;
+    $('speaker-name').addEventListener('input', function() {
+        if (currentMode !== 'sentences') return;
+        sentVoiceId = null;   // typed a different name -> no longer linked to the cloned voice
+        sentActive = null;
+        clearTimeout(nameDebounce);
+        nameDebounce = setTimeout(loadSentenceRecordings, 400);
+    });
+    $('btn-voice-sentences').addEventListener('click', function() {
+        sentVoiceId = currentVoiceId;
+        $('speaker-name').value = currentVoiceName || '';
+        $('speaker-name').disabled = false;
+        showScreen('screen-record');
+        setMode('sentences');
+    });
+
+    // --- Event Listeners ---
+    $('btn-record').addEventListener('click', function() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    });
+
+    $('btn-refresh-prompt').addEventListener('click', showRandomPrompt);
+
+    $('btn-review-play').addEventListener('click', reviewPlay);
+
+    $('btn-rerecord').addEventListener('click', resetRecording);
+
+    $('btn-save-voice').addEventListener('click', saveVoice);
+
+    $('btn-generate').addEventListener('click', generateSpeech);
+
+    $('btn-download-voice').addEventListener('click', downloadVoiceAudio);
+
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            switchLang(btn.dataset.lang);
+        });
+    });
+
+    $('btn-rerecord-voice').addEventListener('click', function() {
+        rerecordMode = true;
+        recordedBlob = null;
+        recordedChunks = [];
+        resetRecording();
+        $('speaker-name').value = currentVoiceName || '';
+        $('speaker-name').disabled = true;
+        showScreen('screen-record');
+        setMode('clone');
+    });
+
+    $('btn-delete-voice').addEventListener('click', async function() {
+        if (!currentVoiceId) return;
+        if (!confirm(t('deleteConfirm').replace('{name}', currentVoiceName || ''))) return;
+        try {
+            await api('/api/voices/' + currentVoiceId, { method: 'DELETE' });
+            currentVoiceId = null;
+            currentVoiceName = null;
+            clips = [];
+            resetRecording();
+            $('speaker-name').value = '';
+            $('speaker-name').disabled = false;
+            showScreen('screen-record');
+            loadExistingVoices();
+            showToast(t('voiceDeleted'));
+        } catch(_) {
+            showToast(t('cannotDelete'));
+        }
+    });
+
+    $('btn-back-record').addEventListener('click', function() {
+        currentVoiceId = null;
+        currentVoiceName = null;
+        rerecordMode = false;
+        recordedBlob = null;
+        recordedChunks = [];
+        clips = [];
+        resetRecording();
+        $('speaker-name').value = '';
+        $('speaker-name').disabled = false;
+        showScreen('screen-record');
+        setMode('clone');
+        loadExistingVoices();
+    });
+
+    $('speaker-name').addEventListener('input', function() {
+        // no-op, validation on record start
+    });
+
+    // --- Existing voices ---
+    async function loadExistingVoices() {
+        try {
+            var resp = await api('/api/voices');
+            var existingVoices = await resp.json();
+            var section = $('existing-voices-section');
+            var list = $('voice-picker-list');
+
+            if (existingVoices.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            list.innerHTML = '';
+            existingVoices.forEach(function(v) {
+                var btn = document.createElement('button');
+                btn.className = 'btn btn-primary btn-sm';
+                btn.style.width = '100%';
+                btn.textContent = v.name;
+                btn.addEventListener('click', async function() {
+                    currentVoiceId = v.voice_id;
+                    currentVoiceName = v.name;
+                    $('voice-name').textContent = v.name;
+                    await loadClipsForVoice(v.voice_id);
+                    showScreen('screen-generate');
+                });
+                list.appendChild(btn);
+            });
+
+            section.style.display = 'block';
+        } catch(_) {}
+    }
+
+    async function loadClipsForVoice(voiceId) {
+        try {
+            var resp = await api('/api/clips?voice_id=' + voiceId);
+            var data = await resp.json();
+            clips = data.map(function(c) {
+                return { id: c.clip_id, text: c.text, provider: c.provider_id, provider_name: c.provider_name };
+            });
+            renderClips();
+        } catch(_) {}
+    }
+
+    // --- Init ---
+    applyLang();
+    loadPrompts();
+    loadProviders();
+    loadExistingVoices();
+
+})();
+</script>
+
+</body>
+</html>

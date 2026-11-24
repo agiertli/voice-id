@@ -1,0 +1,19 @@
+# Rule Zero: never bake audio, databases or seed packs into images
+**/*.wav
+**/*.mp3
+**/*.m4a
+**/*.flac
+**/*.ogg
+**/*.opus
+**/*.webm
+**/*.aac
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/*.sqlite*
+**/*.backup
+**/*.seedpack.zip
+data/
+samples/
+tools/
+**/__pycache__/

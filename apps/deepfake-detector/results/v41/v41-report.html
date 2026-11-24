@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V4.1 Deepfake Detector — Data Diversity Experiment Report</title>
+<style>
+:root {
+    --bg: #0f1923;
+    --bg2: #162230;
+    --bg3: #1c2d3f;
+    --cyan: #5de6c8;
+    --cyan-dim: #3aaa8e;
+    --magenta: #d94fa0;
+    --gold: #f0ab00;
+    --green: #4ade80;
+    --red: #f87171;
+    --orange: #fb923c;
+    --light: #e8f4f0;
+    --gray: #7a9baa;
+    --blue: #60a5fa;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--light);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+h1 { font-size: 2rem; color: var(--cyan); margin-bottom: 0.5rem; border-bottom: 2px solid var(--cyan-dim); padding-bottom: 0.5rem; }
+h2 { font-size: 1.4rem; color: var(--cyan); margin: 2.5rem 0 1rem; padding-bottom: 0.3rem; border-bottom: 1px solid rgba(93,230,200,0.2); }
+h3 { font-size: 1.1rem; color: var(--gold); margin: 1.5rem 0 0.5rem; }
+.subtitle { color: var(--gray); font-size: 0.95rem; margin-bottom: 2rem; }
+.verdict-box { background: var(--bg3); border-left: 4px solid var(--gold); padding: 1.5rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+.verdict-box.recommend { border-left-color: var(--green); }
+.verdict-box.warn { border-left-color: var(--orange); }
+.verdict-box.danger { border-left-color: var(--red); }
+.verdict-box strong { color: var(--gold); }
+.verdict-box.recommend strong { color: var(--green); }
+.verdict-box.warn strong { color: var(--orange); }
+.verdict-box.danger strong { color: var(--red); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th { background: var(--bg3); color: var(--cyan); padding: 0.7rem 1rem; text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.8rem; }
+td { padding: 0.6rem 1rem; border-bottom: 1px solid rgba(93,230,200,0.08); }
+tr:hover td { background: rgba(93,230,200,0.04); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.best { color: var(--green); font-weight: 700; }
+.worst { color: var(--red); }
+.warn-val { color: var(--orange); font-weight: 600; }
+.neutral { color: var(--gray); }
+.model-tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+.tag-v41 { background: rgba(96,165,250,0.15); color: var(--blue); }
+.tag-v4a { background: rgba(74,222,128,0.15); color: var(--green); }
+.tag-deployed { background: rgba(240,171,0,0.15); color: var(--gold); }
+.clip-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.7rem; background: var(--bg3); border-radius: 4px; font-size: 0.82rem; font-variant-numeric: tabular-nums; margin-bottom: 0.3rem; }
+.clip-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clip-prob { min-width: 55px; text-align: right; font-weight: 600; }
+.clip-result { min-width: 20px; text-align: center; font-weight: 700; font-size: 0.9rem; }
+.prob-high { color: var(--magenta); }
+.prob-low { color: var(--green); }
+.prob-mid { color: var(--orange); }
+.metric-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.metric-card { background: var(--bg3); border-radius: 8px; padding: 1.2rem; text-align: center; }
+.metric-card .value { font-size: 2rem; font-weight: 800; margin: 0.3rem 0; }
+.metric-card .label { font-size: 0.8rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-card .sub { font-size: 0.75rem; color: var(--gray); margin-top: 0.3rem; }
+.toc { background: var(--bg3); padding: 1.5rem 2rem; border-radius: 8px; margin: 1.5rem 0; }
+.toc a { color: var(--cyan); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.toc ol { margin-left: 1.2rem; }
+.toc li { margin: 0.3rem 0; font-size: 0.9rem; }
+.bar-container { display: flex; align-items: center; gap: 0.5rem; margin: 0.2rem 0; }
+.bar-label { min-width: 120px; font-size: 0.82rem; text-align: right; color: var(--gray); }
+.bar-track { flex: 1; height: 22px; background: var(--bg); border-radius: 4px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 0.75rem; font-weight: 600; color: var(--bg); min-width: 30px; }
+.bar-fill.green { background: var(--green); }
+.bar-fill.orange { background: var(--orange); }
+.bar-fill.red { background: var(--red); }
+.bar-fill.cyan { background: var(--cyan); }
+.bar-fill.blue { background: var(--blue); }
+.bar-fill.magenta { background: var(--magenta); }
+.split-diagram { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.5rem; align-items: start; margin: 1.5rem 0; }
+.split-box { background: var(--bg3); border-radius: 8px; padding: 1rem 1.2rem; }
+.split-box h4 { font-size: 0.9rem; color: var(--cyan); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.split-divider { display: flex; align-items: center; justify-content: center; color: var(--red); font-weight: 700; font-size: 1.5rem; padding-top: 2rem; }
+.speaker-tag { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.75rem; margin: 0.1rem; }
+.speaker-train { background: rgba(74,222,128,0.15); color: var(--green); }
+.speaker-test { background: rgba(248,113,113,0.15); color: var(--red); }
+.speaker-holdout { background: rgba(240,171,0,0.15); color: var(--gold); }
+.headline-limitation { background: var(--bg3); border: 2px solid var(--red); border-radius: 8px; padding: 2rem; margin: 2rem 0; text-align: center; }
+.headline-limitation .big-number { font-size: 4rem; font-weight: 900; color: var(--red); line-height: 1; }
+.headline-limitation .big-label { font-size: 1.2rem; color: var(--red); margin-top: 0.5rem; font-weight: 600; }
+.headline-limitation .big-detail { font-size: 0.9rem; color: var(--gray); margin-top: 0.5rem; }
+.flex-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+.flex-col { flex: 1; min-width: 300px; }
+.footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(93,230,200,0.1); color: var(--gray); font-size: 0.8rem; text-align: center; }
+code { background: var(--bg3); padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.85rem; color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<h1>V4.1 Data Diversity Experiment</h1>
+<p class="subtitle">Deepfake Voice Detector &mdash; Can XTTS clone_speaker output be detected across unseen voices? &mdash; 2026-09-24</p>
+
+<!-- ============================================================ -->
+<!-- HEADLINE LIMITATION -->
+<!-- ============================================================ -->
+
+<div class="headline-limitation">
+    <div class="big-number">57.1%</div>
+    <div class="big-label">Unseen Synthetic Voice Detection</div>
+    <div class="big-detail">V4.1 did not improve generalization to unseen XTTS voices. On the key unseen-synthetic set,<br>V4.1 and V4-A both achieved 4/7 (57.1%). The juliet speaker was invisible to all three models.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ============================================================ -->
+
+<div class="toc">
+<strong>Contents</strong>
+<ol>
+    <li><a href="#exec">Executive Summary</a></li>
+    <li><a href="#design">Experiment Design</a></li>
+    <li><a href="#hierarchy">Evaluation Hierarchy</a></li>
+    <li><a href="#baseline">Baseline: V4-A on New Test Sets</a></li>
+    <li><a href="#training">V4.1 Training</a></li>
+    <li><a href="#comparison">Results Comparison</a></li>
+    <li><a href="#unseen">Per-Speaker Unseen Synthetic Analysis</a></li>
+    <li><a href="#pfake">p_fake Distribution Analysis</a></li>
+    <li><a href="#deployed">The Deployed Model Trade-off</a></li>
+    <li><a href="#decision">Production Decision: Why V4-A</a></li>
+    <li><a href="#checkpoints">Model Checkpoints</a></li>
+    <li><a href="#limitations">Limitations and Open Questions</a></li>
+    <li><a href="#next">Next Research Direction</a></li>
+</ol>
+</div>
+
+<!-- ============================================================ -->
+<!-- 1. EXECUTIVE SUMMARY -->
+<!-- ============================================================ -->
+
+<h2 id="exec">1. Executive Summary</h2>
+
+<div class="verdict-box danger">
+    <strong>Key finding:</strong> V4.1 did not improve generalization to unseen XTTS voices. On the key unseen-synthetic test set, V4.1 and V4-A both achieved 4/7 (57.1%). This experiment therefore did not demonstrate that the added XTTS voice diversity was sufficient to learn a generalizable XTTS-specific signal.
+</div>
+
+<p>V4.1 tested one specific expansion: adding 10 XTTS clone_speaker examples from 6 new speakers to the training set (alongside 18 new natural voice recordings). The hypothesis was that exposing the model to XTTS clones from diverse source voices would teach it to recognize XTTS-the-engine rather than specific XTTS voice timbres.</p>
+
+<p style="margin-top:0.8rem">The experiment used a voice-disjoint split: no speaker appeared in both training and test sets. Four test speakers (foxtrot, golf, juliet, mike) were held out entirely, with their XTTS clones forming the key unseen-synthetic test set.</p>
+
+<div class="verdict-box recommend">
+    <strong>Production decision:</strong> V4-A remains the selected booth model. Its combination of zero false-positive rate on humans and acceptable in-distribution performance makes it the safest choice for a conference demo where falsely accusing a human is worse than missing a synthetic clip.
+</div>
+
+<div class="metric-cards">
+    <div class="metric-card">
+        <div class="label">V4.1 Unseen Synthetic</div>
+        <div class="value" style="color:var(--red)">57.1%</div>
+        <div class="sub">4/7 clones detected &mdash; same as V4-A</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">V4.1 Unseen Natural</div>
+        <div class="value" style="color:var(--green)">100%</div>
+        <div class="sub">12/12 humans correctly identified</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">V4.1 In-Distribution</div>
+        <div class="value" style="color:var(--cyan)">91.7%</div>
+        <div class="sub">Balanced accuracy on val set</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">V4.1 Same-Speaker</div>
+        <div class="value" style="color:var(--orange)">80.8%</div>
+        <div class="sub">Jakub holdout &mdash; identical to V4-A</div>
+    </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- 2. EXPERIMENT DESIGN -->
+<!-- ============================================================ -->
+
+<h2 id="design">2. Experiment Design</h2>
+
+<h3>Central Question</h3>
+<p>Can the Wav2Vec2 fine-tuned detector learn to recognize XTTS clone_speaker artifacts when trained on diverse voice examples, enabling detection of XTTS clones from speakers never seen during training?</p>
+
+<h3>Dataset Composition</h3>
+
+<table>
+<tr><th>Source</th><th>Type</th><th>Clips</th><th>Speakers</th><th>Languages</th></tr>
+<tr><td>Original V4 (voice-id/samples)</td><td>AI (Fish, XTTS built-in)</td><td class="num">67</td><td>anton, miska, jakub + XTTS built-in voices</td><td>EN, CS, SK</td></tr>
+<tr><td>Original V4 (voice-id/samples)</td><td>Natural</td><td class="num">30</td><td>anton, miska, jveverka (=jakub)</td><td>EN, CS, SK</td></tr>
+<tr><td>Diverse voices (new)</td><td>Natural</td><td class="num">30</td><td>10 speakers (3 clips each)</td><td>EN, CS, SK</td></tr>
+<tr><td>XTTS clones (new)</td><td>AI (clone_speaker)</td><td class="num">17</td><td>10 speakers</td><td>EN, CS</td></tr>
+<tr><td colspan="2"><strong>Total</strong></td><td class="num"><strong>144</strong></td><td colspan="2"></td></tr>
+</table>
+
+<h3>Diverse Speaker Sources</h3>
+<table>
+<tr><th>Speaker</th><th>Source Dataset</th><th>Language</th><th>Split</th></tr>
+<tr><td><span class="speaker-tag speaker-train">delta</span></td><td>LibriSpeech (ID 7729)</td><td>EN</td><td>Train</td></tr>
+<tr><td><span class="speaker-tag speaker-train">echo</span></td><td>LibriSpeech (ID 2094)</td><td>EN</td><td>Train</td></tr>
+<tr><td><span class="speaker-tag speaker-test">foxtrot</span></td><td>LibriSpeech (ID 6930)</td><td>EN</td><td>Test</td></tr>
+<tr><td><span class="speaker-tag speaker-test">golf</span></td><td>LibriSpeech (ID 5639)</td><td>EN</td><td>Test</td></tr>
+<tr><td><span class="speaker-tag speaker-train">hotel</span></td><td>VoxPopuli (ID 95116)</td><td>CS</td><td>Train</td></tr>
+<tr><td><span class="speaker-tag speaker-train">india</span></td><td>VoxPopuli (ID 95113)</td><td>CS</td><td>Train</td></tr>
+<tr><td><span class="speaker-tag speaker-test">juliet</span></td><td>VoxPopuli (ID 124710)</td><td>CS</td><td>Test</td></tr>
+<tr><td><span class="speaker-tag speaker-train">kilo</span></td><td>Common Voice SK</td><td>SK</td><td>Train</td></tr>
+<tr><td><span class="speaker-tag speaker-train">lima</span></td><td>Common Voice SK</td><td>SK</td><td>Train</td></tr>
+<tr><td><span class="speaker-tag speaker-test">mike</span></td><td>Common Voice SK</td><td>SK</td><td>Test</td></tr>
+</table>
+
+<div class="verdict-box warn">
+    <strong>Constraint:</strong> XTTS v2 does not support Slovak. Supported languages: en, es, fr, de, it, pt, pl, tr, ru, nl, cs, ar, zh-cn, hu, ko, ja, hi. Slovak speakers (kilo, lima, mike) received Czech-language XTTS clones instead. This preserves voice timbre while changing the output language.
+</div>
+
+<h3>Voice-Disjoint Split</h3>
+
+<div class="split-diagram">
+    <div class="split-box">
+        <h4>Train Pool (91 + 20 val)</h4>
+        <p style="font-size:0.85rem; color:var(--gray); margin-bottom:0.5rem">Original speakers:</p>
+        <span class="speaker-tag speaker-train">anton</span>
+        <span class="speaker-tag speaker-train">miska</span>
+        <span class="speaker-tag speaker-train">jveverka</span>
+        <span class="speaker-tag speaker-train">XTTS built-in voices</span>
+        <p style="font-size:0.85rem; color:var(--gray); margin: 0.5rem 0">New speakers (naturals + XTTS clones):</p>
+        <span class="speaker-tag speaker-train">delta</span>
+        <span class="speaker-tag speaker-train">echo</span>
+        <span class="speaker-tag speaker-train">hotel</span>
+        <span class="speaker-tag speaker-train">india</span>
+        <span class="speaker-tag speaker-train">kilo</span>
+        <span class="speaker-tag speaker-train">lima</span>
+        <p style="font-size:0.85rem; color:var(--gray); margin-top: 0.5rem">Holdout (same person as jveverka):</p>
+        <span class="speaker-tag speaker-holdout">jakub (14 clips)</span>
+    </div>
+    <div class="split-divider">||</div>
+    <div class="split-box">
+        <h4>Test Speakers (never in training)</h4>
+        <p style="font-size:0.85rem; color:var(--gray); margin-bottom:0.5rem">Unseen synthetic (7 XTTS clones):</p>
+        <span class="speaker-tag speaker-test">foxtrot</span>
+        <span class="speaker-tag speaker-test">golf</span>
+        <span class="speaker-tag speaker-test">juliet</span>
+        <span class="speaker-tag speaker-test">mike</span>
+        <p style="font-size:0.85rem; color:var(--gray); margin: 0.5rem 0">Unseen natural (12 recordings):</p>
+        <span class="speaker-tag speaker-test">foxtrot (3)</span>
+        <span class="speaker-tag speaker-test">golf (3)</span>
+        <span class="speaker-tag speaker-test">juliet (3)</span>
+        <span class="speaker-tag speaker-test">mike (3)</span>
+    </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- 3. EVALUATION HIERARCHY -->
+<!-- ============================================================ -->
+
+<h2 id="hierarchy">3. Evaluation Hierarchy</h2>
+
+<p>Results are reported in order of increasing difficulty. The hierarchy prevents inflated accuracy from easier test sets from masking failures on harder ones.</p>
+
+<table>
+<tr><th>Level</th><th>Test Set</th><th>Clips</th><th>What It Tests</th><th>Why It Matters</th></tr>
+<tr><td>1</td><td>In-distribution validation</td><td class="num">20</td><td>Generalization within training distribution</td><td>Sanity check &mdash; model learned something</td></tr>
+<tr><td>2</td><td>Same-speaker holdout (jakub)</td><td class="num">14</td><td>AI clones of a voice the model knows as natural</td><td>Tests artifact detection vs. speaker memorization</td></tr>
+<tr><td>3</td><td><strong>Unseen synthetic voice</strong></td><td class="num">7</td><td>XTTS clones of speakers never seen in training</td><td><strong>THE CENTRAL QUESTION</strong> &mdash; can the model detect XTTS-the-engine?</td></tr>
+<tr><td>4</td><td>Unseen human speaker</td><td class="num">12</td><td>Real voices never seen in training</td><td>False positive safety &mdash; never falsely accuse a human</td></tr>
+</table>
+
+<div class="verdict-box">
+    <strong>Reading the hierarchy:</strong> A model that scores 95% on Level 1 but 50% on Level 3 has memorized training patterns, not learned to detect synthetic speech. The headline metric is Level 3.
+</div>
+
+
+<!-- ============================================================ -->
+<!-- 4. BASELINE -->
+<!-- ============================================================ -->
+
+<h2 id="baseline">4. Baseline: V4-A on New Test Sets (Before Retraining)</h2>
+
+<p>V4-A was evaluated on the new voice-disjoint test sets <em>before</em> any retraining, establishing the baseline that V4.1 must beat.</p>
+
+<div class="metric-cards">
+    <div class="metric-card">
+        <div class="label">Val (Level 1)</div>
+        <div class="value" style="color:var(--cyan)">83.3%</div>
+        <div class="sub">REAL 100% | FAKE 66.7% | FPR 0%</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">Jakub Holdout (Level 2)</div>
+        <div class="value" style="color:var(--orange)">80.8%</div>
+        <div class="sub">Fish 7/7 (100%) | XTTS 1/6 (17%)</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">Unseen Synthetic (Level 3)</div>
+        <div class="value" style="color:var(--red)">57.1%</div>
+        <div class="sub">4/7 XTTS clones detected</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">Unseen Natural (Level 4)</div>
+        <div class="value" style="color:var(--green)">91.7%</div>
+        <div class="sub">11/12 correct | 1 false positive</div>
+    </div>
+</div>
+
+<h3>V4-A Baseline: Unseen Synthetic Per-Clip</h3>
+<div class="clip-item"><span class="clip-result" style="color:var(--green)">+</span><span class="clip-name">xtts-foxtrot-en.wav</span><span class="clip-prob prob-high">0.997</span></div>
+<div class="clip-item"><span class="clip-result" style="color:var(--red)">X</span><span class="clip-name">xtts-foxtrot-cs.wav</span><span class="clip-prob prob-mid">0.356</span></div>
+<div class="clip-item"><span class="clip-result" style="color:var(--green)">+</span><span class="clip-name">xtts-golf-en.wav</span><span class="clip-prob prob-mid">0.502</span></div>
+<div class="clip-item"><span class="clip-result" style="color:var(--red)">X</span><span class="clip-name">xtts-juliet-cs.wav</span><span class="clip-prob prob-mid">0.291</span></div>
+<div class="clip-item"><span class="clip-result" style="color:var(--red)">X</span><span class="clip-name">xtts-juliet-en.wav</span><span class="clip-prob prob-mid">0.312</span></div>
+<div class="clip-item"><span class="clip-result" style="color:var(--green)">+</span><span class="clip-name">xtts-mike-cs.wav</span><span class="clip-prob prob-high">0.944</span></div>
+<div class="clip-item"><span class="clip-result" style="color:var(--green)">+</span><span class="clip-name">xtts-golf-cs.wav</span><span class="clip-prob prob-high">0.998</span></div>
+
+
+<!-- ============================================================ -->
+<!-- 5. TRAINING -->
+<!-- ============================================================ -->
+
+<h2 id="training">5. V4.1 Training</h2>
+
+<h3>Recipe (identical to V4-A)</h3>
+<table>
+<tr><th>Parameter</th><th>Value</th></tr>
+<tr><td>Base model</td><td><code>garystafford/wav2vec2-deepfake-voice-detector</code></td></tr>
+<tr><td>Frozen layers</td><td>CNN feature extractor + bottom 12 transformer layers</td></tr>
+<tr><td>Trainable parameters</td><td>~13M / 94M (13.8%)</td></tr>
+<tr><td>Epochs</td><td>15</td></tr>
+<tr><td>Batch size</td><td>2</td></tr>
+<tr><td>Learning rate</td><td>1e-5</td></tr>
+<tr><td>Weight decay</td><td>0.01</td></tr>
+<tr><td>Augmentation</td><td>Amplitude only (gain 0.7&ndash;1.8x, 80% probability)</td></tr>
+<tr><td>Class weights</td><td>None</td></tr>
+<tr><td>Best model selection</td><td>Balanced accuracy on validation set</td></tr>
+<tr><td>Device</td><td>Apple M3 MPS</td></tr>
+</table>
+
+<h3>Dataset Composition (V4.1 vs V4-A)</h3>
+<table>
+<tr><th>Component</th><th>V4-A</th><th>V4.1</th><th>Delta</th></tr>
+<tr><td>Train clips</td><td class="num">66</td><td class="num">91</td><td class="num best">+25</td></tr>
+<tr><td>Val clips</td><td class="num">17</td><td class="num">20</td><td class="num">+3</td></tr>
+<tr><td>Train real clips</td><td class="num">20</td><td class="num">40</td><td class="num best">+20 (diverse naturals)</td></tr>
+<tr><td>Train fake clips</td><td class="num">46</td><td class="num">51</td><td class="num">+5 (XTTS clones in train split)</td></tr>
+<tr><td>Unique speakers (train)</td><td class="num">~10</td><td class="num">21</td><td class="num best">+11</td></tr>
+<tr><td>XTTS clone examples</td><td class="num">0</td><td class="num">10</td><td class="num best">+10 (new signal)</td></tr>
+</table>
+
+
+<!-- ============================================================ -->
+<!-- 6. RESULTS COMPARISON -->
+<!-- ============================================================ -->
+
+<h2 id="comparison">6. Results Comparison: All Models x All Test Sets</h2>
+
+<table>
+<tr>
+    <th>Test Set</th>
+    <th><span class="model-tag tag-v4a">V4-A</span> Bal. Acc.</th>
+    <th><span class="model-tag tag-v4a">V4-A</span> FAKE</th>
+    <th><span class="model-tag tag-v4a">V4-A</span> REAL</th>
+    <th><span class="model-tag tag-deployed">Deployed</span> Bal. Acc.</th>
+    <th><span class="model-tag tag-deployed">Deployed</span> FAKE</th>
+    <th><span class="model-tag tag-deployed">Deployed</span> REAL</th>
+    <th><span class="model-tag tag-v41">V4.1</span> Bal. Acc.</th>
+    <th><span class="model-tag tag-v41">V4.1</span> FAKE</th>
+    <th><span class="model-tag tag-v41">V4.1</span> REAL</th>
+</tr>
+<tr>
+    <td>1. In-distribution val</td>
+    <td class="num">83.3%</td><td class="num">67%</td><td class="num best">100%</td>
+    <td class="num">89.6%</td><td class="num best">92%</td><td class="num">88%</td>
+    <td class="num best">91.7%</td><td class="num">83%</td><td class="num best">100%</td>
+</tr>
+<tr>
+    <td>2. Same-speaker holdout</td>
+    <td class="num">80.8%</td><td class="num">62%</td><td class="num best">100%</td>
+    <td class="num worst">50.0%</td><td class="num best">100%</td><td class="num worst">0%</td>
+    <td class="num">80.8%</td><td class="num">62%</td><td class="num best">100%</td>
+</tr>
+<tr style="background: rgba(248,113,113,0.08);">
+    <td><strong>3. Unseen synthetic (KEY)</strong></td>
+    <td class="num warn-val">57.1%</td><td class="num warn-val">57%</td><td class="num neutral">&mdash;</td>
+    <td class="num">71.4%</td><td class="num">71%</td><td class="num neutral">&mdash;</td>
+    <td class="num warn-val">57.1%</td><td class="num warn-val">57%</td><td class="num neutral">&mdash;</td>
+</tr>
+<tr>
+    <td>4. Unseen human speaker</td>
+    <td class="num">91.7%</td><td class="num neutral">&mdash;</td><td class="num">92%</td>
+    <td class="num">83.3%</td><td class="num neutral">&mdash;</td><td class="num">83%</td>
+    <td class="num best">100%</td><td class="num neutral">&mdash;</td><td class="num best">100%</td>
+</tr>
+</table>
+
+<h3>Visual: Balanced Accuracy Across Hierarchy</h3>
+
+<p style="font-size:0.82rem; color:var(--gray); margin-bottom:0.5rem">Level 1: In-distribution validation</p>
+<div class="bar-container"><span class="bar-label">V4-A</span><div class="bar-track"><div class="bar-fill green" style="width:83.3%">83.3%</div></div></div>
+<div class="bar-container"><span class="bar-label">Deployed</span><div class="bar-track"><div class="bar-fill cyan" style="width:89.6%">89.6%</div></div></div>
+<div class="bar-container"><span class="bar-label">V4.1</span><div class="bar-track"><div class="bar-fill blue" style="width:91.7%">91.7%</div></div></div>
+
+<p style="font-size:0.82rem; color:var(--gray); margin: 0.8rem 0 0.5rem">Level 2: Same-speaker holdout</p>
+<div class="bar-container"><span class="bar-label">V4-A</span><div class="bar-track"><div class="bar-fill green" style="width:80.8%">80.8%</div></div></div>
+<div class="bar-container"><span class="bar-label">Deployed</span><div class="bar-track"><div class="bar-fill red" style="width:50%">50.0%</div></div></div>
+<div class="bar-container"><span class="bar-label">V4.1</span><div class="bar-track"><div class="bar-fill blue" style="width:80.8%">80.8%</div></div></div>
+
+<p style="font-size:0.82rem; color:var(--gray); margin: 0.8rem 0 0.5rem"><strong>Level 3: Unseen synthetic voice (KEY)</strong></p>
+<div class="bar-container"><span class="bar-label">V4-A</span><div class="bar-track"><div class="bar-fill orange" style="width:57.1%">57.1%</div></div></div>
+<div class="bar-container"><span class="bar-label">Deployed</span><div class="bar-track"><div class="bar-fill cyan" style="width:71.4%">71.4%</div></div></div>
+<div class="bar-container"><span class="bar-label">V4.1</span><div class="bar-track"><div class="bar-fill orange" style="width:57.1%">57.1%</div></div></div>
+
+<p style="font-size:0.82rem; color:var(--gray); margin: 0.8rem 0 0.5rem">Level 4: Unseen human speaker</p>
+<div class="bar-container"><span class="bar-label">V4-A</span><div class="bar-track"><div class="bar-fill green" style="width:91.7%">91.7%</div></div></div>
+<div class="bar-container"><span class="bar-label">Deployed</span><div class="bar-track"><div class="bar-fill orange" style="width:83.3%">83.3%</div></div></div>
+<div class="bar-container"><span class="bar-label">V4.1</span><div class="bar-track"><div class="bar-fill green" style="width:100%">100%</div></div></div>
+
+
+<!-- ============================================================ -->
+<!-- 7. PER-SPEAKER UNSEEN SYNTHETIC -->
+<!-- ============================================================ -->
+
+<h2 id="unseen">7. Per-Speaker Unseen Synthetic Analysis</h2>
+
+<p>The unseen-synthetic test set contains 7 XTTS clone_speaker clips from 4 speakers never seen in training. This is the experiment's central measurement.</p>
+
+<table>
+<tr>
+    <th>Speaker</th><th>Language</th><th>Clips</th>
+    <th><span class="model-tag tag-v4a">V4-A</span></th>
+    <th><span class="model-tag tag-deployed">Deployed</span></th>
+    <th><span class="model-tag tag-v41">V4.1</span></th>
+</tr>
+<tr>
+    <td>foxtrot</td><td>EN</td><td class="num">2</td>
+    <td class="num warn-val">1/2</td><td class="num best">2/2</td><td class="num warn-val">1/2</td>
+</tr>
+<tr>
+    <td>golf</td><td>EN</td><td class="num">2</td>
+    <td class="num best">2/2</td><td class="num best">2/2</td><td class="num best">2/2</td>
+</tr>
+<tr style="background: rgba(248,113,113,0.08);">
+    <td>juliet</td><td>CS</td><td class="num">2</td>
+    <td class="num worst">0/2</td><td class="num worst">0/2</td><td class="num worst">0/2</td>
+</tr>
+<tr>
+    <td>mike</td><td>SK</td><td class="num">1</td>
+    <td class="num best">1/1</td><td class="num best">1/1</td><td class="num best">1/1</td>
+</tr>
+</table>
+
+<div class="verdict-box danger">
+    <strong>The juliet blind spot:</strong> No model &mdash; V4-A, Deployed, or V4.1 &mdash; detected either of juliet's XTTS clones. This speaker (VoxPopuli CS, ID 124710) produces clone output that is indistinguishable from natural speech to every model variant tested. The p_fake values (0.29&ndash;0.43 across all models) sit just below the 0.5 threshold, suggesting the signal is present but too weak to cross the decision boundary.
+</div>
+
+<h3>Per-Clip p_fake Comparison</h3>
+
+<table>
+<tr><th>Clip</th><th>Speaker</th><th>V4-A p_fake</th><th>Deployed p_fake</th><th>V4.1 p_fake</th></tr>
+<tr>
+    <td>xtts-foxtrot-en.wav</td><td>foxtrot</td>
+    <td class="num best">0.997</td><td class="num best">0.994</td><td class="num best">0.975</td>
+</tr>
+<tr>
+    <td>xtts-foxtrot-cs.wav</td><td>foxtrot</td>
+    <td class="num worst">0.356</td><td class="num warn-val">0.505</td><td class="num worst">0.312</td>
+</tr>
+<tr>
+    <td>xtts-golf-en.wav</td><td>golf</td>
+    <td class="num warn-val">0.502</td><td class="num">0.816</td><td class="num">0.874</td>
+</tr>
+<tr>
+    <td>xtts-golf-cs.wav</td><td>golf</td>
+    <td class="num best">0.998</td><td class="num best">0.997</td><td class="num best">0.988</td>
+</tr>
+<tr style="background: rgba(248,113,113,0.08);">
+    <td>xtts-juliet-cs.wav</td><td>juliet</td>
+    <td class="num worst">0.291</td><td class="num worst">0.190</td><td class="num warn-val">0.427</td>
+</tr>
+<tr style="background: rgba(248,113,113,0.08);">
+    <td>xtts-juliet-en.wav</td><td>juliet</td>
+    <td class="num worst">0.312</td><td class="num worst">0.224</td><td class="num worst">0.315</td>
+</tr>
+<tr>
+    <td>xtts-mike-cs.wav</td><td>mike</td>
+    <td class="num best">0.944</td><td class="num best">0.992</td><td class="num best">0.864</td>
+</tr>
+</table>
+
+<p style="margin-top: 0.8rem">V4.1 did move juliet-cs from 0.291 to 0.427 &mdash; directionally correct but insufficient to cross the 0.5 threshold. This is the only per-clip improvement V4.1 showed on the unseen-synthetic set.</p>
+
+
+<!-- ============================================================ -->
+<!-- 8. P_FAKE DISTRIBUTIONS -->
+<!-- ============================================================ -->
+
+<h2 id="pfake">8. p_fake Distribution Analysis</h2>
+
+<h3>V4.1 on Validation Set</h3>
+<table>
+<tr><th>Class</th><th>Min</th><th>Median</th><th>Mean</th><th>Max</th></tr>
+<tr><td>REAL (8 clips)</td><td class="num prob-low">0.002</td><td class="num">0.176</td><td class="num">0.157</td><td class="num warn-val">0.334</td></tr>
+<tr><td>FAKE (12 clips)</td><td class="num worst">0.006</td><td class="num">0.829</td><td class="num">0.694</td><td class="num prob-high">0.930</td></tr>
+</table>
+
+<h3>V4-A on Validation Set (for comparison)</h3>
+<table>
+<tr><th>Class</th><th>Min</th><th>Median</th><th>Mean</th><th>Max</th></tr>
+<tr><td>REAL (8 clips)</td><td class="num prob-low">0.001</td><td class="num prob-low">0.002</td><td class="num prob-low">0.009</td><td class="num">0.060</td></tr>
+<tr><td>FAKE (12 clips)</td><td class="num worst">0.002</td><td class="num">0.778</td><td class="num">0.615</td><td class="num prob-high">0.996</td></tr>
+</table>
+
+<div class="verdict-box warn">
+    <strong>Separation quality:</strong> V4-A has tighter real-class clustering (max 0.060) compared to V4.1 (max 0.334). V4.1 trades sharper real/fake separation for slightly better overall balanced accuracy. For a conference demo, V4-A's cleaner separation is preferable &mdash; it produces more confident "real" verdicts.
+</div>
+
+<h3>Unseen Synthetic p_fake Distribution (All Models)</h3>
+<table>
+<tr><th>Model</th><th>Min</th><th>Median</th><th>Mean</th><th>Max</th></tr>
+<tr><td><span class="model-tag tag-v4a">V4-A</span></td><td class="num">0.291</td><td class="num">0.502</td><td class="num">0.629</td><td class="num">0.998</td></tr>
+<tr><td><span class="model-tag tag-deployed">Deployed</span></td><td class="num">0.190</td><td class="num">0.816</td><td class="num">0.674</td><td class="num">0.997</td></tr>
+<tr><td><span class="model-tag tag-v41">V4.1</span></td><td class="num">0.312</td><td class="num">0.864</td><td class="num">0.679</td><td class="num">0.988</td></tr>
+</table>
+
+
+<!-- ============================================================ -->
+<!-- 9. DEPLOYED MODEL TRADE-OFF -->
+<!-- ============================================================ -->
+
+<h2 id="deployed">9. The Deployed Model Trade-off</h2>
+
+<p>The currently deployed model (wav2vec2-heavy-augmented) scores the highest on unseen-synthetic detection (71.4%, 5/7). However, this comes at a severe cost in false-positive behavior.</p>
+
+<div class="flex-row">
+<div class="flex-col">
+<h3>Deployed Model Strengths</h3>
+<ul style="margin-left:1.2rem; font-size:0.9rem">
+<li>Unseen synthetic: 71.4% (5/7) &mdash; best of all three</li>
+<li>In-distribution val: 89.6% balanced accuracy</li>
+<li>Detects foxtrot-cs (p=0.505) that V4-A and V4.1 miss</li>
+</ul>
+</div>
+<div class="flex-col">
+<h3>Deployed Model Failures</h3>
+<ul style="margin-left:1.2rem; font-size:0.9rem">
+<li class="worst">Same-speaker holdout: <strong>50.0%</strong> balanced accuracy</li>
+<li class="worst">Calls jakub's real voice fake (p=0.757)</li>
+<li class="worst">Calls jveverka real voice fake (p=0.969)</li>
+<li class="worst">Unseen natural: 83.3% (2 false positives)</li>
+<li class="worst">Val FPR: 12.5% vs. V4-A's 0%</li>
+</ul>
+</div>
+</div>
+
+<div class="verdict-box danger">
+    <strong>The 50% same-speaker result exposes the deployed model's strategy:</strong> it is trigger-happy, not perceptive. It detects more XTTS clones only because it calls more things fake in general. At a conference booth, this means falsely accusing real human speakers of being AI &mdash; a much worse user experience than missing a synthetic clip.
+</div>
+
+
+<!-- ============================================================ -->
+<!-- 10. PRODUCTION DECISION -->
+<!-- ============================================================ -->
+
+<h2 id="decision">10. Production Decision: Why V4-A</h2>
+
+<p>The evidence supports keeping V4-A as the production booth model:</p>
+
+<table>
+<tr><th>Criterion</th><th><span class="model-tag tag-v4a">V4-A</span></th><th><span class="model-tag tag-deployed">Deployed</span></th><th><span class="model-tag tag-v41">V4.1</span></th><th>Best</th></tr>
+<tr>
+    <td>FPR on validation</td>
+    <td class="num best">0%</td><td class="num worst">12.5%</td><td class="num best">0%</td>
+    <td><span class="model-tag tag-v4a">V4-A</span> = <span class="model-tag tag-v41">V4.1</span></td>
+</tr>
+<tr>
+    <td>Same-speaker holdout</td>
+    <td class="num best">80.8%</td><td class="num worst">50.0%</td><td class="num best">80.8%</td>
+    <td><span class="model-tag tag-v4a">V4-A</span> = <span class="model-tag tag-v41">V4.1</span></td>
+</tr>
+<tr>
+    <td>Unseen synthetic</td>
+    <td class="num warn-val">57.1%</td><td class="num">71.4%</td><td class="num warn-val">57.1%</td>
+    <td><span class="model-tag tag-deployed">Deployed</span> (at FPR cost)</td>
+</tr>
+<tr>
+    <td>Unseen natural</td>
+    <td class="num">91.7%</td><td class="num">83.3%</td><td class="num best">100%</td>
+    <td><span class="model-tag tag-v41">V4.1</span></td>
+</tr>
+<tr>
+    <td>Real-class separation (p_fake max)</td>
+    <td class="num best">0.060</td><td class="num worst">0.969</td><td class="num">0.334</td>
+    <td><span class="model-tag tag-v4a">V4-A</span></td>
+</tr>
+</table>
+
+<div class="verdict-box recommend">
+    <strong>V4-A selected for deployment.</strong> In a conference booth demo, the priority ordering is:
+    (1) never falsely accuse a human &rarr; V4-A's 0% FPR;
+    (2) detect known AI clips reliably &rarr; V4-A's 83.3% in-distribution;
+    (3) detect unknown AI clips &rarr; 57.1%, accepted limitation.
+    The 57.1% unseen-synthetic gap is a known, documented limitation, not a deployment blocker for a demo with pre-loaded clips.
+</div>
+
+
+<!-- ============================================================ -->
+<!-- 11. MODEL CHECKPOINTS -->
+<!-- ============================================================ -->
+
+<h2 id="checkpoints">11. Model Checkpoints</h2>
+
+<table>
+<tr><th>Model</th><th>Path</th><th>Role</th></tr>
+<tr>
+    <td><span class="model-tag tag-v4a">V4-A</span></td>
+    <td><code>models/wav2vec2-v4a-no-weights</code></td>
+    <td>Selected booth model (production)</td>
+</tr>
+<tr>
+    <td><span class="model-tag tag-v41">V4.1</span></td>
+    <td><code>models/wav2vec2-v41-diverse</code></td>
+    <td>Diversity experiment &mdash; preserved for research</td>
+</tr>
+<tr>
+    <td><span class="model-tag tag-deployed">Deployed (old)</span></td>
+    <td><code>models/wav2vec2-heavy-augmented</code></td>
+    <td>Historical control &mdash; to be replaced by V4-A</td>
+</tr>
+</table>
+
+<p style="margin-top: 0.8rem; font-size: 0.9rem">All three checkpoints are preserved. The experiment script (<code>experiment_v41.py</code>) and full results JSON (<code>results/v41/v41_20260924_204918.json</code>) are archived alongside this report.</p>
+
+
+<!-- ============================================================ -->
+<!-- 12. LIMITATIONS -->
+<!-- ============================================================ -->
+
+<h2 id="limitations">12. Limitations and Open Questions</h2>
+
+<h3>What this experiment did NOT establish</h3>
+
+<div class="verdict-box warn">
+    <strong>This experiment tested one particular expansion</strong> &mdash; 10 additional XTTS clone examples from 6 speakers &mdash; and that was not sufficient. It does not establish that the entire fine-tuning approach cannot work with more data, different augmentation, or different layer-freezing strategies.
+</div>
+
+<ul style="margin-left:1.2rem; font-size:0.9rem; line-height:1.8">
+<li><strong>Small test set:</strong> 7 unseen-synthetic clips from 4 speakers is not statistically robust. A single speaker (juliet) accounts for both misses. One more detected clip would change the headline from 57% to 71%.</li>
+<li><strong>XTTS-only:</strong> The experiment tests only XTTS clone_speaker. Fish Audio S2 Pro clones were not tested in the unseen-voice regime. Fish detection may also have unseen-speaker weaknesses.</li>
+<li><strong>No Slovak TTS:</strong> XTTS does not support Slovak, creating a language gap. Slovak speakers received Czech-language clones, which may confound language and generator signals.</li>
+<li><strong>Single sentence:</strong> All XTTS clones in the test set use the same text. Text-specific artifacts could inflate or deflate detection rates.</li>
+<li><strong>Juliet anomaly:</strong> The complete failure on juliet across all models warrants investigation. Is this a speaker whose voice characteristics happen to mask XTTS artifacts, or is there a systematic property (e.g., recording quality, pitch range) that correlates with evasion?</li>
+</ul>
+
+<h3>Observations Worth Noting</h3>
+
+<ul style="margin-left:1.2rem; font-size:0.9rem; line-height:1.8">
+<li>V4.1 achieved <strong>100% accuracy on unseen natural speakers</strong> (vs. V4-A's 91.7%), suggesting the additional natural voice diversity genuinely improved real-voice generalization, even though it did not improve synthetic detection.</li>
+<li>The jakub holdout results are identical between V4-A and V4.1 (80.8%), indicating the expanded dataset neither helped nor hurt same-speaker detection.</li>
+<li>V4.1 moved juliet-cs p_fake from 0.291 to 0.427 &mdash; closer to the threshold but not enough. With a lower threshold (e.g., 0.4), V4.1 would detect 5/7 unseen clones. Threshold tuning was not explored.</li>
+</ul>
+
+
+<!-- ============================================================ -->
+<!-- 13. NEXT RESEARCH DIRECTION -->
+<!-- ============================================================ -->
+
+<h2 id="next">13. Next Research Direction</h2>
+
+<p>The V4.1 result raises a question about whether Wav2Vec2 fine-tuning can capture the XTTS clone_speaker artifact signal at all, or whether a different representation or detection approach is needed.</p>
+
+<h3>Possible directions (not prioritized for the current demo)</h3>
+
+<table>
+<tr><th>Direction</th><th>Rationale</th><th>Effort</th></tr>
+<tr>
+    <td>More XTTS clone training data</td>
+    <td>10 examples may be insufficient. 50+ clones from 20+ speakers could surface the engine signature that 10 could not.</td>
+    <td>Low &mdash; requires speaker collection and XTTS generation only</td>
+</tr>
+<tr>
+    <td>Different detection representation</td>
+    <td>Wav2Vec2 may not represent the artifacts that distinguish XTTS clones. Spectrogram-based models, MFCC features, or purpose-built deepfake detectors may capture different signal.</td>
+    <td>Medium &mdash; architecture exploration</td>
+</tr>
+<tr>
+    <td>Threshold tuning</td>
+    <td>V4.1 nearly detects juliet-cs at threshold 0.4. A calibrated threshold per-generator could improve recall without sacrificing FPR on real clips.</td>
+    <td>Low &mdash; but risks false positives</td>
+</tr>
+<tr>
+    <td>Multi-model ensemble</td>
+    <td>Combine Wav2Vec2 (good at Fish) with a spectrogram model (potentially better at XTTS clone artifacts)</td>
+    <td>High &mdash; inference latency doubles</td>
+</tr>
+<tr>
+    <td>Adversarial data augmentation</td>
+    <td>Train with augmented XTTS samples (pitch shift, speed change) to force the model to learn structural rather than surface artifacts</td>
+    <td>Medium</td>
+</tr>
+</table>
+
+<div class="verdict-box">
+    <strong>For the current booth demo:</strong> V4-A is sufficient. The XTTS clone blind spot is a known limitation that does not affect the game (clips are pre-loaded from known speakers). Research into alternative detection approaches should wait until after the conference demo is stable in production.
+</div>
+
+
+<div class="footer">
+    V4.1 Data Diversity Experiment &mdash; Generated 2026-09-24 &mdash; Voice ID Deepfake Detector
+</div>
+
+</body>
+</html>

@@ -1,0 +1,3685 @@
+{
+  "timestamp": "20260924_135600",
+  "device": "cpu",
+  "models": [
+    "base",
+    "heavy",
+    "heavy+aug",
+    "heavy+robust"
+  ],
+  "train_size": 76,
+  "val_size": 20,
+  "generated_clips": 59,
+  "base": {
+    "original": {
+      "accuracy": 0.5625,
+      "balanced_accuracy": 0.3333333333333333,
+      "roc_auc": 0.32427983539094646,
+      "total_correct": 54,
+      "total": 96,
+      "real_correct": 0,
+      "real_total": 15,
+      "fake_correct": 54,
+      "fake_total": 81,
+      "mean_pfake_real": 0.7877931952476501,
+      "mean_pfake_fake": 0.6271460366285877,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 27,
+          "total": 38,
+          "accuracy": 0.7105263157894737,
+          "mean_pfake": 0.6548915154447681
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 27,
+          "total": 43,
+          "accuracy": 0.627906976744186,
+          "mean_pfake": 0.6026267762794051
+        },
+        "anton": {
+          "correct": 0,
+          "total": 6,
+          "accuracy": 0.0,
+          "mean_pfake": 0.8901154200236002
+        },
+        "miska": {
+          "correct": 0,
+          "total": 9,
+          "accuracy": 0.0,
+          "mean_pfake": 0.71957837873035
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 22,
+          "total": 35,
+          "accuracy": 0.6285714285714286,
+          "mean_pfake": 0.6695946974413736
+        },
+        "en": {
+          "correct": 18,
+          "total": 34,
+          "accuracy": 0.5294117647058824,
+          "mean_pfake": 0.6474655073355225
+        },
+        "sk": {
+          "correct": 14,
+          "total": 27,
+          "accuracy": 0.5185185185185185,
+          "mean_pfake": 0.6357809346583154
+        }
+      },
+      "by_speaker": {
+        "?": {
+          "correct": 17,
+          "total": 37,
+          "accuracy": 0.4594594594594595,
+          "mean_pfake": 0.7648674757093996
+        },
+        "anton": {
+          "correct": 22,
+          "total": 30,
+          "accuracy": 0.7333333333333333,
+          "mean_pfake": 0.6512001127004623
+        },
+        "miska": {
+          "correct": 15,
+          "total": 29,
+          "accuracy": 0.5172413793103449,
+          "mean_pfake": 0.5096423073575415
+        }
+      }
+    },
+    "silence_std": {
+      "accuracy": 0.6979166666666666,
+      "balanced_accuracy": 0.41358024691358025,
+      "roc_auc": 0.3481481481481481,
+      "total_correct": 67,
+      "total": 96,
+      "real_correct": 0,
+      "real_total": 15,
+      "fake_correct": 67,
+      "fake_total": 81,
+      "mean_pfake_real": 0.841635278860728,
+      "mean_pfake_fake": 0.7236850526597765,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 31,
+          "total": 38,
+          "accuracy": 0.8157894736842105,
+          "mean_pfake": 0.7317964332668405
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 36,
+          "total": 43,
+          "accuracy": 0.8372093023255814,
+          "mean_pfake": 0.7165168558442315
+        },
+        "anton": {
+          "correct": 0,
+          "total": 6,
+          "accuracy": 0.0,
+          "mean_pfake": 0.9161626895268759
+        },
+        "miska": {
+          "correct": 0,
+          "total": 9,
+          "accuracy": 0.0,
+          "mean_pfake": 0.7919503384166293
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 27,
+          "total": 35,
+          "accuracy": 0.7714285714285715,
+          "mean_pfake": 0.7576110405581338
+        },
+        "en": {
+          "correct": 23,
+          "total": 34,
+          "accuracy": 0.6764705882352942,
+          "mean_pfake": 0.7505475195015178
+        },
+        "sk": {
+          "correct": 17,
+          "total": 27,
+          "accuracy": 0.6296296296296297,
+          "mean_pfake": 0.7114080135469083
+        }
+      },
+      "by_speaker": {
+        "?": {
+          "correct": 20,
+          "total": 37,
+          "accuracy": 0.5405405405405406,
+          "mean_pfake": 0.8454773627422951
+        },
+        "anton": {
+          "correct": 26,
+          "total": 30,
+          "accuracy": 0.8666666666666667,
+          "mean_pfake": 0.750010970234871
+        },
+        "miska": {
+          "correct": 21,
+          "total": 29,
+          "accuracy": 0.7241379310344828,
+          "mean_pfake": 0.6020698937876471
+        }
+      }
+    },
+    "amplitude": {
+      "gain_0.5": {
+        "accuracy": 0.5625,
+        "balanced_accuracy": 0.3333333333333333,
+        "roc_auc": 0.32427983539094646,
+        "total_correct": 54,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 54,
+        "fake_total": 81,
+        "mean_pfake_real": 0.7878108024597168,
+        "mean_pfake_fake": 0.6271644975116224,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 27,
+            "total": 38,
+            "accuracy": 0.7105263157894737,
+            "mean_pfake": 0.6548995259953173
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 27,
+            "total": 43,
+            "accuracy": 0.627906976744186,
+            "mean_pfake": 0.602654472339985
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.8901356955369314
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.7195942070749071
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 22,
+            "total": 35,
+            "accuracy": 0.6285714285714286,
+            "mean_pfake": 0.6695630856922694
+          },
+          "en": {
+            "correct": 18,
+            "total": 34,
+            "accuracy": 0.5294117647058824,
+            "mean_pfake": 0.6474837634493323
+          },
+          "sk": {
+            "correct": 14,
+            "total": 27,
+            "accuracy": 0.5185185185185185,
+            "mean_pfake": 0.6358640881048309
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 17,
+            "total": 37,
+            "accuracy": 0.4594594594594595,
+            "mean_pfake": 0.7648802174104227
+          },
+          "anton": {
+            "correct": 22,
+            "total": 30,
+            "accuracy": 0.7333333333333333,
+            "mean_pfake": 0.6512275010347366
+          },
+          "miska": {
+            "correct": 15,
+            "total": 29,
+            "accuracy": 0.5172413793103449,
+            "mean_pfake": 0.5096583882796353
+          }
+        }
+      },
+      "gain_1.0": {
+        "accuracy": 0.5625,
+        "balanced_accuracy": 0.3333333333333333,
+        "roc_auc": 0.32427983539094646,
+        "total_correct": 54,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 54,
+        "fake_total": 81,
+        "mean_pfake_real": 0.7877931952476501,
+        "mean_pfake_fake": 0.6271460366285877,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 27,
+            "total": 38,
+            "accuracy": 0.7105263157894737,
+            "mean_pfake": 0.6548915154447681
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 27,
+            "total": 43,
+            "accuracy": 0.627906976744186,
+            "mean_pfake": 0.6026267762794051
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.8901154200236002
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.71957837873035
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 22,
+            "total": 35,
+            "accuracy": 0.6285714285714286,
+            "mean_pfake": 0.6695946974413736
+          },
+          "en": {
+            "correct": 18,
+            "total": 34,
+            "accuracy": 0.5294117647058824,
+            "mean_pfake": 0.6474655073355225
+          },
+          "sk": {
+            "correct": 14,
+            "total": 27,
+            "accuracy": 0.5185185185185185,
+            "mean_pfake": 0.6357809346583154
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 17,
+            "total": 37,
+            "accuracy": 0.4594594594594595,
+            "mean_pfake": 0.7648674757093996
+          },
+          "anton": {
+            "correct": 22,
+            "total": 30,
+            "accuracy": 0.7333333333333333,
+            "mean_pfake": 0.6512001127004623
+          },
+          "miska": {
+            "correct": 15,
+            "total": 29,
+            "accuracy": 0.5172413793103449,
+            "mean_pfake": 0.5096423073575415
+          }
+        }
+      },
+      "gain_2.0": {
+        "accuracy": 0.5625,
+        "balanced_accuracy": 0.3333333333333333,
+        "roc_auc": 0.32345679012345674,
+        "total_correct": 54,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 54,
+        "fake_total": 81,
+        "mean_pfake_real": 0.7864009459813436,
+        "mean_pfake_fake": 0.6255893352223031,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 27,
+            "total": 38,
+            "accuracy": 0.7105263157894737,
+            "mean_pfake": 0.6509881509762061
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 27,
+            "total": 43,
+            "accuracy": 0.627906976744186,
+            "mean_pfake": 0.6031438701374586
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.8900627791881561
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.7172930571768019
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 22,
+            "total": 35,
+            "accuracy": 0.6285714285714286,
+            "mean_pfake": 0.6684554738657815
+          },
+          "en": {
+            "correct": 18,
+            "total": 34,
+            "accuracy": 0.5294117647058824,
+            "mean_pfake": 0.6432499780374414
+          },
+          "sk": {
+            "correct": 14,
+            "total": 27,
+            "accuracy": 0.5185185185185185,
+            "mean_pfake": 0.6371225742278276
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 17,
+            "total": 37,
+            "accuracy": 0.4594594594594595,
+            "mean_pfake": 0.7642808476009885
+          },
+          "anton": {
+            "correct": 22,
+            "total": 30,
+            "accuracy": 0.7333333333333333,
+            "mean_pfake": 0.6491865257422129
+          },
+          "miska": {
+            "correct": 15,
+            "total": 29,
+            "accuracy": 0.5172413793103449,
+            "mean_pfake": 0.5074056279042671
+          }
+        }
+      },
+      "gain_2.5": {
+        "accuracy": 0.5729166666666666,
+        "balanced_accuracy": 0.3395061728395062,
+        "roc_auc": 0.33004115226337444,
+        "total_correct": 55,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 55,
+        "fake_total": 81,
+        "mean_pfake_real": 0.7838372071584065,
+        "mean_pfake_fake": 0.626067207183367,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 28,
+            "total": 38,
+            "accuracy": 0.7368421052631579,
+            "mean_pfake": 0.6524888539784833
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 27,
+            "total": 43,
+            "accuracy": 0.627906976744186,
+            "mean_pfake": 0.6027178448993106
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.8877660433451334
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.7145513163672553
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 23,
+            "total": 35,
+            "accuracy": 0.6571428571428571,
+            "mean_pfake": 0.6674343343291964
+          },
+          "en": {
+            "correct": 18,
+            "total": 34,
+            "accuracy": 0.5294117647058824,
+            "mean_pfake": 0.6444221138954163
+          },
+          "sk": {
+            "correct": 14,
+            "total": 27,
+            "accuracy": 0.5185185185185185,
+            "mean_pfake": 0.6369795672319554
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 17,
+            "total": 37,
+            "accuracy": 0.4594594594594595,
+            "mean_pfake": 0.7633198978933128
+          },
+          "anton": {
+            "correct": 23,
+            "total": 30,
+            "accuracy": 0.7666666666666667,
+            "mean_pfake": 0.6520327935616176
+          },
+          "miska": {
+            "correct": 15,
+            "total": 29,
+            "accuracy": 0.5172413793103449,
+            "mean_pfake": 0.5056959262181973
+          }
+        }
+      }
+    },
+    "combined": {
+      "sg_0.5": {
+        "accuracy": 0.6979166666666666,
+        "balanced_accuracy": 0.41358024691358025,
+        "roc_auc": 0.3481481481481481,
+        "total_correct": 67,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 67,
+        "fake_total": 81,
+        "mean_pfake_real": 0.8416493773460388,
+        "mean_pfake_fake": 0.7237088998526703,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 31,
+            "total": 38,
+            "accuracy": 0.8157894736842105,
+            "mean_pfake": 0.7317997856359733
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 36,
+            "total": 43,
+            "accuracy": 0.8372093023255814,
+            "mean_pfake": 0.7165588147418444
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9161735872427622
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.7919665707482232
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 27,
+            "total": 35,
+            "accuracy": 0.7714285714285715,
+            "mean_pfake": 0.7575939169951847
+          },
+          "en": {
+            "correct": 23,
+            "total": 34,
+            "accuracy": 0.6764705882352942,
+            "mean_pfake": 0.7505554924992954
+          },
+          "sk": {
+            "correct": 17,
+            "total": 27,
+            "accuracy": 0.6296296296296297,
+            "mean_pfake": 0.7114995447573839
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 20,
+            "total": 37,
+            "accuracy": 0.5405405405405406,
+            "mean_pfake": 0.845485526967693
+          },
+          "anton": {
+            "correct": 26,
+            "total": 30,
+            "accuracy": 0.8666666666666667,
+            "mean_pfake": 0.7500583777825037
+          },
+          "miska": {
+            "correct": 21,
+            "total": 29,
+            "accuracy": 0.7241379310344828,
+            "mean_pfake": 0.6020843350681765
+          }
+        }
+      },
+      "sg_1.0": {
+        "accuracy": 0.6979166666666666,
+        "balanced_accuracy": 0.41358024691358025,
+        "roc_auc": 0.3481481481481481,
+        "total_correct": 67,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 67,
+        "fake_total": 81,
+        "mean_pfake_real": 0.841635278860728,
+        "mean_pfake_fake": 0.7236850526597765,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 31,
+            "total": 38,
+            "accuracy": 0.8157894736842105,
+            "mean_pfake": 0.7317964332668405
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 36,
+            "total": 43,
+            "accuracy": 0.8372093023255814,
+            "mean_pfake": 0.7165168558442315
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9161626895268759
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.7919503384166293
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 27,
+            "total": 35,
+            "accuracy": 0.7714285714285715,
+            "mean_pfake": 0.7576110405581338
+          },
+          "en": {
+            "correct": 23,
+            "total": 34,
+            "accuracy": 0.6764705882352942,
+            "mean_pfake": 0.7505475195015178
+          },
+          "sk": {
+            "correct": 17,
+            "total": 27,
+            "accuracy": 0.6296296296296297,
+            "mean_pfake": 0.7114080135469083
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 20,
+            "total": 37,
+            "accuracy": 0.5405405405405406,
+            "mean_pfake": 0.8454773627422951
+          },
+          "anton": {
+            "correct": 26,
+            "total": 30,
+            "accuracy": 0.8666666666666667,
+            "mean_pfake": 0.750010970234871
+          },
+          "miska": {
+            "correct": 21,
+            "total": 29,
+            "accuracy": 0.7241379310344828,
+            "mean_pfake": 0.6020698937876471
+          }
+        }
+      },
+      "sg_2.0": {
+        "accuracy": 0.6979166666666666,
+        "balanced_accuracy": 0.41358024691358025,
+        "roc_auc": 0.3448559670781893,
+        "total_correct": 67,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 67,
+        "fake_total": 81,
+        "mean_pfake_real": 0.8411585728327433,
+        "mean_pfake_fake": 0.7194680015981934,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 31,
+            "total": 38,
+            "accuracy": 0.8157894736842105,
+            "mean_pfake": 0.7223076859587118
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 36,
+            "total": 43,
+            "accuracy": 0.8372093023255814,
+            "mean_pfake": 0.7169585130935492
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.91604083776474
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.7912370628780789
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 27,
+            "total": 35,
+            "accuracy": 0.7714285714285715,
+            "mean_pfake": 0.7552286224705832
+          },
+          "en": {
+            "correct": 23,
+            "total": 34,
+            "accuracy": 0.6764705882352942,
+            "mean_pfake": 0.7449743958080516
+          },
+          "sk": {
+            "correct": 17,
+            "total": 27,
+            "accuracy": 0.6296296296296297,
+            "mean_pfake": 0.7085983510370608
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 20,
+            "total": 37,
+            "accuracy": 0.5405405405405406,
+            "mean_pfake": 0.8452858691279953
+          },
+          "anton": {
+            "correct": 26,
+            "total": 30,
+            "accuracy": 0.8666666666666667,
+            "mean_pfake": 0.741597267985344
+          },
+          "miska": {
+            "correct": 21,
+            "total": 29,
+            "accuracy": 0.7241379310344828,
+            "mean_pfake": 0.5989928111947816
+          }
+        }
+      },
+      "sg_2.5": {
+        "accuracy": 0.6979166666666666,
+        "balanced_accuracy": 0.41358024691358025,
+        "roc_auc": 0.3448559670781893,
+        "total_correct": 67,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 67,
+        "fake_total": 81,
+        "mean_pfake_real": 0.8397739171981812,
+        "mean_pfake_fake": 0.7195117168220473,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 31,
+            "total": 38,
+            "accuracy": 0.8157894736842105,
+            "mean_pfake": 0.722912513111767
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 36,
+            "total": 43,
+            "accuracy": 0.8372093023255814,
+            "mean_pfake": 0.7165063619613647
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9143266677856445
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.7900720834732056
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 27,
+            "total": 35,
+            "accuracy": 0.7714285714285715,
+            "mean_pfake": 0.754482660974775
+          },
+          "en": {
+            "correct": 23,
+            "total": 34,
+            "accuracy": 0.6764705882352942,
+            "mean_pfake": 0.7443660120753681
+          },
+          "sk": {
+            "correct": 17,
+            "total": 27,
+            "accuracy": 0.6296296296296297,
+            "mean_pfake": 0.7096933435510706
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 20,
+            "total": 37,
+            "accuracy": 0.5405405405405406,
+            "mean_pfake": 0.8446822174497552
+          },
+          "anton": {
+            "correct": 26,
+            "total": 30,
+            "accuracy": 0.8666666666666667,
+            "mean_pfake": 0.7439480175574621
+          },
+          "miska": {
+            "correct": 21,
+            "total": 29,
+            "accuracy": 0.7241379310344828,
+            "mean_pfake": 0.5967370775239221
+          }
+        }
+      }
+    },
+    "jakub_norm": {
+      "accuracy": 0.9285714285714286,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 1.0,
+      "total_correct": 13,
+      "total": 14,
+      "real_correct": 0,
+      "real_total": 1,
+      "fake_correct": 13,
+      "fake_total": 13,
+      "mean_pfake_real": 0.828302264213562,
+      "mean_pfake_fake": 0.9189549271876996,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 6,
+          "total": 6,
+          "accuracy": 1.0,
+          "mean_pfake": 0.8870308498541514
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 7,
+          "total": 7,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9463184220450265
+        },
+        "jakub": {
+          "correct": 0,
+          "total": 1,
+          "accuracy": 0.0,
+          "mean_pfake": 0.828302264213562
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 5,
+          "total": 5,
+          "accuracy": 1.0,
+          "mean_pfake": 0.8937721133232117
+        },
+        "en": {
+          "correct": 5,
+          "total": 6,
+          "accuracy": 0.8333333333333334,
+          "mean_pfake": 0.9089495440324148
+        },
+        "sk": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9507194956143697
+        }
+      },
+      "by_speaker": {
+        "jakub": {
+          "correct": 13,
+          "total": 14,
+          "accuracy": 0.9285714285714286,
+          "mean_pfake": 0.9124797369752612
+        }
+      }
+    },
+    "jakub_raw": {
+      "accuracy": 0.9285714285714286,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 1.0,
+      "total_correct": 13,
+      "total": 14,
+      "real_correct": 0,
+      "real_total": 1,
+      "fake_correct": 13,
+      "fake_total": 13,
+      "mean_pfake_real": 0.8283042311668396,
+      "mean_pfake_fake": 0.9189546933540931,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 6,
+          "total": 6,
+          "accuracy": 1.0,
+          "mean_pfake": 0.8870278298854828
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 7,
+          "total": 7,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9463205763271877
+        },
+        "jakub": {
+          "correct": 0,
+          "total": 1,
+          "accuracy": 0.0,
+          "mean_pfake": 0.8283042311668396
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 5,
+          "total": 5,
+          "accuracy": 1.0,
+          "mean_pfake": 0.8937737822532654
+        },
+        "en": {
+          "correct": 5,
+          "total": 6,
+          "accuracy": 0.8333333333333334,
+          "mean_pfake": 0.908947745958964
+        },
+        "sk": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_pfake": 0.950719952583313
+        }
+      },
+      "by_speaker": {
+        "jakub": {
+          "correct": 13,
+          "total": 14,
+          "accuracy": 0.9285714285714286,
+          "mean_pfake": 0.9124796603407178
+        }
+      }
+    }
+  },
+  "heavy": {
+    "original": {
+      "accuracy": 0.625,
+      "balanced_accuracy": 0.7777777777777778,
+      "roc_auc": 0.9728395061728395,
+      "total_correct": 60,
+      "total": 96,
+      "real_correct": 15,
+      "real_total": 15,
+      "fake_correct": 45,
+      "fake_total": 81,
+      "mean_pfake_real": 0.00011624762846622616,
+      "mean_pfake_fake": 0.5530340186514989,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 13,
+          "total": 38,
+          "accuracy": 0.34210526315789475,
+          "mean_pfake": 0.33189823032961085
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 32,
+          "total": 43,
+          "accuracy": 0.7441860465116279,
+          "mean_pfake": 0.748456343215028
+        },
+        "anton": {
+          "correct": 6,
+          "total": 6,
+          "accuracy": 1.0,
+          "mean_pfake": 0.00010484213028879215
+        },
+        "miska": {
+          "correct": 9,
+          "total": 9,
+          "accuracy": 1.0,
+          "mean_pfake": 0.00012385129391784884
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 25,
+          "total": 35,
+          "accuracy": 0.7142857142857143,
+          "mean_pfake": 0.6132847261193092
+        },
+        "en": {
+          "correct": 18,
+          "total": 34,
+          "accuracy": 0.5294117647058824,
+          "mean_pfake": 0.3697672393410518
+        },
+        "sk": {
+          "correct": 17,
+          "total": 27,
+          "accuracy": 0.6296296296296297,
+          "mean_pfake": 0.3985350990158083
+        }
+      },
+      "by_speaker": {
+        "?": {
+          "correct": 29,
+          "total": 37,
+          "accuracy": 0.7837837837837838,
+          "mean_pfake": 0.3846501443950802
+        },
+        "anton": {
+          "correct": 14,
+          "total": 30,
+          "accuracy": 0.4666666666666667,
+          "mean_pfake": 0.43874916121712887
+        },
+        "miska": {
+          "correct": 17,
+          "total": 29,
+          "accuracy": 0.5862068965517241,
+          "mean_pfake": 0.6001023808988474
+        }
+      }
+    },
+    "silence_std": {
+      "accuracy": 0.6458333333333334,
+      "balanced_accuracy": 0.6,
+      "roc_auc": 0.5958847736625514,
+      "total_correct": 62,
+      "total": 96,
+      "real_correct": 8,
+      "real_total": 15,
+      "fake_correct": 54,
+      "fake_total": 81,
+      "mean_pfake_real": 0.4620600483530628,
+      "mean_pfake_fake": 0.6603857859847694,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 17,
+          "total": 38,
+          "accuracy": 0.4473684210526316,
+          "mean_pfake": 0.44217465020215296
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 37,
+          "total": 43,
+          "accuracy": 0.8604651162790697,
+          "mean_pfake": 0.8532235338856862
+        },
+        "anton": {
+          "correct": 4,
+          "total": 6,
+          "accuracy": 0.6666666666666666,
+          "mean_pfake": 0.32186736343282973
+        },
+        "miska": {
+          "correct": 4,
+          "total": 9,
+          "accuracy": 0.4444444444444444,
+          "mean_pfake": 0.5555218382998848
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 22,
+          "total": 35,
+          "accuracy": 0.6285714285714286,
+          "mean_pfake": 0.7138441544893015
+        },
+        "en": {
+          "correct": 24,
+          "total": 34,
+          "accuracy": 0.7058823529411765,
+          "mean_pfake": 0.5800846054069766
+        },
+        "sk": {
+          "correct": 16,
+          "total": 27,
+          "accuracy": 0.5925925925925926,
+          "mean_pfake": 0.5820269407073889
+        }
+      },
+      "by_speaker": {
+        "?": {
+          "correct": 24,
+          "total": 37,
+          "accuracy": 0.6486486486486487,
+          "mean_pfake": 0.6129562654691777
+        },
+        "anton": {
+          "correct": 18,
+          "total": 30,
+          "accuracy": 0.6,
+          "mean_pfake": 0.5815203650177864
+        },
+        "miska": {
+          "correct": 20,
+          "total": 29,
+          "accuracy": 0.6896551724137931,
+          "mean_pfake": 0.6999019523161757
+        }
+      }
+    },
+    "amplitude": {
+      "gain_0.5": {
+        "accuracy": 0.625,
+        "balanced_accuracy": 0.7777777777777778,
+        "roc_auc": 0.9728395061728395,
+        "total_correct": 60,
+        "total": 96,
+        "real_correct": 15,
+        "real_total": 15,
+        "fake_correct": 45,
+        "fake_total": 81,
+        "mean_pfake_real": 0.00011624598264461383,
+        "mean_pfake_fake": 0.553306073248857,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 13,
+            "total": 38,
+            "accuracy": 0.34210526315789475,
+            "mean_pfake": 0.331905220082454
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 32,
+            "total": 43,
+            "accuracy": 0.7441860465116279,
+            "mean_pfake": 0.7489626411633528
+          },
+          "anton": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0001048432301710515
+          },
+          "miska": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0,
+            "mean_pfake": 0.00012384781762698872
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 25,
+            "total": 35,
+            "accuracy": 0.7142857142857143,
+            "mean_pfake": 0.6138262287809214
+          },
+          "en": {
+            "correct": 18,
+            "total": 34,
+            "accuracy": 0.5294117647058824,
+            "mean_pfake": 0.369858533353288
+          },
+          "sk": {
+            "correct": 17,
+            "total": 27,
+            "accuracy": 0.6296296296296297,
+            "mean_pfake": 0.39853435116863156
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 29,
+            "total": 37,
+            "accuracy": 0.7837837837837838,
+            "mean_pfake": 0.38467211294522025
+          },
+          "anton": {
+            "correct": 14,
+            "total": 30,
+            "accuracy": 0.4666666666666667,
+            "mean_pfake": 0.43943565423299635
+          },
+          "miska": {
+            "correct": 17,
+            "total": 29,
+            "accuracy": 0.5862068965517241,
+            "mean_pfake": 0.6001240626528983
+          }
+        }
+      },
+      "gain_1.0": {
+        "accuracy": 0.625,
+        "balanced_accuracy": 0.7777777777777778,
+        "roc_auc": 0.9728395061728395,
+        "total_correct": 60,
+        "total": 96,
+        "real_correct": 15,
+        "real_total": 15,
+        "fake_correct": 45,
+        "fake_total": 81,
+        "mean_pfake_real": 0.00011624762846622616,
+        "mean_pfake_fake": 0.5530340186514989,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 13,
+            "total": 38,
+            "accuracy": 0.34210526315789475,
+            "mean_pfake": 0.33189823032961085
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 32,
+            "total": 43,
+            "accuracy": 0.7441860465116279,
+            "mean_pfake": 0.748456343215028
+          },
+          "anton": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.00010484213028879215
+          },
+          "miska": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0,
+            "mean_pfake": 0.00012385129391784884
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 25,
+            "total": 35,
+            "accuracy": 0.7142857142857143,
+            "mean_pfake": 0.6132847261193092
+          },
+          "en": {
+            "correct": 18,
+            "total": 34,
+            "accuracy": 0.5294117647058824,
+            "mean_pfake": 0.3697672393410518
+          },
+          "sk": {
+            "correct": 17,
+            "total": 27,
+            "accuracy": 0.6296296296296297,
+            "mean_pfake": 0.3985350990158083
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 29,
+            "total": 37,
+            "accuracy": 0.7837837837837838,
+            "mean_pfake": 0.3846501443950802
+          },
+          "anton": {
+            "correct": 14,
+            "total": 30,
+            "accuracy": 0.4666666666666667,
+            "mean_pfake": 0.43874916121712887
+          },
+          "miska": {
+            "correct": 17,
+            "total": 29,
+            "accuracy": 0.5862068965517241,
+            "mean_pfake": 0.6001023808988474
+          }
+        }
+      },
+      "gain_2.0": {
+        "accuracy": 0.625,
+        "balanced_accuracy": 0.7777777777777778,
+        "roc_auc": 0.9736625514403292,
+        "total_correct": 60,
+        "total": 96,
+        "real_correct": 15,
+        "real_total": 15,
+        "fake_correct": 45,
+        "fake_total": 81,
+        "mean_pfake_real": 0.00011961473549793785,
+        "mean_pfake_fake": 0.5547793449247062,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 13,
+            "total": 38,
+            "accuracy": 0.34210526315789475,
+            "mean_pfake": 0.3376941192791013
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 32,
+            "total": 43,
+            "accuracy": 0.7441860465116279,
+            "mean_pfake": 0.7466221024719849
+          },
+          "anton": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0001048426177779523
+          },
+          "miska": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0,
+            "mean_pfake": 0.00012946281397792822
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 25,
+            "total": 35,
+            "accuracy": 0.7142857142857143,
+            "mean_pfake": 0.611032820912078
+          },
+          "en": {
+            "correct": 19,
+            "total": 34,
+            "accuracy": 0.5588235294117647,
+            "mean_pfake": 0.3904803923563604
+          },
+          "sk": {
+            "correct": 16,
+            "total": 27,
+            "accuracy": 0.5925925925925926,
+            "mean_pfake": 0.38060885510721065
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 29,
+            "total": 37,
+            "accuracy": 0.7837837837837838,
+            "mean_pfake": 0.384640311403436
+          },
+          "anton": {
+            "correct": 13,
+            "total": 30,
+            "accuracy": 0.43333333333333335,
+            "mean_pfake": 0.41819576389631646
+          },
+          "miska": {
+            "correct": 18,
+            "total": 29,
+            "accuracy": 0.6206896551724138,
+            "mean_pfake": 0.6262536800385188
+          }
+        }
+      },
+      "gain_2.5": {
+        "accuracy": 0.6145833333333334,
+        "balanced_accuracy": 0.7716049382716049,
+        "roc_auc": 0.9728395061728395,
+        "total_correct": 59,
+        "total": 96,
+        "real_correct": 15,
+        "real_total": 15,
+        "fake_correct": 44,
+        "fake_total": 81,
+        "mean_pfake_real": 0.00012620679335668684,
+        "mean_pfake_fake": 0.5477489682952306,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 12,
+            "total": 38,
+            "accuracy": 0.3157894736842105,
+            "mean_pfake": 0.3261987996717691
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 32,
+            "total": 43,
+            "accuracy": 0.7441860465116279,
+            "mean_pfake": 0.7435374894043361
+          },
+          "anton": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.00010484531230758876
+          },
+          "miska": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0001404477807227522
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 25,
+            "total": 35,
+            "accuracy": 0.7142857142857143,
+            "mean_pfake": 0.6069012615118741
+          },
+          "en": {
+            "correct": 18,
+            "total": 34,
+            "accuracy": 0.5294117647058824,
+            "mean_pfake": 0.3767016240663532
+          },
+          "sk": {
+            "correct": 16,
+            "total": 27,
+            "accuracy": 0.5925925925925926,
+            "mean_pfake": 0.3822281541719416
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 29,
+            "total": 37,
+            "accuracy": 0.7837837837837838,
+            "mean_pfake": 0.3846061515422834
+          },
+          "anton": {
+            "correct": 13,
+            "total": 30,
+            "accuracy": 0.43333333333333335,
+            "mean_pfake": 0.4177071663757185
+          },
+          "miska": {
+            "correct": 17,
+            "total": 29,
+            "accuracy": 0.5862068965517241,
+            "mean_pfake": 0.607169549499241
+          }
+        }
+      }
+    },
+    "combined": {
+      "sg_0.5": {
+        "accuracy": 0.6458333333333334,
+        "balanced_accuracy": 0.6,
+        "roc_auc": 0.5958847736625514,
+        "total_correct": 62,
+        "total": 96,
+        "real_correct": 8,
+        "real_total": 15,
+        "fake_correct": 54,
+        "fake_total": 81,
+        "mean_pfake_real": 0.46217834779575545,
+        "mean_pfake_fake": 0.6605611040143197,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 17,
+            "total": 38,
+            "accuracy": 0.4473684210526316,
+            "mean_pfake": 0.44224149823525005
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 37,
+            "total": 43,
+            "accuracy": 0.8604651162790697,
+            "mean_pfake": 0.8534947091214045
+          },
+          "anton": {
+            "correct": 4,
+            "total": 6,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.3221630923023137
+          },
+          "miska": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444,
+            "mean_pfake": 0.55552185145805
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 22,
+            "total": 35,
+            "accuracy": 0.6285714285714286,
+            "mean_pfake": 0.7139346752001854
+          },
+          "en": {
+            "correct": 24,
+            "total": 34,
+            "accuracy": 0.7058823529411765,
+            "mean_pfake": 0.5804461220547691
+          },
+          "sk": {
+            "correct": 16,
+            "total": 27,
+            "accuracy": 0.5925925925925926,
+            "mean_pfake": 0.5820460318602811
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 24,
+            "total": 37,
+            "accuracy": 0.6486486486486487,
+            "mean_pfake": 0.6130600245946757
+          },
+          "anton": {
+            "correct": 18,
+            "total": 30,
+            "accuracy": 0.6,
+            "mean_pfake": 0.5819194957463575
+          },
+          "miska": {
+            "correct": 20,
+            "total": 29,
+            "accuracy": 0.6896551724137931,
+            "mean_pfake": 0.6999075468862931
+          }
+        }
+      },
+      "sg_1.0": {
+        "accuracy": 0.6458333333333334,
+        "balanced_accuracy": 0.6,
+        "roc_auc": 0.5958847736625514,
+        "total_correct": 62,
+        "total": 96,
+        "real_correct": 8,
+        "real_total": 15,
+        "fake_correct": 54,
+        "fake_total": 81,
+        "mean_pfake_real": 0.4620600483530628,
+        "mean_pfake_fake": 0.6603857859847694,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 17,
+            "total": 38,
+            "accuracy": 0.4473684210526316,
+            "mean_pfake": 0.44217465020215296
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 37,
+            "total": 43,
+            "accuracy": 0.8604651162790697,
+            "mean_pfake": 0.8532235338856862
+          },
+          "anton": {
+            "correct": 4,
+            "total": 6,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.32186736343282973
+          },
+          "miska": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444,
+            "mean_pfake": 0.5555218382998848
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 22,
+            "total": 35,
+            "accuracy": 0.6285714285714286,
+            "mean_pfake": 0.7138441544893015
+          },
+          "en": {
+            "correct": 24,
+            "total": 34,
+            "accuracy": 0.7058823529411765,
+            "mean_pfake": 0.5800846054069766
+          },
+          "sk": {
+            "correct": 16,
+            "total": 27,
+            "accuracy": 0.5925925925925926,
+            "mean_pfake": 0.5820269407073889
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 24,
+            "total": 37,
+            "accuracy": 0.6486486486486487,
+            "mean_pfake": 0.6129562654691777
+          },
+          "anton": {
+            "correct": 18,
+            "total": 30,
+            "accuracy": 0.6,
+            "mean_pfake": 0.5815203650177864
+          },
+          "miska": {
+            "correct": 20,
+            "total": 29,
+            "accuracy": 0.6896551724137931,
+            "mean_pfake": 0.6999019523161757
+          }
+        }
+      },
+      "sg_2.0": {
+        "accuracy": 0.6458333333333334,
+        "balanced_accuracy": 0.6,
+        "roc_auc": 0.5991769547325103,
+        "total_correct": 62,
+        "total": 96,
+        "real_correct": 8,
+        "real_total": 15,
+        "fake_correct": 54,
+        "fake_total": 81,
+        "mean_pfake_real": 0.46202979823380397,
+        "mean_pfake_fake": 0.6581893884997245,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 17,
+            "total": 38,
+            "accuracy": 0.4473684210526316,
+            "mean_pfake": 0.437588484624269
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 37,
+            "total": 43,
+            "accuracy": 0.8604651162790697,
+            "mean_pfake": 0.8531390244826853
+          },
+          "anton": {
+            "correct": 4,
+            "total": 6,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.32179174177993747
+          },
+          "miska": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444,
+            "mean_pfake": 0.5555218358697149
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 22,
+            "total": 35,
+            "accuracy": 0.6285714285714286,
+            "mean_pfake": 0.7138242496142214
+          },
+          "en": {
+            "correct": 24,
+            "total": 34,
+            "accuracy": 0.7058823529411765,
+            "mean_pfake": 0.5708245415191735
+          },
+          "sk": {
+            "correct": 16,
+            "total": 27,
+            "accuracy": 0.5925925925925926,
+            "mean_pfake": 0.5871075664383372
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 24,
+            "total": 37,
+            "accuracy": 0.6486486486486487,
+            "mean_pfake": 0.6129303284007521
+          },
+          "anton": {
+            "correct": 18,
+            "total": 30,
+            "accuracy": 0.6,
+            "mean_pfake": 0.5859896204072963
+          },
+          "miska": {
+            "correct": 20,
+            "total": 29,
+            "accuracy": 0.6896551724137931,
+            "mean_pfake": 0.6891612647909667
+          }
+        }
+      },
+      "sg_2.5": {
+        "accuracy": 0.6458333333333334,
+        "balanced_accuracy": 0.6,
+        "roc_auc": 0.5934156378600823,
+        "total_correct": 62,
+        "total": 96,
+        "real_correct": 8,
+        "real_total": 15,
+        "fake_correct": 54,
+        "fake_total": 81,
+        "mean_pfake_real": 0.46274843038554536,
+        "mean_pfake_fake": 0.664424453105222,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 17,
+            "total": 38,
+            "accuracy": 0.4473684210526316,
+            "mean_pfake": 0.4509361248563341
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 37,
+            "total": 43,
+            "accuracy": 0.8604651162790697,
+            "mean_pfake": 0.853088557139123
+          },
+          "anton": {
+            "correct": 4,
+            "total": 6,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.32358964891318465
+          },
+          "miska": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444,
+            "mean_pfake": 0.5555209513671192
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 22,
+            "total": 35,
+            "accuracy": 0.6285714285714286,
+            "mean_pfake": 0.7137803041773233
+          },
+          "en": {
+            "correct": 25,
+            "total": 34,
+            "accuracy": 0.7352941176470589,
+            "mean_pfake": 0.5975639001866083
+          },
+          "sk": {
+            "correct": 15,
+            "total": 27,
+            "accuracy": 0.5555555555555556,
+            "mean_pfake": 0.5725971816575987
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 24,
+            "total": 37,
+            "accuracy": 0.6486486486486487,
+            "mean_pfake": 0.6132203301415241
+          },
+          "anton": {
+            "correct": 17,
+            "total": 30,
+            "accuracy": 0.5666666666666667,
+            "mean_pfake": 0.5672714420659759
+          },
+          "miska": {
+            "correct": 21,
+            "total": 29,
+            "accuracy": 0.7241379310344828,
+            "mean_pfake": 0.7259417820720862
+          }
+        }
+      }
+    },
+    "jakub_norm": {
+      "accuracy": 0.42857142857142855,
+      "balanced_accuracy": 0.6923076923076923,
+      "roc_auc": 0.9230769230769231,
+      "total_correct": 6,
+      "total": 14,
+      "real_correct": 1,
+      "real_total": 1,
+      "fake_correct": 5,
+      "fake_total": 13,
+      "mean_pfake_real": 0.00011145394819322973,
+      "mean_pfake_fake": 0.3605032919641907,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 0,
+          "total": 6,
+          "accuracy": 0.0,
+          "mean_pfake": 0.00021737139225782207
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 5,
+          "total": 7,
+          "accuracy": 0.7142857142857143,
+          "mean_pfake": 0.6693197953115616
+        },
+        "jakub": {
+          "correct": 1,
+          "total": 1,
+          "accuracy": 1.0,
+          "mean_pfake": 0.00011145394819322973
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 1,
+          "total": 5,
+          "accuracy": 0.2,
+          "mean_pfake": 0.18645019636751387
+        },
+        "en": {
+          "correct": 2,
+          "total": 6,
+          "accuracy": 0.3333333333333333,
+          "mean_pfake": 0.1665458338696529
+        },
+        "sk": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_pfake": 0.918376088142395
+        }
+      },
+      "by_speaker": {
+        "jakub": {
+          "correct": 6,
+          "total": 14,
+          "accuracy": 0.42857142857142855,
+          "mean_pfake": 0.33476101782019085
+        }
+      }
+    },
+    "jakub_raw": {
+      "accuracy": 0.42857142857142855,
+      "balanced_accuracy": 0.6923076923076923,
+      "roc_auc": 0.9230769230769231,
+      "total_correct": 6,
+      "total": 14,
+      "real_correct": 1,
+      "real_total": 1,
+      "fake_correct": 5,
+      "fake_total": 13,
+      "mean_pfake_real": 0.00011145373719045892,
+      "mean_pfake_fake": 0.3606192369233423,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 0,
+          "total": 6,
+          "accuracy": 0.0,
+          "mean_pfake": 0.00021730207663495094
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 5,
+          "total": 7,
+          "accuracy": 0.7142857142857143,
+          "mean_pfake": 0.6695351810776629
+        },
+        "jakub": {
+          "correct": 1,
+          "total": 1,
+          "accuracy": 1.0,
+          "mean_pfake": 0.00011145373719045892
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 1,
+          "total": 5,
+          "accuracy": 0.2,
+          "mean_pfake": 0.18650499749783195
+        },
+        "en": {
+          "correct": 2,
+          "total": 6,
+          "accuracy": 0.3333333333333333,
+          "mean_pfake": 0.16654738340730546
+        },
+        "sk": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9187840819358826
+        }
+      },
+      "by_speaker": {
+        "jakub": {
+          "correct": 6,
+          "total": 14,
+          "accuracy": 0.42857142857142855,
+          "mean_pfake": 0.3348686809814743
+        }
+      }
+    }
+  },
+  "heavy+aug": {
+    "original": {
+      "accuracy": 0.8229166666666666,
+      "balanced_accuracy": 0.8950617283950617,
+      "roc_auc": 0.9358024691358025,
+      "total_correct": 79,
+      "total": 96,
+      "real_correct": 15,
+      "real_total": 15,
+      "fake_correct": 64,
+      "fake_total": 81,
+      "mean_pfake_real": 0.07110460276405016,
+      "mean_pfake_fake": 0.7161866648835532,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 25,
+          "total": 38,
+          "accuracy": 0.6578947368421053,
+          "mean_pfake": 0.6218095876178459
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 39,
+          "total": 43,
+          "accuracy": 0.9069767441860465,
+          "mean_pfake": 0.7995896633974341
+        },
+        "anton": {
+          "correct": 6,
+          "total": 6,
+          "accuracy": 1.0,
+          "mean_pfake": 0.15169971932967505
+        },
+        "miska": {
+          "correct": 9,
+          "total": 9,
+          "accuracy": 1.0,
+          "mean_pfake": 0.017374525053633585
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 30,
+          "total": 35,
+          "accuracy": 0.8571428571428571,
+          "mean_pfake": 0.6759233457435455
+        },
+        "en": {
+          "correct": 29,
+          "total": 34,
+          "accuracy": 0.8529411764705882,
+          "mean_pfake": 0.6274633331443457
+        },
+        "sk": {
+          "correct": 20,
+          "total": 27,
+          "accuracy": 0.7407407407407407,
+          "mean_pfake": 0.5217266099665452
+        }
+      },
+      "by_speaker": {
+        "?": {
+          "correct": 36,
+          "total": 37,
+          "accuracy": 0.972972972972973,
+          "mean_pfake": 0.5562245252768736
+        },
+        "anton": {
+          "correct": 25,
+          "total": 30,
+          "accuracy": 0.8333333333333334,
+          "mean_pfake": 0.7694500967860222
+        },
+        "miska": {
+          "correct": 18,
+          "total": 29,
+          "accuracy": 0.6206896551724138,
+          "mean_pfake": 0.5315130537311579
+        }
+      }
+    },
+    "silence_std": {
+      "accuracy": 0.78125,
+      "balanced_accuracy": 0.6530864197530863,
+      "roc_auc": 0.6312757201646091,
+      "total_correct": 75,
+      "total": 96,
+      "real_correct": 7,
+      "real_total": 15,
+      "fake_correct": 68,
+      "fake_total": 81,
+      "mean_pfake_real": 0.5402931518231829,
+      "mean_pfake_fake": 0.7640836012181769,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 25,
+          "total": 38,
+          "accuracy": 0.6578947368421053,
+          "mean_pfake": 0.6316695765371582
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 43,
+          "total": 43,
+          "accuracy": 1.0,
+          "mean_pfake": 0.8811006462851236
+        },
+        "anton": {
+          "correct": 3,
+          "total": 6,
+          "accuracy": 0.5,
+          "mean_pfake": 0.580095952997605
+        },
+        "miska": {
+          "correct": 4,
+          "total": 9,
+          "accuracy": 0.4444444444444444,
+          "mean_pfake": 0.5137579510402348
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 27,
+          "total": 35,
+          "accuracy": 0.7714285714285715,
+          "mean_pfake": 0.7881773933236088
+        },
+        "en": {
+          "correct": 29,
+          "total": 34,
+          "accuracy": 0.8529411764705882,
+          "mean_pfake": 0.7315315956468967
+        },
+        "sk": {
+          "correct": 19,
+          "total": 27,
+          "accuracy": 0.7037037037037037,
+          "mean_pfake": 0.6495142947296025
+        }
+      },
+      "by_speaker": {
+        "?": {
+          "correct": 29,
+          "total": 37,
+          "accuracy": 0.7837837837837838,
+          "mean_pfake": 0.7838092521588141
+        },
+        "anton": {
+          "correct": 27,
+          "total": 30,
+          "accuracy": 0.9,
+          "mean_pfake": 0.8130404730637868
+        },
+        "miska": {
+          "correct": 19,
+          "total": 29,
+          "accuracy": 0.6551724137931034,
+          "mean_pfake": 0.572517670835529
+        }
+      }
+    },
+    "amplitude": {
+      "gain_0.5": {
+        "accuracy": 0.8229166666666666,
+        "balanced_accuracy": 0.8950617283950617,
+        "roc_auc": 0.9358024691358025,
+        "total_correct": 79,
+        "total": 96,
+        "real_correct": 15,
+        "real_total": 15,
+        "fake_correct": 64,
+        "fake_total": 81,
+        "mean_pfake_real": 0.07112654751787582,
+        "mean_pfake_fake": 0.7161900082971027,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 25,
+            "total": 38,
+            "accuracy": 0.6578947368421053,
+            "mean_pfake": 0.6218108052730953
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 39,
+            "total": 43,
+            "accuracy": 0.9069767441860465,
+            "mean_pfake": 0.799594885388086
+          },
+          "anton": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.15175149527688822
+          },
+          "miska": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0,
+            "mean_pfake": 0.01737658234520091
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 30,
+            "total": 35,
+            "accuracy": 0.8571428571428571,
+            "mean_pfake": 0.6759228214621544
+          },
+          "en": {
+            "correct": 29,
+            "total": 34,
+            "accuracy": 0.8529411764705882,
+            "mean_pfake": 0.6274378803996917
+          },
+          "sk": {
+            "correct": 20,
+            "total": 27,
+            "accuracy": 0.7407407407407407,
+            "mean_pfake": 0.5217815629655013
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 36,
+            "total": 37,
+            "accuracy": 0.972972972972973,
+            "mean_pfake": 0.5562365784284633
+          },
+          "anton": {
+            "correct": 25,
+            "total": 30,
+            "accuracy": 0.8333333333333334,
+            "mean_pfake": 0.7694470643997192
+          },
+          "miska": {
+            "correct": 18,
+            "total": 29,
+            "accuracy": 0.6206896551724138,
+            "mean_pfake": 0.5315215017582322
+          }
+        }
+      },
+      "gain_1.0": {
+        "accuracy": 0.8229166666666666,
+        "balanced_accuracy": 0.8950617283950617,
+        "roc_auc": 0.9358024691358025,
+        "total_correct": 79,
+        "total": 96,
+        "real_correct": 15,
+        "real_total": 15,
+        "fake_correct": 64,
+        "fake_total": 81,
+        "mean_pfake_real": 0.07110460276405016,
+        "mean_pfake_fake": 0.7161866648835532,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 25,
+            "total": 38,
+            "accuracy": 0.6578947368421053,
+            "mean_pfake": 0.6218095876178459
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 39,
+            "total": 43,
+            "accuracy": 0.9069767441860465,
+            "mean_pfake": 0.7995896633974341
+          },
+          "anton": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.15169971932967505
+          },
+          "miska": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0,
+            "mean_pfake": 0.017374525053633585
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 30,
+            "total": 35,
+            "accuracy": 0.8571428571428571,
+            "mean_pfake": 0.6759233457435455
+          },
+          "en": {
+            "correct": 29,
+            "total": 34,
+            "accuracy": 0.8529411764705882,
+            "mean_pfake": 0.6274633331443457
+          },
+          "sk": {
+            "correct": 20,
+            "total": 27,
+            "accuracy": 0.7407407407407407,
+            "mean_pfake": 0.5217266099665452
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 36,
+            "total": 37,
+            "accuracy": 0.972972972972973,
+            "mean_pfake": 0.5562245252768736
+          },
+          "anton": {
+            "correct": 25,
+            "total": 30,
+            "accuracy": 0.8333333333333334,
+            "mean_pfake": 0.7694500967860222
+          },
+          "miska": {
+            "correct": 18,
+            "total": 29,
+            "accuracy": 0.6206896551724138,
+            "mean_pfake": 0.5315130537311579
+          }
+        }
+      },
+      "gain_2.0": {
+        "accuracy": 0.8333333333333334,
+        "balanced_accuracy": 0.9012345679012346,
+        "roc_auc": 0.9325102880658437,
+        "total_correct": 80,
+        "total": 96,
+        "real_correct": 15,
+        "real_total": 15,
+        "fake_correct": 65,
+        "fake_total": 81,
+        "mean_pfake_real": 0.07067617705712716,
+        "mean_pfake_fake": 0.7166587492956975,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 26,
+            "total": 38,
+            "accuracy": 0.6842105263157895,
+            "mean_pfake": 0.6222965853827956
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 39,
+            "total": 43,
+            "accuracy": 0.9069767441860465,
+            "mean_pfake": 0.8000485685675643
+          },
+          "anton": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.15128095261752605
+          },
+          "miska": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0,
+            "mean_pfake": 0.016939660016861226
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 30,
+            "total": 35,
+            "accuracy": 0.8571428571428571,
+            "mean_pfake": 0.6809575992769429
+          },
+          "en": {
+            "correct": 29,
+            "total": 34,
+            "accuracy": 0.8529411764705882,
+            "mean_pfake": 0.6204819349736413
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.5251703550004296
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 36,
+            "total": 37,
+            "accuracy": 0.972972972972973,
+            "mean_pfake": 0.5558564265485149
+          },
+          "anton": {
+            "correct": 26,
+            "total": 30,
+            "accuracy": 0.8666666666666667,
+            "mean_pfake": 0.768403597176075
+          },
+          "miska": {
+            "correct": 18,
+            "total": 29,
+            "accuracy": 0.6206896551724138,
+            "mean_pfake": 0.5341622638355555
+          }
+        }
+      },
+      "gain_2.5": {
+        "accuracy": 0.8333333333333334,
+        "balanced_accuracy": 0.9012345679012346,
+        "roc_auc": 0.9415637860082303,
+        "total_correct": 80,
+        "total": 96,
+        "real_correct": 15,
+        "real_total": 15,
+        "fake_correct": 65,
+        "fake_total": 81,
+        "mean_pfake_real": 0.06823988097409407,
+        "mean_pfake_fake": 0.7235195577133124,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 26,
+            "total": 38,
+            "accuracy": 0.6842105263157895,
+            "mean_pfake": 0.6369592487003262
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 39,
+            "total": 43,
+            "accuracy": 0.9069767441860465,
+            "mean_pfake": 0.8000147145154864
+          },
+          "anton": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.14585252789159617
+          },
+          "miska": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0,
+            "mean_pfake": 0.016498116362426016
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 30,
+            "total": 35,
+            "accuracy": 0.8571428571428571,
+            "mean_pfake": 0.6868945186159441
+          },
+          "en": {
+            "correct": 29,
+            "total": 34,
+            "accuracy": 0.8529411764705882,
+            "mean_pfake": 0.626657993916203
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.5289260164696585
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 36,
+            "total": 37,
+            "accuracy": 0.972972972972973,
+            "mean_pfake": 0.5547196967275562
+          },
+          "anton": {
+            "correct": 26,
+            "total": 30,
+            "accuracy": 0.8666666666666667,
+            "mean_pfake": 0.7799042950073878
+          },
+          "miska": {
+            "correct": 18,
+            "total": 29,
+            "accuracy": 0.6206896551724138,
+            "mean_pfake": 0.5416180951809831
+          }
+        }
+      }
+    },
+    "combined": {
+      "sg_0.5": {
+        "accuracy": 0.78125,
+        "balanced_accuracy": 0.6530864197530863,
+        "roc_auc": 0.6312757201646091,
+        "total_correct": 75,
+        "total": 96,
+        "real_correct": 7,
+        "real_total": 15,
+        "fake_correct": 68,
+        "fake_total": 81,
+        "mean_pfake_real": 0.5403093482678135,
+        "mean_pfake_fake": 0.7640490168188181,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 25,
+            "total": 38,
+            "accuracy": 0.6578947368421053,
+            "mean_pfake": 0.6316698673058694
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8810352419697961
+          },
+          "anton": {
+            "correct": 3,
+            "total": 6,
+            "accuracy": 0.5,
+            "mean_pfake": 0.5801285070677599
+          },
+          "miska": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444,
+            "mean_pfake": 0.5137632424011827
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 27,
+            "total": 35,
+            "accuracy": 0.7714285714285715,
+            "mean_pfake": 0.788171440575804
+          },
+          "en": {
+            "correct": 29,
+            "total": 34,
+            "accuracy": 0.8529411764705882,
+            "mean_pfake": 0.7314560000017724
+          },
+          "sk": {
+            "correct": 19,
+            "total": 27,
+            "accuracy": 0.7037037037037037,
+            "mean_pfake": 0.6495224505973359
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 29,
+            "total": 37,
+            "accuracy": 0.7837837837837838,
+            "mean_pfake": 0.7838141719080709
+          },
+          "anton": {
+            "correct": 27,
+            "total": 30,
+            "accuracy": 0.9,
+            "mean_pfake": 0.8129424686233203
+          },
+          "miska": {
+            "correct": 19,
+            "total": 29,
+            "accuracy": 0.6551724137931034,
+            "mean_pfake": 0.5725245574842496
+          }
+        }
+      },
+      "sg_1.0": {
+        "accuracy": 0.78125,
+        "balanced_accuracy": 0.6530864197530863,
+        "roc_auc": 0.6312757201646091,
+        "total_correct": 75,
+        "total": 96,
+        "real_correct": 7,
+        "real_total": 15,
+        "fake_correct": 68,
+        "fake_total": 81,
+        "mean_pfake_real": 0.5402931518231829,
+        "mean_pfake_fake": 0.7640836012181769,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 25,
+            "total": 38,
+            "accuracy": 0.6578947368421053,
+            "mean_pfake": 0.6316695765371582
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8811006462851236
+          },
+          "anton": {
+            "correct": 3,
+            "total": 6,
+            "accuracy": 0.5,
+            "mean_pfake": 0.580095952997605
+          },
+          "miska": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444,
+            "mean_pfake": 0.5137579510402348
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 27,
+            "total": 35,
+            "accuracy": 0.7714285714285715,
+            "mean_pfake": 0.7881773933236088
+          },
+          "en": {
+            "correct": 29,
+            "total": 34,
+            "accuracy": 0.8529411764705882,
+            "mean_pfake": 0.7315315956468967
+          },
+          "sk": {
+            "correct": 19,
+            "total": 27,
+            "accuracy": 0.7037037037037037,
+            "mean_pfake": 0.6495142947296025
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 29,
+            "total": 37,
+            "accuracy": 0.7837837837837838,
+            "mean_pfake": 0.7838092521588141
+          },
+          "anton": {
+            "correct": 27,
+            "total": 30,
+            "accuracy": 0.9,
+            "mean_pfake": 0.8130404730637868
+          },
+          "miska": {
+            "correct": 19,
+            "total": 29,
+            "accuracy": 0.6551724137931034,
+            "mean_pfake": 0.572517670835529
+          }
+        }
+      },
+      "sg_2.0": {
+        "accuracy": 0.78125,
+        "balanced_accuracy": 0.6530864197530863,
+        "roc_auc": 0.6279835390946502,
+        "total_correct": 75,
+        "total": 96,
+        "real_correct": 7,
+        "real_total": 15,
+        "fake_correct": 68,
+        "fake_total": 81,
+        "mean_pfake_real": 0.54017530841132,
+        "mean_pfake_fake": 0.7647483701944168,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 25,
+            "total": 38,
+            "accuracy": 0.6578947368421053,
+            "mean_pfake": 0.6323944157430608
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8817123299421266
+          },
+          "anton": {
+            "correct": 3,
+            "total": 6,
+            "accuracy": 0.5,
+            "mean_pfake": 0.580043942357103
+          },
+          "miska": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444,
+            "mean_pfake": 0.5135962191141314
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 27,
+            "total": 35,
+            "accuracy": 0.7714285714285715,
+            "mean_pfake": 0.7919304201113326
+          },
+          "en": {
+            "correct": 29,
+            "total": 34,
+            "accuracy": 0.8529411764705882,
+            "mean_pfake": 0.7276299993562347
+          },
+          "sk": {
+            "correct": 19,
+            "total": 27,
+            "accuracy": 0.7037037037037037,
+            "mean_pfake": 0.6514912196262567
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 29,
+            "total": 37,
+            "accuracy": 0.7837837837837838,
+            "mean_pfake": 0.7837569430168416
+          },
+          "anton": {
+            "correct": 27,
+            "total": 30,
+            "accuracy": 0.9,
+            "mean_pfake": 0.8136845817168553
+          },
+          "miska": {
+            "correct": 19,
+            "total": 29,
+            "accuracy": 0.6551724137931034,
+            "mean_pfake": 0.5737139058203019
+          }
+        }
+      },
+      "sg_2.5": {
+        "accuracy": 0.78125,
+        "balanced_accuracy": 0.6530864197530863,
+        "roc_auc": 0.6353909465020575,
+        "total_correct": 75,
+        "total": 96,
+        "real_correct": 7,
+        "real_total": 15,
+        "fake_correct": 68,
+        "fake_total": 81,
+        "mean_pfake_real": 0.5398853685706854,
+        "mean_pfake_fake": 0.770127084945547,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 25,
+            "total": 38,
+            "accuracy": 0.6578947368421053,
+            "mean_pfake": 0.6436758740609022
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8818746666575588
+          },
+          "anton": {
+            "correct": 3,
+            "total": 6,
+            "accuracy": 0.5,
+            "mean_pfake": 0.5776803872237602
+          },
+          "miska": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444,
+            "mean_pfake": 0.5146886894686354
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 27,
+            "total": 35,
+            "accuracy": 0.7714285714285715,
+            "mean_pfake": 0.7954914516902396
+          },
+          "en": {
+            "correct": 29,
+            "total": 34,
+            "accuracy": 0.8529411764705882,
+            "mean_pfake": 0.7330332296243047
+          },
+          "sk": {
+            "correct": 19,
+            "total": 27,
+            "accuracy": 0.7037037037037037,
+            "mean_pfake": 0.6560460663986979
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 29,
+            "total": 37,
+            "accuracy": 0.7837837837837838,
+            "mean_pfake": 0.7836159397722096
+          },
+          "anton": {
+            "correct": 27,
+            "total": 30,
+            "accuracy": 0.9,
+            "mean_pfake": 0.82144861916701
+          },
+          "miska": {
+            "correct": 19,
+            "total": 29,
+            "accuracy": 0.6551724137931034,
+            "mean_pfake": 0.580735381467846
+          }
+        }
+      }
+    },
+    "jakub_norm": {
+      "accuracy": 0.9285714285714286,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 0.7692307692307693,
+      "total_correct": 13,
+      "total": 14,
+      "real_correct": 0,
+      "real_total": 1,
+      "fake_correct": 13,
+      "fake_total": 13,
+      "mean_pfake_real": 0.7572676539421082,
+      "mean_pfake_fake": 0.900165699995481,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 6,
+          "total": 6,
+          "accuracy": 1.0,
+          "mean_pfake": 0.7903991937637329
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 7,
+          "total": 7,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9942512767655509
+        },
+        "jakub": {
+          "correct": 0,
+          "total": 1,
+          "accuracy": 0.0,
+          "mean_pfake": 0.7572676539421082
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 5,
+          "total": 5,
+          "accuracy": 1.0,
+          "mean_pfake": 0.826144003868103
+        },
+        "en": {
+          "correct": 5,
+          "total": 6,
+          "accuracy": 0.8333333333333334,
+          "mean_pfake": 0.8909523288408915
+        },
+        "sk": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9943292538324991
+        }
+      },
+      "by_speaker": {
+        "jakub": {
+          "correct": 13,
+          "total": 14,
+          "accuracy": 0.9285714285714286,
+          "mean_pfake": 0.8899586967059544
+        }
+      }
+    },
+    "jakub_raw": {
+      "accuracy": 0.9285714285714286,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 0.7692307692307693,
+      "total_correct": 13,
+      "total": 14,
+      "real_correct": 0,
+      "real_total": 1,
+      "fake_correct": 13,
+      "fake_total": 13,
+      "mean_pfake_real": 0.7572746276855469,
+      "mean_pfake_fake": 0.9001612754968497,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 6,
+          "total": 6,
+          "accuracy": 1.0,
+          "mean_pfake": 0.7903896272182465
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 7,
+          "total": 7,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9942512597356524
+        },
+        "jakub": {
+          "correct": 0,
+          "total": 1,
+          "accuracy": 0.0,
+          "mean_pfake": 0.7572746276855469
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 5,
+          "total": 5,
+          "accuracy": 1.0,
+          "mean_pfake": 0.8261388301849365
+        },
+        "en": {
+          "correct": 5,
+          "total": 6,
+          "accuracy": 0.8333333333333334,
+          "mean_pfake": 0.8909483253955841
+        },
+        "sk": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_pfake": 0.994329035282135
+        }
+      },
+      "by_speaker": {
+        "jakub": {
+          "correct": 13,
+          "total": 14,
+          "accuracy": 0.9285714285714286,
+          "mean_pfake": 0.8899550863674709
+        }
+      }
+    }
+  },
+  "heavy+robust": {
+    "original": {
+      "accuracy": 0.84375,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 0.5991769547325102,
+      "total_correct": 81,
+      "total": 96,
+      "real_correct": 0,
+      "real_total": 15,
+      "fake_correct": 81,
+      "fake_total": 81,
+      "mean_pfake_real": 0.9885961373647054,
+      "mean_pfake_fake": 0.9865247320245814,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 38,
+          "total": 38,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9894220656470248
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 43,
+          "total": 43,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9839642976605615
+        },
+        "anton": {
+          "correct": 0,
+          "total": 6,
+          "accuracy": 0.0,
+          "mean_pfake": 0.9908594290415446
+        },
+        "miska": {
+          "correct": 0,
+          "total": 9,
+          "accuracy": 0.0,
+          "mean_pfake": 0.9870872762468126
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 32,
+          "total": 35,
+          "accuracy": 0.9142857142857143,
+          "mean_pfake": 0.9851648075239999
+        },
+        "en": {
+          "correct": 28,
+          "total": 34,
+          "accuracy": 0.8235294117647058,
+          "mean_pfake": 0.9868836280177621
+        },
+        "sk": {
+          "correct": 21,
+          "total": 27,
+          "accuracy": 0.7777777777777778,
+          "mean_pfake": 0.9889864347599171
+        }
+      },
+      "by_speaker": {
+        "?": {
+          "correct": 22,
+          "total": 37,
+          "accuracy": 0.5945945945945946,
+          "mean_pfake": 0.9862366254265243
+        },
+        "anton": {
+          "correct": 30,
+          "total": 30,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9917823652426402
+        },
+        "miska": {
+          "correct": 29,
+          "total": 29,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9825248019448642
+        }
+      }
+    },
+    "silence_std": {
+      "accuracy": 0.84375,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 0.5753086419753086,
+      "total_correct": 81,
+      "total": 96,
+      "real_correct": 0,
+      "real_total": 15,
+      "fake_correct": 81,
+      "fake_total": 81,
+      "mean_pfake_real": 0.9900701761245727,
+      "mean_pfake_fake": 0.9899309329044672,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 38,
+          "total": 38,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9910230479742351
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 43,
+          "total": 43,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9889658079590908
+        },
+        "anton": {
+          "correct": 0,
+          "total": 6,
+          "accuracy": 0.0,
+          "mean_pfake": 0.9924547572930654
+        },
+        "miska": {
+          "correct": 0,
+          "total": 9,
+          "accuracy": 0.0,
+          "mean_pfake": 0.9884804553455777
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 32,
+          "total": 35,
+          "accuracy": 0.9142857142857143,
+          "mean_pfake": 0.989510841029031
+        },
+        "en": {
+          "correct": 28,
+          "total": 34,
+          "accuracy": 0.8235294117647058,
+          "mean_pfake": 0.9900243878364563
+        },
+        "sk": {
+          "correct": 21,
+          "total": 27,
+          "accuracy": 0.7777777777777778,
+          "mean_pfake": 0.9904351698027717
+        }
+      },
+      "by_speaker": {
+        "?": {
+          "correct": 22,
+          "total": 37,
+          "accuracy": 0.5945945945945946,
+          "mean_pfake": 0.990675645905572
+        },
+        "anton": {
+          "correct": 30,
+          "total": 30,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9924816429615021
+        },
+        "miska": {
+          "correct": 29,
+          "total": 29,
+          "accuracy": 1.0,
+          "mean_pfake": 0.986414138613076
+        }
+      }
+    },
+    "amplitude": {
+      "gain_0.5": {
+        "accuracy": 0.84375,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.5991769547325102,
+        "total_correct": 81,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 81,
+        "fake_total": 81,
+        "mean_pfake_real": 0.9885964949925741,
+        "mean_pfake_fake": 0.9865255510365522,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 38,
+            "total": 38,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9894221095662368
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9839658016382262
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9908598363399506
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9870876007609897
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 32,
+            "total": 35,
+            "accuracy": 0.9142857142857143,
+            "mean_pfake": 0.9851654750960214
+          },
+          "en": {
+            "correct": 28,
+            "total": 34,
+            "accuracy": 0.8235294117647058,
+            "mean_pfake": 0.9868842275703654
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.9889874701146726
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 22,
+            "total": 37,
+            "accuracy": 0.5945945945945946,
+            "mean_pfake": 0.9862369395591117
+          },
+          "anton": {
+            "correct": 30,
+            "total": 30,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9917833228905996
+          },
+          "miska": {
+            "correct": 29,
+            "total": 29,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9825258830498005
+          }
+        }
+      },
+      "gain_1.0": {
+        "accuracy": 0.84375,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.5991769547325102,
+        "total_correct": 81,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 81,
+        "fake_total": 81,
+        "mean_pfake_real": 0.9885961373647054,
+        "mean_pfake_fake": 0.9865247320245814,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 38,
+            "total": 38,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9894220656470248
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9839642976605615
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9908594290415446
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9870872762468126
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 32,
+            "total": 35,
+            "accuracy": 0.9142857142857143,
+            "mean_pfake": 0.9851648075239999
+          },
+          "en": {
+            "correct": 28,
+            "total": 34,
+            "accuracy": 0.8235294117647058,
+            "mean_pfake": 0.9868836280177621
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.9889864347599171
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 22,
+            "total": 37,
+            "accuracy": 0.5945945945945946,
+            "mean_pfake": 0.9862366254265243
+          },
+          "anton": {
+            "correct": 30,
+            "total": 30,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9917823652426402
+          },
+          "miska": {
+            "correct": 29,
+            "total": 29,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9825248019448642
+          }
+        }
+      },
+      "gain_2.0": {
+        "accuracy": 0.84375,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.6016460905349794,
+        "total_correct": 81,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 81,
+        "fake_total": 81,
+        "mean_pfake_real": 0.9885955611864726,
+        "mean_pfake_fake": 0.9866072211736514,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 38,
+            "total": 38,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9895722489607962
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9839869640594305
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9908600350220998
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9870859119627211
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 32,
+            "total": 35,
+            "accuracy": 0.9142857142857143,
+            "mean_pfake": 0.9852301376206535
+          },
+          "en": {
+            "correct": 28,
+            "total": 34,
+            "accuracy": 0.8235294117647058,
+            "mean_pfake": 0.9870148458901573
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.9889836576249864
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 22,
+            "total": 37,
+            "accuracy": 0.5945945945945946,
+            "mean_pfake": 0.9862347551294275
+          },
+          "anton": {
+            "correct": 30,
+            "total": 30,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9917823751767476
+          },
+          "miska": {
+            "correct": 29,
+            "total": 29,
+            "accuracy": 1.0,
+            "mean_pfake": 0.982757280612814
+          }
+        }
+      },
+      "gain_2.5": {
+        "accuracy": 0.84375,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.6074074074074074,
+        "total_correct": 81,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 81,
+        "fake_total": 81,
+        "mean_pfake_real": 0.9885544379552206,
+        "mean_pfake_fake": 0.9866267611951004,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 38,
+            "total": 38,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9896493428631833
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9839556425116783
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9908025860786438
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.987055672539605
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 32,
+            "total": 35,
+            "accuracy": 0.9142857142857143,
+            "mean_pfake": 0.9852132099015373
+          },
+          "en": {
+            "correct": 28,
+            "total": 34,
+            "accuracy": 0.8235294117647058,
+            "mean_pfake": 0.9870395204600166
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.9890103031087805
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 22,
+            "total": 37,
+            "accuracy": 0.5945945945945946,
+            "mean_pfake": 0.9862134537181338
+          },
+          "anton": {
+            "correct": 30,
+            "total": 30,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9917547504107157
+          },
+          "miska": {
+            "correct": 29,
+            "total": 29,
+            "accuracy": 1.0,
+            "mean_pfake": 0.982846342284104
+          }
+        }
+      }
+    },
+    "combined": {
+      "sg_0.5": {
+        "accuracy": 0.84375,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.5744855967078188,
+        "total_correct": 81,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 81,
+        "fake_total": 81,
+        "mean_pfake_real": 0.9900706330935161,
+        "mean_pfake_fake": 0.9899315547060084,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 38,
+            "total": 38,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9910231091474232
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9889669251996417
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9924550950527191
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9884809917873807
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 32,
+            "total": 35,
+            "accuracy": 0.9142857142857143,
+            "mean_pfake": 0.9895112071718488
+          },
+          "en": {
+            "correct": 28,
+            "total": 34,
+            "accuracy": 0.8235294117647058,
+            "mean_pfake": 0.9900248296120587
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.9904362581394337
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 22,
+            "total": 37,
+            "accuracy": 0.5945945945945946,
+            "mean_pfake": 0.9906758037773339
+          },
+          "anton": {
+            "correct": 30,
+            "total": 30,
+            "accuracy": 1.0,
+            "mean_pfake": 0.992482586701711
+          },
+          "miska": {
+            "correct": 29,
+            "total": 29,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9864149340267839
+          }
+        }
+      },
+      "sg_1.0": {
+        "accuracy": 0.84375,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.5753086419753086,
+        "total_correct": 81,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 81,
+        "fake_total": 81,
+        "mean_pfake_real": 0.9900701761245727,
+        "mean_pfake_fake": 0.9899309329044672,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 38,
+            "total": 38,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9910230479742351
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9889658079590908
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9924547572930654
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9884804553455777
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 32,
+            "total": 35,
+            "accuracy": 0.9142857142857143,
+            "mean_pfake": 0.989510841029031
+          },
+          "en": {
+            "correct": 28,
+            "total": 34,
+            "accuracy": 0.8235294117647058,
+            "mean_pfake": 0.9900243878364563
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.9904351698027717
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 22,
+            "total": 37,
+            "accuracy": 0.5945945945945946,
+            "mean_pfake": 0.990675645905572
+          },
+          "anton": {
+            "correct": 30,
+            "total": 30,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9924816429615021
+          },
+          "miska": {
+            "correct": 29,
+            "total": 29,
+            "accuracy": 1.0,
+            "mean_pfake": 0.986414138613076
+          }
+        }
+      },
+      "sg_2.0": {
+        "accuracy": 0.84375,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.582716049382716,
+        "total_correct": 81,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 81,
+        "fake_total": 81,
+        "mean_pfake_real": 0.9900843461354574,
+        "mean_pfake_fake": 0.9900406856595734,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 38,
+            "total": 38,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9912141200743223
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9890036971070045
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9924560884634653
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.988503184583452
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 32,
+            "total": 35,
+            "accuracy": 0.9142857142857143,
+            "mean_pfake": 0.9895798104149954
+          },
+          "en": {
+            "correct": 28,
+            "total": 34,
+            "accuracy": 0.8235294117647058,
+            "mean_pfake": 0.9901488703839919
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.9905261397361755
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 22,
+            "total": 37,
+            "accuracy": 0.5945945945945946,
+            "mean_pfake": 0.9906810409313923
+          },
+          "anton": {
+            "correct": 30,
+            "total": 30,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9925573945045472
+          },
+          "miska": {
+            "correct": 29,
+            "total": 29,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9866427717537716
+          }
+        }
+      },
+      "sg_2.5": {
+        "accuracy": 0.84375,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.5810699588477366,
+        "total_correct": 81,
+        "total": 96,
+        "real_correct": 0,
+        "real_total": 15,
+        "fake_correct": 81,
+        "fake_total": 81,
+        "mean_pfake_real": 0.9900855223337809,
+        "mean_pfake_fake": 0.9900427651994023,
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 38,
+            "total": 38,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9912293788633848
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 43,
+            "total": 43,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9889941298684408
+          },
+          "anton": {
+            "correct": 0,
+            "total": 6,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9924295445283254
+          },
+          "miska": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9885228408707513
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 32,
+            "total": 35,
+            "accuracy": 0.9142857142857143,
+            "mean_pfake": 0.9895558203969683
+          },
+          "en": {
+            "correct": 28,
+            "total": 34,
+            "accuracy": 0.8235294117647058,
+            "mean_pfake": 0.9901418913813198
+          },
+          "sk": {
+            "correct": 21,
+            "total": 27,
+            "accuracy": 0.7777777777777778,
+            "mean_pfake": 0.9905729183444271
+          }
+        },
+        "by_speaker": {
+          "?": {
+            "correct": 22,
+            "total": 37,
+            "accuracy": 0.5945945945945946,
+            "mean_pfake": 0.9906784747097943
+          },
+          "anton": {
+            "correct": 30,
+            "total": 30,
+            "accuracy": 1.0,
+            "mean_pfake": 0.992552653948466
+          },
+          "miska": {
+            "correct": 29,
+            "total": 29,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9866573666704113
+          }
+        }
+      }
+    },
+    "jakub_norm": {
+      "accuracy": 0.9285714285714286,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 1.0,
+      "total_correct": 13,
+      "total": 14,
+      "real_correct": 0,
+      "real_total": 1,
+      "fake_correct": 13,
+      "fake_total": 13,
+      "mean_pfake_real": 0.9900169968605042,
+      "mean_pfake_fake": 0.9937105453931369,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 6,
+          "total": 6,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9928662578264872
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 7,
+          "total": 7,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9944342204502651
+        },
+        "jakub": {
+          "correct": 0,
+          "total": 1,
+          "accuracy": 0.0,
+          "mean_pfake": 0.9900169968605042
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 5,
+          "total": 5,
+          "accuracy": 1.0,
+          "mean_pfake": 0.993256413936615
+        },
+        "en": {
+          "correct": 5,
+          "total": 6,
+          "accuracy": 0.8333333333333334,
+          "mean_pfake": 0.9930704633394877
+        },
+        "sk": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9945164124170939
+        }
+      },
+      "by_speaker": {
+        "jakub": {
+          "correct": 13,
+          "total": 14,
+          "accuracy": 0.9285714285714286,
+          "mean_pfake": 0.9934467204979488
+        }
+      }
+    },
+    "jakub_raw": {
+      "accuracy": 0.9285714285714286,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 1.0,
+      "total_correct": 13,
+      "total": 14,
+      "real_correct": 0,
+      "real_total": 1,
+      "fake_correct": 13,
+      "fake_total": 13,
+      "mean_pfake_real": 0.9900169968605042,
+      "mean_pfake_fake": 0.9937105270532461,
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 6,
+          "total": 6,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9928661584854126
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 7,
+          "total": 7,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9944342715399606
+        },
+        "jakub": {
+          "correct": 0,
+          "total": 1,
+          "accuracy": 0.0,
+          "mean_pfake": 0.9900169968605042
+        }
+      },
+      "by_language": {
+        "cs": {
+          "correct": 5,
+          "total": 5,
+          "accuracy": 1.0,
+          "mean_pfake": 0.993256437778473
+        },
+        "en": {
+          "correct": 5,
+          "total": 6,
+          "accuracy": 0.8333333333333334,
+          "mean_pfake": 0.9930704037348429
+        },
+        "sk": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_pfake": 0.9945164124170939
+        }
+      },
+      "by_speaker": {
+        "jakub": {
+          "correct": 13,
+          "total": 14,
+          "accuracy": 0.9285714285714286,
+          "mean_pfake": 0.9934467034680503
+        }
+      }
+    }
+  }
+}

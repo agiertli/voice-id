@@ -1,0 +1,94 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qwen2-audio-model
+  namespace: voice-id
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: gp3-csi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-qwen2-audio
+  namespace: voice-id
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: download
+        image: registry.access.redhat.com/ubi9/python-312:latest
+        command:
+        - bash
+        - -c
+        - |
+          pip install -q huggingface_hub && \
+          python3 -c "
+          from huggingface_hub import snapshot_download
+          snapshot_download(
+              'Qwen/Qwen2-Audio-7B-Instruct',
+              local_dir='/models/Qwen2-Audio-7B-Instruct',
+              local_dir_use_symlinks=False,
+          )
+          print('Download complete')
+          "
+        volumeMounts:
+        - name: model
+          mountPath: /models
+        resources:
+          requests:
+            cpu: "1"
+            memory: 4Gi
+          limits:
+            cpu: "2"
+            memory: 8Gi
+      volumes:
+      - name: model
+        persistentVolumeClaim:
+          claimName: qwen2-audio-model
+---
+apiVersion: serving.kserve.io/v1alpha2
+kind: LLMInferenceService
+metadata:
+  annotations:
+    opendatahub.io/hardware-profile-name: gpu-profile
+    opendatahub.io/hardware-profile-namespace: redhat-ods-applications
+  labels:
+    networking.kserve.io/visibility: exposed
+    opendatahub.io/dashboard: "true"
+    opendatahub.io/genai-asset: "true"
+  name: qwen2-audio
+  namespace: voice-id
+spec:
+  model:
+    uri: pvc://qwen2-audio-model/Qwen2-Audio-7B-Instruct
+  replicas: 1
+  template:
+    containers:
+      - name: main
+        args:
+          - --dtype=auto
+          - --max-model-len=4096
+          - --gpu-memory-utilization=0.90
+          - --trust-remote-code
+          - --served-model-name=Qwen2-Audio-7B-Instruct
+        resources:
+          requests:
+            cpu: "1"
+            memory: 8Gi
+            nvidia.com/gpu: "1"
+          limits:
+            cpu: "4"
+            memory: 24Gi
+            nvidia.com/gpu: "1"
+    tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Exists

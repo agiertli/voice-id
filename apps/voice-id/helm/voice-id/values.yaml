@@ -1,0 +1,49 @@
+image:
+  repository: quay.io/agiertli/voice-id
+  tag: "v3.0.0"
+  pullPolicy: IfNotPresent
+
+replicas: 1
+
+clusterDomain: ""
+
+conference:
+  name: "Red Hat Summit"
+
+game:
+  size: 5
+  prizeThreshold: 4
+  defaultLang: "en"
+
+aiJudge:
+  enabled: true
+  # LLMInferenceService internal workload svc (no Connectivity Link needed; app uses verify=False)
+  url: "https://gemma-kserve-workload-svc.voice-id.svc.cluster.local:8000/v1"
+  model: "gemma-4-12b"
+
+aiJudge2:
+  enabled: true
+  url: "https://qwen2-audio-kserve-workload-svc.voice-id.svc.cluster.local:8000/v1"
+  model: "Qwen2-Audio-7B-Instruct"
+
+detector:
+  enabled: true
+  url: "http://deepfake-detector-fine-tuned:8080"
+
+detectorBase:
+  enabled: true
+  url: "http://deepfake-detector-base:8080"
+
+# Admin page (/admin) password. Empty = image default. Override per event:
+#   --set adminToken=...
+adminToken: ""
+
+storage: "1Gi"
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "512Mi"
+  limits:
+    cpu: "2"
+    memory: "1Gi"

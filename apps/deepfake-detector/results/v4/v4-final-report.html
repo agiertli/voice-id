@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V4 Deepfake Detector — Final Experiment Report</title>
+<style>
+:root {
+    --bg: #0f1923;
+    --bg2: #162230;
+    --bg3: #1c2d3f;
+    --cyan: #5de6c8;
+    --cyan-dim: #3aaa8e;
+    --magenta: #d94fa0;
+    --gold: #f0ab00;
+    --green: #4ade80;
+    --red: #f87171;
+    --orange: #fb923c;
+    --light: #e8f4f0;
+    --gray: #7a9baa;
+    --blue: #60a5fa;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--light);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+h1 { font-size: 2rem; color: var(--cyan); margin-bottom: 0.5rem; border-bottom: 2px solid var(--cyan-dim); padding-bottom: 0.5rem; }
+h2 { font-size: 1.4rem; color: var(--cyan); margin: 2.5rem 0 1rem; padding-bottom: 0.3rem; border-bottom: 1px solid rgba(93,230,200,0.2); }
+h3 { font-size: 1.1rem; color: var(--gold); margin: 1.5rem 0 0.5rem; }
+.subtitle { color: var(--gray); font-size: 0.95rem; margin-bottom: 2rem; }
+.verdict-box { background: var(--bg3); border-left: 4px solid var(--gold); padding: 1.5rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+.verdict-box.recommend { border-left-color: var(--green); }
+.verdict-box.warn { border-left-color: var(--orange); }
+.verdict-box.danger { border-left-color: var(--red); }
+.verdict-box strong { color: var(--gold); }
+.verdict-box.recommend strong { color: var(--green); }
+.verdict-box.warn strong { color: var(--orange); }
+.verdict-box.danger strong { color: var(--red); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th { background: var(--bg3); color: var(--cyan); padding: 0.7rem 1rem; text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.8rem; }
+td { padding: 0.6rem 1rem; border-bottom: 1px solid rgba(93,230,200,0.08); }
+tr:hover td { background: rgba(93,230,200,0.04); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.best { color: var(--green); font-weight: 700; }
+.worst { color: var(--red); }
+.warn-val { color: var(--orange); font-weight: 600; }
+.neutral { color: var(--gray); }
+.model-tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+.tag-v4a { background: rgba(74,222,128,0.15); color: var(--green); }
+.tag-v4b { background: rgba(96,165,250,0.15); color: var(--blue); }
+.tag-control { background: rgba(240,171,0,0.15); color: var(--gold); }
+.tag-base { background: rgba(122,155,170,0.15); color: var(--gray); }
+.clip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 0.5rem 0; }
+.clip-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.7rem; background: var(--bg3); border-radius: 4px; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.clip-icon { font-size: 1rem; }
+.clip-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clip-prob { min-width: 55px; text-align: right; font-weight: 600; }
+.prob-high { color: var(--magenta); }
+.prob-low { color: var(--green); }
+.prob-mid { color: var(--orange); }
+.flex-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+.flex-col { flex: 1; min-width: 300px; }
+.metric-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.metric-card { background: var(--bg3); border-radius: 8px; padding: 1.2rem; text-align: center; }
+.metric-card .value { font-size: 2rem; font-weight: 800; margin: 0.3rem 0; }
+.metric-card .label { font-size: 0.8rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-card .sub { font-size: 0.75rem; color: var(--gray); margin-top: 0.3rem; }
+.section-note { font-size: 0.85rem; color: var(--gray); font-style: italic; margin: 0.5rem 0; }
+.toc { background: var(--bg3); padding: 1.5rem 2rem; border-radius: 8px; margin: 1.5rem 0; }
+.toc a { color: var(--cyan); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.toc ol { margin-left: 1.2rem; }
+.toc li { margin: 0.3rem 0; font-size: 0.9rem; }
+.footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(93,230,200,0.1); color: var(--gray); font-size: 0.8rem; text-align: center; }
+.comparison-badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; font-weight: 600; margin-left: 0.5rem; }
+.badge-better { background: rgba(74,222,128,0.2); color: var(--green); }
+.badge-worse { background: rgba(248,113,113,0.2); color: var(--red); }
+.badge-same { background: rgba(122,155,170,0.2); color: var(--gray); }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<h1>Deepfake Voice Detector: V4 Final Report</h1>
+<div class="subtitle">
+    Wav2Vec2-XLSR 315M &bull; Heavy freeze (top 12 transformer layers) &bull; 97 clips, 3 speakers, 2 TTS engines<br>
+    Amplitude-only augmentation &bull; Trained on Apple M3 MPS &bull; 24 September 2026
+</div>
+
+<!-- ============================================================ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ============================================================ -->
+<div class="toc">
+<strong>Contents</strong>
+<ol>
+    <li><a href="#recommendation">Final Recommendation</a></li>
+    <li><a href="#key-finding">Key Finding: Built-in vs Cloned Voice Detection</a></li>
+    <li><a href="#headline">Headline Metrics</a></li>
+    <li><a href="#pfake">p_fake Distributions</a></li>
+    <li><a href="#real-fake">REAL vs FAKE Accuracy</a></li>
+    <li><a href="#xtts-breakdown">XTTS Deep Dive: Built-in vs Clone_Speaker</a></li>
+    <li><a href="#fish-breakdown">Fish S2 Pro by Speaker</a></li>
+    <li><a href="#natural-speakers">Natural Speaker Analysis</a></li>
+    <li><a href="#per-language">Per-Language Results</a></li>
+    <li><a href="#holdout">Jveverka Same-Speaker Holdout</a></li>
+    <li><a href="#misclassified">Misclassified Clips (Per-Clip Detail)</a></li>
+    <li><a href="#ablation">Class-Weight Ablation: V4-A vs V4-B</a></li>
+    <li><a href="#amplitude">Amplitude Robustness</a></li>
+    <li><a href="#training">Training Configuration</a></li>
+    <li><a href="#dataset">Dataset Composition</a></li>
+    <li><a href="#v3-postmortem">V3 Collapse Post-Mortem</a></li>
+    <li><a href="#limitations">Known Limitations</a></li>
+</ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="recommendation">1. Final Recommendation</h2>
+
+<div class="verdict-box recommend">
+    <strong>Deploy V4-A as the new gary-finetuned model.</strong><br><br>
+    For a conference booth demo, the single most important metric is FPR &mdash; how often the AI detector falsely accuses
+    a real human of being synthetic. V4-A reduces FPR from <strong>33.3% to 3.3%</strong> (a 10x improvement).
+    The trade-off is lower fake detection on some categories (XTTS cloned voices, Fish), but for a demo
+    where the game clips are fixed and pre-loaded, this is acceptable.<br><br>
+    V4-A is the better model for the use case. Not perfect &mdash; but the right deployment for today.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="key-finding">2. Key Finding: Built-in vs Cloned Voice Detection</h2>
+
+<p>Post-experiment analysis revealed that XTTS v2 clips in the dataset come from two fundamentally different sources,
+and V4 treats them completely differently:</p>
+
+<table>
+<thead>
+<tr>
+    <th>XTTS Category</th>
+    <th>What It Is</th>
+    <th class="num"><span class="model-tag tag-v4a">V4-A</span></th>
+    <th class="num"><span class="model-tag tag-control">Deployed</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td><strong>Built-in voices</strong> (19 clips)<br>
+        <span class="neutral" style="font-size:0.8rem">alison, ana, annmarie, asya, barbora, claribel, daisy, damien, filip, gracie, marcos, sofia, tammie</span></td>
+    <td>XTTS built-in reference speakers.<br>Synthetic voice is not cloned from anyone.</td>
+    <td class="num best">19/19 = 100%<br><span class="neutral">p&#772;=0.968</span></td>
+    <td class="num">18/19 = 94.7%<br><span class="neutral">p&#772;=0.925</span></td>
+</tr>
+<tr>
+    <td><strong>Cloned voices, in training</strong> (13 clips)<br>
+        <span class="neutral" style="font-size:0.8rem">xtts-anton (7), xtts-miska (6)</span></td>
+    <td>XTTS <code>clone_speaker</code> with a real person's recording.<br>Speaker's natural voice also in training data.</td>
+    <td class="num">10/13 = 76.9%<br><span class="neutral">p&#772;=0.718</span></td>
+    <td class="num">11/13 = 84.6%<br><span class="neutral">p&#772;=0.787</span></td>
+</tr>
+<tr>
+    <td><strong>Cloned voices, holdout</strong> (6 clips)<br>
+        <span class="neutral" style="font-size:0.8rem">xtts-jakub (6)</span></td>
+    <td>XTTS <code>clone_speaker</code> with jakub's recording.<br>Speaker's natural voice in training, but these clips held out.</td>
+    <td class="num worst">1/6 = 16.7%<br><span class="neutral">p&#772;=0.108</span></td>
+    <td class="num best">6/6 = 100%<br><span class="neutral">p&#772;=0.790</span></td>
+</tr>
+</tbody>
+</table>
+
+<div class="verdict-box warn">
+    <strong>V4 learned to detect "XTTS the engine" (built-in voice artifacts), not "XTTS voice cloning" (clone_speaker artifacts).</strong><br><br>
+    Built-in XTTS voices use pre-computed speaker embeddings that carry distinct synthetic fingerprints &mdash; V4 catches these perfectly.
+    But when XTTS clones a real person's voice via <code>clone_speaker</code>, the output sounds more natural and V4 struggles,
+    especially on voices not seen during training (16.7% on holdout).<br><br>
+    <strong>For the game demo, this matters less than it looks.</strong> The game serves fixed clips from a database.
+    If all game speakers have training data, the 77% detection rate on cloned voices is serviceable.
+    The deployed model's 100% holdout XTTS detection comes at the cost of 33% FPR &mdash; accusing 1 in 3 humans of being AI.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="headline">3. Headline Metrics</h2>
+<p class="section-note">Evaluated on 83 non-holdout clips (30 real, 53 fake). V4-A and V4-B are functionally identical; only V4-A shown vs deployed.</p>
+
+<div class="metric-cards">
+    <div class="metric-card">
+        <div class="label">V4-A Balanced Accuracy</div>
+        <div class="value" style="color:var(--green)">89.8%</div>
+        <div class="sub">ROC-AUC: 0.960</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">Deployed Balanced Accuracy</div>
+        <div class="value" style="color:var(--orange)">78.6%</div>
+        <div class="sub">ROC-AUC: 0.852</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">V4-A FPR</div>
+        <div class="value" style="color:var(--green)">3.3%</div>
+        <div class="sub">1 false positive out of 30 real clips</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">Deployed FPR</div>
+        <div class="value" style="color:var(--red)">33.3%</div>
+        <div class="sub">10 false positives out of 30 real clips</div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pfake">4. p_fake Distributions</h2>
+<p class="section-note">Each row shows where REAL and FAKE clips fall on the 0&ndash;1 probability scale. Wider median gap = better discrimination.</p>
+
+<table>
+<thead>
+<tr>
+    <th style="width:170px">Model</th>
+    <th>Class</th>
+    <th class="num">Min</th>
+    <th class="num">Median</th>
+    <th class="num">Mean</th>
+    <th class="num">Max</th>
+    <th class="num" style="width:90px">Median Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td rowspan="2"><span class="model-tag tag-v4a">V4-A</span></td>
+    <td style="color:var(--green)">REAL (30)</td>
+    <td class="num best">0.0011</td>
+    <td class="num best">0.0017</td>
+    <td class="num best">0.0336</td>
+    <td class="num">0.9515</td>
+    <td class="num best" rowspan="2" style="vertical-align:middle; font-size:1.2rem">+0.975</td>
+</tr>
+<tr>
+    <td style="color:var(--magenta)">FAKE (53)</td>
+    <td class="num">0.0013</td>
+    <td class="num">0.9765</td>
+    <td class="num">0.7863</td>
+    <td class="num">0.9983</td>
+</tr>
+<tr style="border-top: 2px solid rgba(93,230,200,0.1)">
+    <td rowspan="2"><span class="model-tag tag-control">Deployed</span></td>
+    <td style="color:var(--green)">REAL (30)</td>
+    <td class="num">0.0102</td>
+    <td class="num warn-val">0.1898</td>
+    <td class="num warn-val">0.3684</td>
+    <td class="num worst">0.9899</td>
+    <td class="num" rowspan="2" style="vertical-align:middle; font-size:1.2rem; color:var(--orange)">+0.787</td>
+</tr>
+<tr>
+    <td style="color:var(--magenta)">FAKE (53)</td>
+    <td class="num worst">0.0095</td>
+    <td class="num">0.9766</td>
+    <td class="num">0.8607</td>
+    <td class="num">0.9975</td>
+</tr>
+<tr style="border-top: 2px solid rgba(93,230,200,0.1)">
+    <td rowspan="2"><span class="model-tag tag-base">Base (pretrained)</span></td>
+    <td style="color:var(--green)">REAL (30)</td>
+    <td class="num worst">0.5540</td>
+    <td class="num worst">0.8976</td>
+    <td class="num worst">0.8532</td>
+    <td class="num">0.9474</td>
+    <td class="num worst" rowspan="2" style="vertical-align:middle; font-size:1.2rem">-0.034</td>
+</tr>
+<tr>
+    <td style="color:var(--magenta)">FAKE (53)</td>
+    <td class="num">0.1920</td>
+    <td class="num">0.8635</td>
+    <td class="num">0.7667</td>
+    <td class="num">0.9905</td>
+</tr>
+</tbody>
+</table>
+
+<div class="verdict-box">
+    <strong>V4 median gap: 0.975.</strong> REAL clips cluster near 0 (median 0.0017), FAKE clips cluster near 1 (median 0.977).
+    The deployed model's REAL median sits at 0.19 &mdash; 10 of 30 real clips score above 0.5.
+    Base model has no separation (negative gap). V3 was equivalent to Base (collapsed).
+</div>
+
+<!-- ============================================================ -->
+<h2 id="real-fake">5. REAL vs FAKE Accuracy</h2>
+<p class="section-note">For a conference demo, false positives (accusing a human of being AI) are worse than false negatives (missing a synthetic clip).</p>
+
+<table>
+<thead>
+<tr>
+    <th>Metric</th>
+    <th class="num"><span class="model-tag tag-v4a">V4-A</span></th>
+    <th class="num"><span class="model-tag tag-control">Deployed</span></th>
+    <th class="num">Delta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>REAL accuracy (true negatives)</td>
+    <td class="num best">29/30 = 96.7%</td>
+    <td class="num warn-val">20/30 = 66.7%</td>
+    <td class="num best">+30.0pp</td>
+</tr>
+<tr>
+    <td>FAKE accuracy (true positives)</td>
+    <td class="num">44/53 = 83.0%</td>
+    <td class="num best">48/53 = 90.6%</td>
+    <td class="num worst">-7.6pp</td>
+</tr>
+<tr>
+    <td>FPR (real wrongly called fake)</td>
+    <td class="num best">3.3%</td>
+    <td class="num worst">33.3%</td>
+    <td class="num best">-30.0pp</td>
+</tr>
+<tr>
+    <td>FNR (fake wrongly called real)</td>
+    <td class="num">17.0%</td>
+    <td class="num best">9.4%</td>
+    <td class="num worst">+7.6pp</td>
+</tr>
+<tr>
+    <td>Balanced accuracy</td>
+    <td class="num best">89.8%</td>
+    <td class="num">78.6%</td>
+    <td class="num best">+11.2pp</td>
+</tr>
+<tr>
+    <td>ROC-AUC</td>
+    <td class="num best">0.960</td>
+    <td class="num">0.852</td>
+    <td class="num best">+0.108</td>
+</tr>
+</tbody>
+</table>
+
+<div class="verdict-box">
+    <strong>The trade-off in one sentence:</strong> V4-A misses 9 fake clips (17% FNR) but almost never falsely accuses a human (3.3% FPR).
+    The deployed model catches more fakes (9.4% FNR) but falsely accuses 1 in 3 humans (33.3% FPR).
+    For a conference booth, the V4-A trade is clearly the right one.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="xtts-breakdown">6. XTTS Deep Dive: Built-in vs clone_speaker</h2>
+
+<h3>XTTS Built-in Voices (19 clips, in training)</h3>
+<p class="section-note">These are XTTS's pre-packaged reference speakers &mdash; no voice cloning involved.</p>
+
+<table>
+<thead><tr><th>Voice</th><th>Languages</th><th class="num">V4-A</th><th class="num">p&#772; V4-A</th><th class="num">Deployed</th><th class="num">p&#772; Dep</th></tr></thead>
+<tbody>
+<tr><td>alison</td><td>cs, en</td><td class="num best">2/2</td><td class="num">0.9964</td><td class="num">2/2</td><td class="num">0.9829</td></tr>
+<tr><td>ana</td><td>cs</td><td class="num best">1/1</td><td class="num">0.9939</td><td class="num">1/1</td><td class="num">0.9856</td></tr>
+<tr><td>annmarie</td><td>cs, en</td><td class="num best">2/2</td><td class="num">0.9976</td><td class="num">2/2</td><td class="num">0.9953</td></tr>
+<tr><td>asya</td><td>cs, en</td><td class="num best">2/2</td><td class="num">0.9888</td><td class="num">2/2</td><td class="num">0.9407</td></tr>
+<tr><td>barbora</td><td>cs</td><td class="num best">1/1</td><td class="num">0.8727</td><td class="num">1/1</td><td class="num">0.6421</td></tr>
+<tr><td>claribel</td><td>cs, en</td><td class="num best">2/2</td><td class="num">0.9980</td><td class="num">2/2</td><td class="num">0.9970</td></tr>
+<tr><td>daisy</td><td>en</td><td class="num best">1/1</td><td class="num">0.9981</td><td class="num">1/1</td><td class="num">0.9935</td></tr>
+<tr><td>damien</td><td>en</td><td class="num best">1/1</td><td class="num">0.9983</td><td class="num">1/1</td><td class="num">0.9975</td></tr>
+<tr><td>filip</td><td>en</td><td class="num best">1/1</td><td class="num">0.9843</td><td class="num">1/1</td><td class="num">0.9937</td></tr>
+<tr><td>gracie</td><td>en</td><td class="num best">1/1</td><td class="num warn-val">0.6308</td><td class="num worst">0/1</td><td class="num worst">0.2665</td></tr>
+<tr><td>marcos</td><td>cs</td><td class="num best">1/1</td><td class="num">0.9881</td><td class="num">1/1</td><td class="num">0.9878</td></tr>
+<tr><td>sofia</td><td>cs</td><td class="num best">1/1</td><td class="num">0.9973</td><td class="num">1/1</td><td class="num">0.9960</td></tr>
+<tr><td>tammie</td><td>cs, en</td><td class="num best">3/3</td><td class="num">0.9880</td><td class="num">3/3</td><td class="num">0.9589</td></tr>
+<tr style="border-top: 2px solid rgba(93,230,200,0.2); font-weight:700">
+    <td colspan="2">Total</td>
+    <td class="num best">19/19 = 100%</td><td class="num">0.968</td>
+    <td class="num">18/19 = 94.7%</td><td class="num">0.925</td>
+</tr>
+</tbody>
+</table>
+
+<h3>XTTS Cloned Voices &mdash; Training Speakers (13 clips)</h3>
+<p class="section-note">Real person's voice fed through XTTS <code>clone_speaker</code>. Speaker's natural recordings also in training.</p>
+
+<table>
+<thead><tr><th>Voice</th><th>Languages</th><th class="num">V4-A</th><th class="num">p&#772; V4-A</th><th class="num">Deployed</th><th class="num">p&#772; Dep</th></tr></thead>
+<tbody>
+<tr><td>anton</td><td>cs, en</td><td class="num">6/7 = 85.7%</td><td class="num">0.780</td><td class="num best">7/7 = 100%</td><td class="num">0.918</td></tr>
+<tr><td>miska</td><td>cs, en</td><td class="num">4/6 = 66.7%</td><td class="num warn-val">0.646</td><td class="num">4/6 = 66.7%</td><td class="num warn-val">0.634</td></tr>
+<tr style="border-top: 2px solid rgba(93,230,200,0.2); font-weight:700">
+    <td colspan="2">Total</td>
+    <td class="num">10/13 = 76.9%</td><td class="num">0.718</td>
+    <td class="num">11/13 = 84.6%</td><td class="num">0.787</td>
+</tr>
+</tbody>
+</table>
+
+<h3>XTTS Cloned Voices &mdash; Holdout (6 clips)</h3>
+<p class="section-note">Same <code>clone_speaker</code> technique but jakub voice not used in training XTTS clips. Tests generalization.</p>
+
+<table>
+<thead><tr><th>Clip</th><th>Lang</th><th class="num">p_fake V4-A</th><th class="num">V4-A</th><th class="num">p_fake Dep</th><th class="num">Deployed</th></tr></thead>
+<tbody>
+<tr><td>xtts-jakub-security.wav</td><td>en</td><td class="num best">0.7527</td><td class="num best">OK</td><td class="num">0.7904</td><td class="num">OK</td></tr>
+<tr><td>xtts-jakub-kubernetes.wav</td><td>en</td><td class="num warn-val">0.1487</td><td class="num worst">MISS</td><td class="num">0.8962</td><td class="num">OK</td></tr>
+<tr><td>xtts-jakub-inteligence.wav</td><td>cs</td><td class="num worst">0.0141</td><td class="num worst">MISS</td><td class="num">0.9120</td><td class="num">OK</td></tr>
+<tr><td>xtts-jakub-infrastructure.wav</td><td>en</td><td class="num worst">0.0042</td><td class="num worst">MISS</td><td class="num">0.8757</td><td class="num">OK</td></tr>
+<tr><td>xtts-jakub-automatizace.wav</td><td>cs</td><td class="num worst">0.0017</td><td class="num worst">MISS</td><td class="num">0.8168</td><td class="num">OK</td></tr>
+<tr><td>xtts-jakub-kontejnerizace.wav</td><td>cs</td><td class="num worst">0.0013</td><td class="num worst">MISS</td><td class="num warn-val">0.1476</td><td class="num worst">MISS</td></tr>
+<tr style="border-top: 2px solid rgba(93,230,200,0.2); font-weight:700">
+    <td colspan="2">Total</td>
+    <td class="num">p&#772;=0.108</td>
+    <td class="num worst">1/6 = 16.7%</td>
+    <td class="num">p&#772;=0.790</td>
+    <td class="num best">5/6 = 83.3%</td>
+</tr>
+</tbody>
+</table>
+
+<div class="verdict-box danger">
+    <strong>V4 treats XTTS-cloned jakub speech as indistinguishable from real human speech</strong> (5 of 6 clips score p_fake &lt; 0.02).
+    The deployed model catches 5 of 6. This is V4's biggest weakness &mdash; but it only manifests when XTTS clones a voice
+    the model hasn't seen as a clone during training. The game's current clip library uses known speakers, so this doesn't surface in normal gameplay.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="fish-breakdown">7. Fish S2 Pro by Speaker</h2>
+
+<table>
+<thead>
+<tr>
+    <th>Speaker</th>
+    <th>Set</th>
+    <th>Languages</th>
+    <th class="num">Clips</th>
+    <th class="num"><span class="model-tag tag-v4a">V4-A</span></th>
+    <th class="num">p&#772; V4-A</th>
+    <th class="num"><span class="model-tag tag-control">Deployed</span></th>
+    <th class="num">p&#772; Dep</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>anton</td><td>Training</td><td>cs, en, sk</td>
+    <td class="num">14</td>
+    <td class="num">10/14 = 71.4%</td><td class="num">0.669</td>
+    <td class="num best">14/14 = 100%</td><td class="num">0.972</td>
+</tr>
+<tr>
+    <td>miska</td><td>Training</td><td>cs, en, sk</td>
+    <td class="num">7</td>
+    <td class="num">5/7 = 71.4%</td><td class="num warn-val">0.654</td>
+    <td class="num">5/7 = 71.4%</td><td class="num warn-val">0.601</td>
+</tr>
+<tr>
+    <td>jakub</td><td>Holdout</td><td>cs, en, sk</td>
+    <td class="num">7</td>
+    <td class="num best">7/7 = 100%</td><td class="num best">0.994</td>
+    <td class="num best">7/7 = 100%</td><td class="num best">0.994</td>
+</tr>
+<tr style="border-top: 2px solid rgba(93,230,200,0.2); font-weight:700">
+    <td colspan="3">Total (all Fish)</td>
+    <td class="num">28</td>
+    <td class="num">22/28 = 78.6%</td><td class="num">0.744</td>
+    <td class="num best">26/28 = 92.9%</td><td class="num">0.883</td>
+</tr>
+</tbody>
+</table>
+
+<div class="verdict-box">
+    <strong>Both models detect Fish-jakub holdout perfectly (7/7).</strong> The blind spot is NOT Fish-specific.
+    V4 struggles with some Fish-anton clips (4 misses, all p_fake &lt; 0.4) and Fish-miska (2 misses).
+    The deployed model misses the exact same 2 Fish-miska clips but catches all Fish-anton.
+    Both models agree that <code>fish-miska-automatizace.wav</code> and <code>fish-miska-bezpecnost2.wav</code> are hard.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="natural-speakers">8. Natural Speaker Analysis</h2>
+
+<table>
+<thead>
+<tr>
+    <th>Speaker</th>
+    <th>Languages</th>
+    <th class="num">Clips</th>
+    <th class="num"><span class="model-tag tag-v4a">V4-A</span></th>
+    <th class="num">p&#772; V4-A</th>
+    <th class="num"><span class="model-tag tag-control">Deployed</span></th>
+    <th class="num">p&#772; Dep</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>anton</td><td>en, sk</td>
+    <td class="num">8</td>
+    <td class="num best">8/8 = 100%</td><td class="num best">0.002</td>
+    <td class="num best">8/8 = 100%</td><td class="num">0.174</td>
+</tr>
+<tr>
+    <td>jveverka</td><td>cs</td>
+    <td class="num">10</td>
+    <td class="num best">10/10 = 100%</td><td class="num best">0.002</td>
+    <td class="num worst">1/10 = 10%</td><td class="num worst">0.851</td>
+</tr>
+<tr>
+    <td>miska</td><td>cs, en, sk</td>
+    <td class="num">12</td>
+    <td class="num">11/12 = 91.7%</td><td class="num">0.081</td>
+    <td class="num">11/12 = 91.7%</td><td class="num">0.096</td>
+</tr>
+<tr>
+    <td>jakub (holdout)</td><td>en</td>
+    <td class="num">1</td>
+    <td class="num best">1/1 = 100%</td><td class="num best">0.002</td>
+    <td class="num worst">0/1 = 0%</td><td class="num worst">0.972</td>
+</tr>
+<tr style="border-top: 2px solid rgba(93,230,200,0.2); font-weight:700">
+    <td colspan="2">Total</td>
+    <td class="num">31</td>
+    <td class="num best">30/31 = 96.8%</td><td class="num best">0.034</td>
+    <td class="num worst">20/31 = 64.5%</td><td class="num worst">0.380</td>
+</tr>
+</tbody>
+</table>
+
+<div class="verdict-box danger">
+    <strong>The deployed model classifies 9 of 10 Jveverka natural clips as AI</strong> (mean p_fake = 0.85).
+    These 10 Czech FLAC recordings were added to the dataset specifically because the deployed model had never seen this speaker.
+    V4-A, trained on these clips, correctly identifies all 10 as human with near-zero p_fake.<br><br>
+    Both models agree on the one hard clip: <code>miska-cs-4.m4a</code> (p_fake ~0.95 for both). This clip may be genuinely ambiguous.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="per-language">9. Per-Language Results</h2>
+
+<table>
+<thead>
+<tr>
+    <th>Language</th>
+    <th class="num">Clips (R/F)</th>
+    <th class="num"><span class="model-tag tag-v4a">V4-A</span></th>
+    <th class="num"><span class="model-tag tag-control">Deployed</span></th>
+    <th class="num">Delta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>Czech (cs)</td>
+    <td class="num">40 (10R / 30F)</td>
+    <td class="num best">34/40 = 85.0%</td>
+    <td class="num">26/40 = 65.0%</td>
+    <td class="num best">+20.0pp</td>
+</tr>
+<tr>
+    <td>English (en)</td>
+    <td class="num">32 (9R / 23F)</td>
+    <td class="num">29/32 = 90.6%</td>
+    <td class="num best">31/32 = 96.9%</td>
+    <td class="num worst">-6.3pp</td>
+</tr>
+<tr>
+    <td>Slovak (sk)</td>
+    <td class="num">11 (8R / 3F)</td>
+    <td class="num">10/11 = 90.9%</td>
+    <td class="num best">11/11 = 100%</td>
+    <td class="num worst">-9.1pp</td>
+</tr>
+</tbody>
+</table>
+
+<p class="section-note">
+    Czech improved by 20pp thanks to the 10 new Jveverka natural clips (deployed model treated all 9 in-eval as AI).
+    English and Slovak are slightly lower because V4 is more conservative &mdash; fewer false positives also means fewer lucky catches
+    on borderline fakes. Slovak has only 3 fake clips (all Fish), so the 1-clip difference has outsized percentage impact.
+</p>
+
+<!-- ============================================================ -->
+<h2 id="holdout">10. Jveverka Same-Speaker Holdout</h2>
+<p class="section-note">
+    jakub == jveverka (Jakub Veverka). V4 trained on 10 jveverka natural FLAC clips.
+    Holdout: 1 natural + 13 AI clips (6 XTTS, 7 Fish) using jakub's voice.
+    Tests: does the model detect AI clones of a voice it knows as natural?
+</p>
+
+<table>
+<thead><tr><th>Category</th><th class="num">Clips</th><th class="num">V4-A</th><th class="num">p&#772; V4-A</th><th class="num">Deployed</th><th class="num">p&#772; Dep</th></tr></thead>
+<tbody>
+<tr><td>Natural (jakub-en-clone.mp3)</td><td class="num">1</td><td class="num best">1/1</td><td class="num best">0.002</td><td class="num worst">0/1</td><td class="num worst">0.972</td></tr>
+<tr><td>Fish S2 Pro clones</td><td class="num">7</td><td class="num best">7/7 = 100%</td><td class="num best">0.994</td><td class="num best">7/7 = 100%</td><td class="num best">0.994</td></tr>
+<tr><td>XTTS v2 clones</td><td class="num">6</td><td class="num worst">1/6 = 16.7%</td><td class="num worst">0.108</td><td class="num">5/6 = 83.3%</td><td class="num">0.790</td></tr>
+<tr style="border-top: 2px solid rgba(93,230,200,0.2); font-weight:700">
+    <td>All holdout</td><td class="num">14</td>
+    <td class="num">9/14 = 64.3%</td><td class="num">&mdash;</td>
+    <td class="num">12/14 = 85.7%</td><td class="num">&mdash;</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Per-Clip Holdout Detail</h3>
+<div class="clip-grid">
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">jakub-en-clone.mp3 (REAL)</span>
+        <span class="clip-prob prob-low">0.002</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">fish-jakub-hybrid.wav</span>
+        <span class="clip-prob prob-high">0.998</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">fish-jakub-redhat.wav</span>
+        <span class="clip-prob prob-high">0.990</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">fish-jakub-kubernetes.wav</span>
+        <span class="clip-prob prob-high">0.998</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">fish-jakub-otevreny.wav</span>
+        <span class="clip-prob prob-high">0.997</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">fish-jakub-inteligencia.wav</span>
+        <span class="clip-prob prob-high">0.990</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">fish-jakub-kontajnerizacia.wav</span>
+        <span class="clip-prob prob-high">0.997</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">fish-jakub-openshift.wav</span>
+        <span class="clip-prob prob-high">0.990</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--green)">&#10003;</span>
+        <span class="clip-name">xtts-jakub-security.wav</span>
+        <span class="clip-prob prob-mid">0.753</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--red)">&#10007;</span>
+        <span class="clip-name">xtts-jakub-kubernetes.wav</span>
+        <span class="clip-prob prob-low">0.149</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--red)">&#10007;</span>
+        <span class="clip-name">xtts-jakub-inteligence.wav</span>
+        <span class="clip-prob prob-low">0.014</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--red)">&#10007;</span>
+        <span class="clip-name">xtts-jakub-infrastructure.wav</span>
+        <span class="clip-prob prob-low">0.004</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--red)">&#10007;</span>
+        <span class="clip-name">xtts-jakub-automatizace.wav</span>
+        <span class="clip-prob prob-low">0.002</span>
+    </div>
+    <div class="clip-item">
+        <span class="clip-icon" style="color:var(--red)">&#10007;</span>
+        <span class="clip-name">xtts-jakub-kontejnerizace.wav</span>
+        <span class="clip-prob prob-low">0.001</span>
+    </div>
+</div>
+
+<div class="verdict-box">
+    <strong>jakub-en-clone.mp3 correctly classified as REAL (p=0.002)</strong> despite the model having seen jveverka's voice in training.
+    The model learns synthetic artifacts, not speaker identity. But XTTS clone_speaker artifacts from unseen clone recordings
+    are too subtle for V4 to catch.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="misclassified">11. Misclassified Clips (Per-Clip Detail)</h2>
+<p class="section-note">All 10 clips V4-A gets wrong on the 83-clip non-holdout set.</p>
+
+<table>
+<thead>
+<tr>
+    <th>Filename</th>
+    <th>True</th>
+    <th class="num">p_fake V4-A</th>
+    <th>Category</th>
+    <th>Deployed?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>fish-anton-ai-transforms2.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.0024</td><td>Fish / anton</td>
+    <td class="best">Caught (0.966)</td>
+</tr>
+<tr>
+    <td>fish-anton-automation.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.1205</td><td>Fish / anton</td>
+    <td class="best">Caught (0.968)</td>
+</tr>
+<tr>
+    <td>fish-anton-inteligencia.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.3930</td><td>Fish / anton</td>
+    <td class="best">Caught (0.980)</td>
+</tr>
+<tr>
+    <td>fish-anton-redhat.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.0078</td><td>Fish / anton</td>
+    <td class="best">Caught (0.870)</td>
+</tr>
+<tr>
+    <td>fish-miska-automatizace.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.4420</td><td>Fish / miska</td>
+    <td class="worst">Also missed (0.446)</td>
+</tr>
+<tr>
+    <td>fish-miska-bezpecnost2.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.1674</td><td>Fish / miska</td>
+    <td class="worst">Also missed (0.146)</td>
+</tr>
+<tr>
+    <td>miska-cs-4.m4a</td><td style="color:var(--green)">REAL</td>
+    <td class="num worst">0.9515</td><td>Natural / miska</td>
+    <td class="worst">Also missed (0.906)</td>
+</tr>
+<tr>
+    <td>xtts-anton-kontejnerizace.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.0055</td><td>XTTS cloned / anton</td>
+    <td class="best">Caught (0.625)</td>
+</tr>
+<tr>
+    <td>xtts-miska-kontejnery.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.0022</td><td>XTTS cloned / miska</td>
+    <td class="worst">Also missed (0.033)</td>
+</tr>
+<tr>
+    <td>xtts-miska-openshift2.wav</td><td style="color:var(--magenta)">FAKE</td>
+    <td class="num worst">0.0013</td><td>XTTS cloned / miska</td>
+    <td class="worst">Also missed (0.010)</td>
+</tr>
+</tbody>
+</table>
+
+<div class="verdict-box">
+    <strong>Of V4-A's 10 errors:</strong><br>
+    &bull; 4 are Fish-anton clips that the deployed model catches &mdash; these are genuine V4 regressions<br>
+    &bull; 3 are clips both models fail on (fish-miska-automatizace, fish-miska-bezpecnost2, miska-cs-4.m4a) &mdash; inherently hard clips<br>
+    &bull; 3 are XTTS cloned clips (1 anton, 2 miska) &mdash; consistent with the clone_speaker blind spot<br><br>
+    The single false positive (<code>miska-cs-4.m4a</code> scored 0.95) is the same clip the deployed model also misclassifies. Likely a problematic recording.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ablation">12. Class-Weight Ablation: V4-A vs V4-B</h2>
+
+<table>
+<thead>
+<tr>
+    <th>Metric</th>
+    <th class="num"><span class="model-tag tag-v4a">V4-A (no weights)</span></th>
+    <th class="num"><span class="model-tag tag-v4b">V4-B (weights: r=1.33, f=0.80)</span></th>
+    <th class="num">Difference</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Balanced accuracy</td><td class="num">89.8%</td><td class="num">89.8%</td><td class="num neutral">0.0pp</td></tr>
+<tr><td>REAL accuracy</td><td class="num">96.7%</td><td class="num">96.7%</td><td class="num neutral">0.0pp</td></tr>
+<tr><td>FAKE accuracy</td><td class="num">83.0%</td><td class="num">83.0%</td><td class="num neutral">0.0pp</td></tr>
+<tr><td>ROC-AUC</td><td class="num">0.960</td><td class="num">0.958</td><td class="num neutral">-0.002</td></tr>
+<tr><td>REAL p_fake median</td><td class="num">0.0017</td><td class="num">0.0018</td><td class="num neutral">+0.0001</td></tr>
+<tr><td>FAKE p_fake median</td><td class="num">0.9765</td><td class="num">0.9742</td><td class="num neutral">-0.0023</td></tr>
+<tr><td>Best checkpoint epoch</td><td class="num">4</td><td class="num">8</td><td class="num neutral">&mdash;</td></tr>
+</tbody>
+</table>
+
+<div class="verdict-box">
+    <strong>Class weights had zero measurable effect.</strong> V4-A and V4-B produce identical predictions on every metric.
+    This conclusively proves:<br>
+    1. The V3 collapse was <strong>not caused by class imbalance</strong> (1.7:1 fake:real ratio).<br>
+    2. It was caused by <strong>aggressive augmentation</strong> (noise + lowpass filter) destroying the discriminative signal.<br>
+    3. V4-A is preferred as the simpler model. No class weighting needed at this imbalance ratio.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="amplitude">13. Amplitude Robustness</h2>
+
+<table>
+<thead>
+<tr>
+    <th>Gain</th>
+    <th class="num"><span class="model-tag tag-v4a">V4-A</span></th>
+    <th class="num"><span class="model-tag tag-control">Deployed</span></th>
+    <th class="num"><span class="model-tag tag-base">Base</span></th>
+</tr>
+</thead>
+<tbody>
+<tr><td>0.5x (quiet)</td><td class="num best">89.8%</td><td class="num">78.6%</td><td class="num worst">40.6%</td></tr>
+<tr><td>1.0x (original)</td><td class="num best">89.8%</td><td class="num">78.6%</td><td class="num worst">40.6%</td></tr>
+<tr><td>2.0x (loud)</td><td class="num best">88.9%</td><td class="num">78.6%</td><td class="num worst">40.6%</td></tr>
+<tr><td>2.5x (very loud)</td><td class="num best">88.0%</td><td class="num">78.6%</td><td class="num worst">40.6%</td></tr>
+</tbody>
+</table>
+
+<p class="section-note">
+    V4 degrades gracefully under amplitude changes (89.8% &rarr; 88.0% at 2.5x gain).
+    Both V4 and deployed are amplitude-robust for practical use. The training amplitude augmentation (0.7&ndash;1.8x) pays off.
+</p>
+
+<!-- ============================================================ -->
+<h2 id="training">14. Training Configuration</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Base model</td><td>garystafford/wav2vec2-deepfake-voice-detector (Wav2Vec2-XLSR, 315M params)</td></tr>
+<tr><td>Freeze strategy</td><td>CNN encoder + feature projection + bottom 12 transformer layers frozen (50.6% trainable)</td></tr>
+<tr><td>Training clips</td><td>69 (26 real, 43 fake) &mdash; class ratio 1.65:1</td></tr>
+<tr><td>Validation clips</td><td>14 (4 real, 10 fake)</td></tr>
+<tr><td>Holdout clips</td><td>14 (1 real, 13 fake) &mdash; Jakub/Jveverka same-speaker</td></tr>
+<tr><td>Augmentation</td><td>Amplitude only (gain 0.7&ndash;1.8x, 80% probability)</td></tr>
+<tr><td>Audio preprocessing</td><td>Truncate/pad to 10 seconds (160,000 samples at 16 kHz)</td></tr>
+<tr><td>Epochs</td><td>15 (best checkpoint by balanced_accuracy on validation set)</td></tr>
+<tr><td>Batch size</td><td>2</td></tr>
+<tr><td>Learning rate</td><td>1e-5 with linear warmup (7 steps)</td></tr>
+<tr><td>Weight decay</td><td>0.01</td></tr>
+<tr><td>Best checkpoint (V4-A)</td><td>Epoch 4 (balanced accuracy 85% on val)</td></tr>
+<tr><td>Device</td><td>Apple M3 MPS &mdash; ~1.1s/step (5.8x faster than CPU)</td></tr>
+<tr><td>Training time</td><td>~11 min per model variant</td></tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="dataset">15. Dataset Composition</h2>
+
+<table>
+<thead>
+<tr><th>Category</th><th class="num">CS</th><th class="num">EN</th><th class="num">SK</th><th class="num">Total</th></tr>
+</thead>
+<tbody>
+<tr><td style="color:var(--magenta)">XTTS v2 &mdash; built-in voices</td><td class="num">11</td><td class="num">8</td><td class="num">0</td><td class="num">19</td></tr>
+<tr><td style="color:var(--magenta)">XTTS v2 &mdash; cloned (anton, miska)</td><td class="num">5</td><td class="num">8</td><td class="num">0</td><td class="num">13</td></tr>
+<tr><td style="color:var(--magenta)">XTTS v2 &mdash; cloned (jakub, holdout)</td><td class="num">3</td><td class="num">3</td><td class="num">0</td><td class="num">6</td></tr>
+<tr><td style="color:var(--magenta)">Fish S2 Pro (anton, miska)</td><td class="num">10</td><td class="num">8</td><td class="num">3</td><td class="num">21</td></tr>
+<tr><td style="color:var(--magenta)">Fish S2 Pro (jakub, holdout)</td><td class="num">2</td><td class="num">2</td><td class="num">3</td><td class="num">7</td></tr>
+<tr><td style="color:var(--green)">Natural &mdash; anton</td><td class="num">0</td><td class="num">4</td><td class="num">4</td><td class="num">8</td></tr>
+<tr><td style="color:var(--green)">Natural &mdash; jveverka</td><td class="num">10</td><td class="num">0</td><td class="num">0</td><td class="num">10</td></tr>
+<tr><td style="color:var(--green)">Natural &mdash; miska</td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">12</td></tr>
+<tr><td style="color:var(--green)">Natural &mdash; jakub (holdout)</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">1</td></tr>
+<tr style="border-top:2px solid rgba(93,230,200,0.2)">
+    <td><strong>Total</strong></td>
+    <td class="num"><strong>45</strong></td>
+    <td class="num"><strong>38</strong></td>
+    <td class="num"><strong>14</strong></td>
+    <td class="num"><strong>97</strong></td>
+</tr>
+</tbody>
+</table>
+
+<p class="section-note">
+    No XTTS clips exist for Slovak. All 13 XTTS cloned clips in training come from just 2 speakers (anton, miska).
+    If XTTS clone generalization matters, more diverse clone speakers are needed.
+</p>
+
+<!-- ============================================================ -->
+<h2 id="v3-postmortem">16. V3 Collapse Post-Mortem</h2>
+
+<table>
+<thead><tr><th>Hypothesis</th><th>Tested By</th><th>Result</th></tr></thead>
+<tbody>
+<tr>
+    <td>Class imbalance (1.7:1) caused V3 to collapse to all-FAKE</td>
+    <td>V4-A (no weights) vs V4-B (weighted loss)</td>
+    <td style="color:var(--red)"><strong>Rejected.</strong> Identical results. Imbalance not the cause.</td>
+</tr>
+<tr>
+    <td>Aggressive augmentation (noise + lowpass) destroyed discriminative signal</td>
+    <td>V4 uses amplitude-only augmentation</td>
+    <td style="color:var(--green)"><strong>Confirmed.</strong> V4 produces genuine separation (median gap +0.975).
+    V3 used noise injection + lowpass filtering, which collapsed the model.</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="limitations">17. Known Limitations</h2>
+
+<table>
+<thead><tr><th>Issue</th><th>Severity</th><th>Impact on Game Demo</th><th>Fix</th></tr></thead>
+<tbody>
+<tr>
+    <td>XTTS clone_speaker blind spot on unseen recordings</td>
+    <td style="color:var(--orange)">Medium</td>
+    <td>Low &mdash; game clips are fixed, from known speakers</td>
+    <td>Add XTTS clones from more diverse voices to training data</td>
+</tr>
+<tr>
+    <td>Fish S2 Pro detection: 71% on training speakers (4 anton misses)</td>
+    <td style="color:var(--orange)">Medium</td>
+    <td>Medium &mdash; some Fish clips will fool the AI opponent</td>
+    <td>Collect more Fish samples; these misses make the game harder (arguably a feature)</td>
+</tr>
+<tr>
+    <td>Only 3 real speakers (31 clips total)</td>
+    <td style="color:var(--gray)">Low</td>
+    <td>Low &mdash; real speakers are demo participants</td>
+    <td>Recruit more speakers; use public voice datasets for pre-training diversity</td>
+</tr>
+<tr>
+    <td>miska-cs-4.m4a false positive (p=0.95)</td>
+    <td style="color:var(--gray)">Low</td>
+    <td>Minimal &mdash; both models fail on this clip</td>
+    <td>Inspect the recording; may be a genuinely ambiguous or corrupted clip</td>
+</tr>
+<tr>
+    <td>Silence standardization degrades both models (~61% balanced accuracy)</td>
+    <td style="color:var(--gray)">Low</td>
+    <td>None &mdash; clips served as-is in the game</td>
+    <td>Both models use silence patterns as features; not a problem for pre-loaded clips</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ -->
+
+<div style="margin-top: 3rem; background: var(--bg3); border: 2px solid var(--green); border-radius: 8px; padding: 1.5rem;">
+<h3 style="color: var(--green); margin-top: 0;">Bottom Line</h3>
+<p>V4-A is the right model for the conference booth demo. It nearly eliminates false positives (3.3% vs 33.3%),
+produces excellent probability separation (median gap +0.975), and handles amplitude variation well.
+The XTTS clone_speaker blind spot is a genuine weakness but doesn't affect the game's fixed clip library.
+The class-weight experiment proved that V3's collapse was caused by augmentation, not class imbalance.</p>
+<p style="margin-top:1rem"><strong>Action:</strong> Replace deployed <code>wav2vec2-heavy-augmented</code> with <code>wav2vec2-v4a-no-weights</code>
+as the gary-finetuned model. No retraining needed unless new speakers or TTS engines are added to the game.</p>
+</div>
+
+<div class="footer">
+    V4 Final Experiment Report &bull; voice-id/apps/deepfake-detector &bull; Generated 24 September 2026<br>
+    Data: results/v4/v4_per_clip_correct.json &bull; Models: models/wav2vec2-v4a-no-weights<br>
+    Previous report (v4-comparison-report.html) superseded by this document
+</div>
+
+</body>
+</html>

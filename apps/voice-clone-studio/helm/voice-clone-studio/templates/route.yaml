@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: voice-clone-studio
+  annotations:
+    haproxy.router.openshift.io/timeout: 300s
+spec:
+  to:
+    kind: Service
+    name: voice-clone-studio
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge

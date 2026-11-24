@@ -1,0 +1,137 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fish-data
+  namespace: voice-id
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fish-native
+  namespace: voice-id
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fish-native
+  template:
+    metadata:
+      labels:
+        app: fish-native
+    spec:
+      initContainers:
+      - name: download-model
+        image: fishaudio/fish-speech:server-cuda
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          if [ ! -f /data/checkpoints/s2-pro/config.json ]; then
+            echo "Downloading Fish S2 Pro model weights..."
+            pip3 install --break-system-packages -q huggingface_hub && \
+            python3 -c "
+          from huggingface_hub import snapshot_download
+          snapshot_download('fishaudio/s2-pro', local_dir='/data/checkpoints/s2-pro')
+          print('Download complete')
+          "
+          else
+            echo "Model already downloaded, skipping"
+          fi
+        volumeMounts:
+        - name: fish-data
+          mountPath: /data
+        env:
+        - name: HOME
+          value: /tmp
+        - name: HF_HOME
+          value: /tmp/hf_home
+      containers:
+      - name: fish
+        image: fishaudio/fish-speech:server-cuda
+        command: ["/app/.venv/bin/python3"]
+        args:
+        - /app/tools/api_server.py
+        - --listen
+        - "0.0.0.0:8080"
+        - --llama-checkpoint-path
+        - checkpoints/s2-pro
+        - --decoder-checkpoint-path
+        - checkpoints/s2-pro/codec.pth
+        - --decoder-config-name
+        - modded_dac_vq
+        - --compile
+        workingDir: /app
+        ports:
+        - containerPort: 8080
+        env:
+        - name: HOME
+          value: /tmp
+        - name: HF_HOME
+          value: /tmp/hf_home
+        - name: NUMBA_CACHE_DIR
+          value: /tmp/numba_cache
+        - name: TMPDIR
+          value: /tmp
+        - name: BACKEND
+          value: cuda
+        - name: COMPILE
+          value: "1"
+        volumeMounts:
+        - name: fish-data
+          mountPath: /app/checkpoints
+          subPath: checkpoints
+        - name: references
+          mountPath: /app/references
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "4"
+            memory: 16Gi
+            nvidia.com/gpu: "1"
+      volumes:
+      - name: fish-data
+        persistentVolumeClaim:
+          claimName: fish-data
+      - name: references
+        emptyDir: {}
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fish-native
+  namespace: voice-id
+spec:
+  selector:
+    app: fish-native
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: fish-native
+  namespace: voice-id
+  annotations:
+    haproxy.router.openshift.io/timeout: 300s
+spec:
+  to:
+    kind: Service
+    name: fish-native
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge

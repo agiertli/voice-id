@@ -1,0 +1,4 @@
+interface:
+  display_name: "Voice ID Operations"
+  short_description: "Install, operate and verify the AI or Alive? booth stack"
+  default_prompt: "Use $voice-id-operations to check booth readiness and report any gaps without changing anything."

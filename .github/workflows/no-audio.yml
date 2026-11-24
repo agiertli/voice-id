@@ -1,0 +1,19 @@
+name: no-audio-guard
+# This repo is PUBLIC. Fail any push/PR that contains audio or database files
+# (voice recordings of real people, SQLite DBs with audio BLOBs and player emails).
+on: [push, pull_request]
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject audio and database files (by extension and content)
+        run: |
+          bad=$(git ls-files -z | xargs -0 -r file --mime-type | grep -E ': (audio/|video/webm|video/mp4|application/vnd.sqlite3|application/x-sqlite3)' || true)
+          ext=$(git ls-files | grep -i -E '\.(wav|mp3|m4a|flac|ogg|oga|opus|webm|aac|aiff?|wma|amr|caf|db|db-wal|db-shm|sqlite3?|backup|seedpack\.zip)$' || true)
+          if [ -n "$bad$ext" ]; then
+            echo "::error::Audio/database files must never be committed to this public repo:"
+            printf '%s\n%s\n' "$bad" "$ext"
+            exit 1
+          fi
+          echo "OK: no audio or database files tracked."

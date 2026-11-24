@@ -1,115 +1,78 @@
 <p align="center">
-  <img src="src/static/logo.jpg" alt="Voice ID: AI or Alive?" width="600">
+  <img src="apps/voice-id/src/static/logo-light-compact.png" alt="Voice ID: AI or Alive?" width="520">
 </p>
 
 # Voice ID: AI or Alive?
 
-Interactive web game for Red Hat conference booths. Players listen to audio clips and guess whether each is AI-generated or a real human voice.
+A conference booth game about trusting voices. Players hear five short clips,
+some real people and some AI clones of the same people saying the same sentences,
+and decide **natural voice** or **AI generated** as fast as they can. In battle
+mode they compete against four AI detectors, from a 7B audio LLM to a fine-tuned
+deepfake classifier. Everything runs on OpenShift and OpenShift AI (vLLM) on
+NVIDIA L4 GPUs; no voice leaves the cluster.
 
-## How It Works
+**New here?** Start with the [portal](https://agiertli.github.io/voice-id/)
+(source in [`portal/`](portal/)): what the game is, how to play, the opponents,
+scoring with worked examples and the architecture.
 
-1. Player enters their name
-2. 5 random clips are preloaded (mix of AI and natural, always at least 1 of each)
-3. For each clip: listen, choose "AI Generated" or "Natural Voice", see the reveal
-4. Final score with prize eligibility
-5. Leaderboard persists across games
+## Rule zero: no audio in this repository
 
-## Features
-
-- Multi-language UI (English, Czech, Slovak) with flag switcher
-- Real-time waveform visualization during playback
-- Mystery silhouette reveal animation (person vs robot icon)
-- TV leaderboard view (`/tv`) for booth monitors
-- Clips preloaded with progress bar for instant playback
-- Game logging with full clip metadata for analysis
-
-## Audio Samples
-
-Audio clips are stored in SQLite on a PVC. They are **not** baked into the container image.
-
-### Supplying Clips
-
-Place audio files in the `samples/` directory following this structure:
-
-```
-samples/
-  ai/                              # AI-generated clips
-    en/                            # Language subdirectory (ISO code)
-      fish-anton-hello.wav         # {model}-{speaker}-{description}.{ext}
-      xtts-miska-greeting.wav
-    cs/
-      fish-anton-pozdrav.wav
-      xtts-jakub-kubernetes.wav
-    sk/
-      fish-anton-inteligencia.wav
-  natural/                         # Real human voice clips
-    en/
-      anton-hello.wav              # {speaker}-{description}.{ext}
-      miska-greeting.wav
-    cs/
-      miska-pozdrav.wav
-    sk/
-      anton-ahoj.wav
-```
-
-**Naming convention:**
-- AI clips: `{model}-{speaker}-{description}.{ext}` -- the model prefix (before the first `-`) maps to a display name (e.g., `fish` -> "Fish Audio S2 Pro", `xtts` -> "Coqui XTTS v2")
-- Natural clips: `{speaker}-{description}.{ext}` -- the speaker name is extracted from the first segment
-
-**Supported formats:** WAV, MP3, M4A, OGG, FLAC
-
-**Loading into the database:**
-```bash
-python3 load_samples.py
-```
-
-**Uploading to a running deployment** (do NOT use `oc cp`):
-```bash
-ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
-
-# Upload a clip
-curl -sk "https://${ROUTE}/api/admin/upload" \
-  -F "audio=@samples/ai/en/fish-anton-hello.wav" \
-  -F "is_ai=1" -F "language=en" \
-  -F "source=Fish Audio S2 Pro" -F "speaker=anton" \
-  -F "filename=ai/en/fish-anton-hello.wav"
-
-# List all clips
-curl -sk "https://${ROUTE}/api/admin/clips"
-
-# Delete a clip
-curl -sk -X DELETE "https://${ROUTE}/api/admin/delete-clip/<clip_id>"
-```
-
-## Deployment
-
-Requires OpenShift 4.14+ with Helm.
+This repository is public. Voice recordings of real people, clones, speaker
+photos, seed packs and databases are sensitive personal data and **never** go into
+Git, issues or pull requests. Teams get the clips as a private **seed pack**; see
+[docs/SEEDING.md](docs/SEEDING.md). The old `samples/` folders were removed on
+purpose. Enable the guard once per clone:
 
 ```bash
-# Build (on Mac, always target amd64)
-podman build --platform linux/amd64 -t quay.io/your-org/voice-id:v1.0.0 .
-
-# Deploy
-helm upgrade --install voice-id helm/voice-id \
-  --namespace voice-id --create-namespace \
-  --set image.tag=v1.0.0 \
-  --set conference.name="Your Conference"
+git config core.hooksPath .githooks
 ```
 
-See `helm/voice-id/values.yaml` for all configurable parameters.
+Full rule: top of [AGENTS.md](AGENTS.md).
 
-## Localization
+## Install
 
-UI strings live in `helm/voice-id/i18n.json`, mounted as a ConfigMap. Adding a language = edit the JSON + `helm upgrade`. No image rebuild.
+About 35 minutes on a fresh OpenShift AI 3 cluster with four GPU nodes.
 
-## TTS Models Used
+- [Installation runbook](docs/INSTALLATION.md): GPU nodes, opponents, TTS engines,
+  the game, Voice Clone Studio, verification, troubleshooting.
+- [Install with an agent](docs/AGENT-INSTALLATION.md): Claude Code or Codex with the
+  `voice-id-operations` skill and a copyable prompt.
+- [Seeding](docs/SEEDING.md): load, export and share the clips.
 
-- **Fish Audio S2 Pro** -- highest quality for English; produces Russian accent on Czech/Slovak
-- **Coqui XTTS v2** -- very good quality for English and Czech; does not support Slovak
-- **MOSS-TTS-Nano** -- Chinese-accented Czech, easiest to detect
+## Operate and customize
 
-## Tech Stack
+- [Customization index](docs/CUSTOMIZATION.md)
+- [Scoring](docs/customization/scoring.md): exactly how points, prizes and the
+  leaderboard work, with worked examples and known limitations
+- [AI opponents](docs/customization/ai-opponents.md),
+  [clips and speakers](docs/customization/clips-and-speakers.md),
+  [languages](docs/customization/languages.md),
+  [booth operations](docs/customization/booth-operations.md),
+  [backups](docs/customization/backups.md)
+- [Architecture](docs/ARCHITECTURE.md)
 
-- **Backend:** Flask + Gunicorn, SQLite with WAL mode on PVC
-- **Frontend:** Vanilla HTML/CSS/JS, Web Audio API for waveform visualization
-- **Deployment:** Helm chart on OpenShift (Deployment, Service, Route, ConfigMap, PVC)
+## Agents
+
+[AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) hold the same instructions. The
+skill lives in [.agents/skills/voice-id-operations](.agents/skills/voice-id-operations/SKILL.md)
+(Codex) and is symlinked at `.claude/skills/voice-id-operations` (Claude Code). Keep
+the symlink when cloning. Claude Code also has a background agent at
+`.claude/agents/voice-id.md`.
+
+## Repository layout
+
+```text
+apps/voice-id/             the game (Flask, SQLite), Helm chart, tools/ (seedpack, Clone Studio import)
+apps/voice-clone-studio/   voice cloning and sentence recording app, Helm chart
+apps/deepfake-detector/    detector research, training and inference server (Gary, Gary 2.0)
+infra/                     GPU MachineSet example, LLM opponents, detectors, TTS engines
+docs/                      runbooks and guides
+portal/                    public GitHub Pages site (Vite + React)
+```
+
+## Supportability
+
+A custom conference demo built on Red Hat OpenShift and OpenShift AI with
+community models (Qwen2-Audio, Coqui XTTS v2, Fish Speech, Wav2Vec2) and a Red Hat
+AI published Gemma model. Single replicas and SQLite: fine for a booth, not a
+production design, and not a Red Hat supported solution as a whole.

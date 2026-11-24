@@ -1,0 +1,3257 @@
+{
+  "timestamp": "20260924_204918",
+  "device": "mps",
+  "experiment": "v4.1-data-diversity",
+  "train_speakers": [
+    "delta",
+    "echo",
+    "hotel",
+    "india",
+    "kilo",
+    "lima"
+  ],
+  "test_speakers": [
+    "foxtrot",
+    "golf",
+    "juliet",
+    "mike"
+  ],
+  "splits": {
+    "train": 91,
+    "val": 20,
+    "jakub_holdout": 14,
+    "test_unseen_synthetic": 7,
+    "test_unseen_natural": 12
+  },
+  "V4-A (control)": {
+    "val": {
+      "metrics": {
+        "accuracy": 0.8,
+        "balanced_accuracy": 0.8333333333333333,
+        "roc_auc": 0.9583333333333333,
+        "total_correct": 16,
+        "total": 20,
+        "real_accuracy": 1.0,
+        "real_correct": 8,
+        "real_total": 8,
+        "fake_accuracy": 0.6666666666666666,
+        "fake_correct": 8,
+        "fake_total": 12,
+        "fpr": 0.0,
+        "fnr": 0.33333333333333337,
+        "pfake_dist_real": {
+          "min": 0.0008659748127683997,
+          "median": 0.0016255403752438724,
+          "mean": 0.008866613992722705,
+          "max": 0.06022318825125694
+        },
+        "pfake_dist_fake": {
+          "min": 0.002006933558732271,
+          "median": 0.7778280079364777,
+          "mean": 0.615435947974523,
+          "max": 0.9961502552032471
+        },
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 4,
+            "total": 5,
+            "accuracy": 0.8,
+            "mean_pfake": 0.769196408521384
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 3,
+            "total": 5,
+            "accuracy": 0.6,
+            "mean_pfake": 0.5933275673538446
+          },
+          "XTTS clone": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.28630574815906584
+          },
+          "anton": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0016920145717449486
+          },
+          "echo": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.001120487810112536
+          },
+          "hotel": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0011764937080442905
+          },
+          "india": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0008659748127683997
+          },
+          "jveverka": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.001756110112182796
+          },
+          "lima": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.06022318825125694
+          },
+          "miska": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.002406628103926778
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 9,
+            "total": 10,
+            "accuracy": 0.9,
+            "mean_pfake": 0.4023443731945008
+          },
+          "en": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143,
+            "mean_pfake": 0.4253731127329437
+          },
+          "sk": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.15170292218681425
+          }
+        },
+        "by_speaker": {
+          "anton": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714,
+            "mean_pfake": 0.3416025794410546
+          },
+          "barbora": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8727431297302246
+          },
+          "echo": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.001120487810112536
+          },
+          "hotel": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.0015917136333882809
+          },
+          "india": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0008659748127683997
+          },
+          "jveverka": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.001756110112182796
+          },
+          "lima": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.3154138755053282
+          },
+          "miska": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0,
+            "mean_pfake": 0.641618334047962
+          },
+          "tammie": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9879760146141052
+          }
+        },
+        "by_generator": {
+          "fish": {
+            "correct": 3,
+            "total": 5,
+            "accuracy": 0.6,
+            "mean_pfake": 0.5933275673538446
+          },
+          "human": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0,
+            "mean_pfake": 0.008866613992722705
+          },
+          "xtts": {
+            "correct": 4,
+            "total": 5,
+            "accuracy": 0.8,
+            "mean_pfake": 0.769196408521384
+          },
+          "xtts-clone": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.28630574815906584
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "xtts-lima-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "lima",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.5706045627593994
+        },
+        {
+          "filename": "xtts-anton-kontejnerizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.005480376537889242
+        },
+        {
+          "filename": "xtts-tammie-hybridni.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "tammie",
+          "origin": "v4-original",
+          "prob_fake": 0.9879760146141052
+        },
+        {
+          "filename": "xtts-barbora-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "barbora",
+          "origin": "v4-original",
+          "prob_fake": 0.8727431297302246
+        },
+        {
+          "filename": "fish-miska-devops.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.6829128861427307
+        },
+        {
+          "filename": "fish-miska-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.8975215554237366
+        },
+        {
+          "filename": "fish-anton-ai-transforms.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.9854201674461365
+        },
+        {
+          "filename": "fish-anton-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.007786707952618599
+        },
+        {
+          "filename": "xtts-miska-container.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.9836322665214539
+        },
+        {
+          "filename": "xtts-hotel-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "hotel",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.002006933558732271
+        },
+        {
+          "filename": "xtts-anton-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.9961502552032471
+        },
+        {
+          "filename": "fish-anton-inteligencia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.39299651980400085
+        },
+        {
+          "filename": "hotel-cs-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "hotel",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "hotel",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0011764937080442905
+        },
+        {
+          "filename": "jveverka-kontejnerizace-je-budoucnost-cloudu.flac",
+          "label": 0,
+          "label_name": "real",
+          "source": "jveverka",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "jveverka",
+          "origin": "v4-original",
+          "prob_fake": 0.001756110112182796
+        },
+        {
+          "filename": "miska-cs-3.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "miska",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.002406628103926778
+        },
+        {
+          "filename": "india-cs-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "india",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "india",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0008659748127683997
+        },
+        {
+          "filename": "anton-en-3.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "anton",
+          "generator": "human",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.0014949706383049488
+        },
+        {
+          "filename": "echo-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "echo",
+          "generator": "human",
+          "language": "en",
+          "speaker": "echo",
+          "origin": "diverse-natural",
+          "prob_fake": 0.001120487810112536
+        },
+        {
+          "filename": "anton-sk-2.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "anton",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.0018890585051849484
+        },
+        {
+          "filename": "lima-sk-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "lima",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "lima",
+          "origin": "diverse-natural",
+          "prob_fake": 0.06022318825125694
+        }
+      ]
+    },
+    "jakub_holdout": {
+      "metrics": {
+        "accuracy": 0.6428571428571429,
+        "balanced_accuracy": 0.8076923076923077,
+        "roc_auc": 0.7692307692307693,
+        "total_correct": 9,
+        "total": 14,
+        "real_accuracy": 1.0,
+        "real_correct": 1,
+        "real_total": 1,
+        "fake_accuracy": 0.6153846153846154,
+        "fake_correct": 8,
+        "fake_total": 13,
+        "fpr": 0.0,
+        "fnr": 0.3846153846153846,
+        "pfake_dist_real": {
+          "min": 0.002264401875436306,
+          "median": 0.002264401875436306,
+          "mean": 0.002264401875436306,
+          "max": 0.002264401875436306
+        },
+        "pfake_dist_fake": {
+          "min": 0.0014487960143014789,
+          "median": 0.989700198173523,
+          "mean": 0.5849818540916133,
+          "max": 0.9976970553398132
+        },
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 1,
+            "total": 6,
+            "accuracy": 0.16666666666666666,
+            "mean_pfake": 0.10753610718529671
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 7,
+            "total": 7,
+            "accuracy": 1.0,
+            "mean_pfake": 0.994221065725599
+          },
+          "jakub": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.002264401875436306
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 3,
+            "total": 5,
+            "accuracy": 0.6,
+            "mean_pfake": 0.5184204598190263
+          },
+          "en": {
+            "correct": 3,
+            "total": 6,
+            "accuracy": 0.5,
+            "mean_pfake": 0.3381909150048159
+          },
+          "sk": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9952602386474609
+          }
+        },
+        "by_speaker": {
+          "jakub": {
+            "correct": 9,
+            "total": 14,
+            "accuracy": 0.6428571428571429,
+            "mean_pfake": 0.543359178933315
+          }
+        },
+        "by_generator": {
+          "fish": {
+            "correct": 7,
+            "total": 7,
+            "accuracy": 1.0,
+            "mean_pfake": 0.994221065725599
+          },
+          "human": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.002264401875436306
+          },
+          "xtts": {
+            "correct": 1,
+            "total": 6,
+            "accuracy": 0.16666666666666666,
+            "mean_pfake": 0.10753610718529671
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "fish-jakub-kubernetes.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9902037382125854
+        },
+        {
+          "filename": "fish-jakub-otevreny.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9961657524108887
+        },
+        {
+          "filename": "xtts-jakub-automatizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.0016624571289867163
+        },
+        {
+          "filename": "xtts-jakub-inteligence.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.6026215553283691
+        },
+        {
+          "filename": "xtts-jakub-kontejnerizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.0014487960143014789
+        },
+        {
+          "filename": "fish-jakub-hybrid.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9976970553398132
+        },
+        {
+          "filename": "fish-jakub-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.989700198173523
+        },
+        {
+          "filename": "xtts-jakub-infrastructure.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.0019229879835620522
+        },
+        {
+          "filename": "xtts-jakub-kubernetes.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.021344181150197983
+        },
+        {
+          "filename": "xtts-jakub-security.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.016216665506362915
+        },
+        {
+          "filename": "fish-jakub-inteligencia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9957940578460693
+        },
+        {
+          "filename": "fish-jakub-kontajnerizacia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9948462247848511
+        },
+        {
+          "filename": "fish-jakub-openshift.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9951404333114624
+        },
+        {
+          "filename": "jakub-en-clone.mp3",
+          "label": 0,
+          "label_name": "real",
+          "source": "jakub",
+          "generator": "human",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.002264401875436306
+        }
+      ]
+    },
+    "test_unseen_synthetic": {
+      "metrics": {
+        "accuracy": 0.5714285714285714,
+        "balanced_accuracy": 0.5714285714285714,
+        "roc_auc": NaN,
+        "total_correct": 4,
+        "total": 7,
+        "real_accuracy": 0.0,
+        "real_correct": 0,
+        "real_total": 0,
+        "fake_accuracy": 0.5714285714285714,
+        "fake_correct": 4,
+        "fake_total": 7,
+        "fpr": 0.0,
+        "fnr": 0.4285714285714286,
+        "pfake_dist_real": {
+          "min": null,
+          "median": null,
+          "mean": null,
+          "max": null
+        },
+        "pfake_dist_fake": {
+          "min": 0.2908928692340851,
+          "median": 0.5022405982017517,
+          "mean": 0.628594275031771,
+          "max": 0.99774569272995
+        },
+        "by_source": {
+          "XTTS clone": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714,
+            "mean_pfake": 0.628594275031771
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5,
+            "mean_pfake": 0.6470700800418854
+          },
+          "en": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.6039598683516184
+          }
+        },
+        "by_speaker": {
+          "foxtrot": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.6766648441553116
+          },
+          "golf": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.7499931454658508
+          },
+          "juliet": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0.0,
+            "mean_pfake": 0.3015570342540741
+          },
+          "mike": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9437298774719238
+          }
+        },
+        "by_generator": {
+          "xtts-clone": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714,
+            "mean_pfake": 0.628594275031771
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "xtts-foxtrot-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.9974178075790405
+        },
+        {
+          "filename": "xtts-foxtrot-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "foxtrot",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.35591188073158264
+        },
+        {
+          "filename": "xtts-golf-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.5022405982017517
+        },
+        {
+          "filename": "xtts-juliet-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.2908928692340851
+        },
+        {
+          "filename": "xtts-juliet-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "juliet",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.3122211992740631
+        },
+        {
+          "filename": "xtts-mike-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "mike",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.9437298774719238
+        },
+        {
+          "filename": "xtts-golf-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "golf",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.99774569272995
+        }
+      ]
+    },
+    "test_unseen_natural": {
+      "metrics": {
+        "accuracy": 0.9166666666666666,
+        "balanced_accuracy": 0.9166666666666666,
+        "roc_auc": NaN,
+        "total_correct": 11,
+        "total": 12,
+        "real_accuracy": 0.9166666666666666,
+        "real_correct": 11,
+        "real_total": 12,
+        "fake_accuracy": 0.0,
+        "fake_correct": 0,
+        "fake_total": 0,
+        "fpr": 0.08333333333333337,
+        "fnr": 0.0,
+        "pfake_dist_real": {
+          "min": 0.0009073897963389754,
+          "median": 0.0015100943855941296,
+          "mean": 0.09644506218804356,
+          "max": 0.8343201875686646
+        },
+        "pfake_dist_fake": {
+          "min": null,
+          "median": null,
+          "mean": null,
+          "max": null
+        },
+        "by_source": {
+          "foxtrot": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.07774452888406813
+          },
+          "golf": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.3057383944590886
+          },
+          "juliet": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0009601619094610214
+          },
+          "mike": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0013371634995564818
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0009601619094610214
+          },
+          "en": {
+            "correct": 5,
+            "total": 6,
+            "accuracy": 0.8333333333333334,
+            "mean_pfake": 0.19174146167157838
+          },
+          "sk": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0013371634995564818
+          }
+        },
+        "by_speaker": {
+          "foxtrot": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.07774452888406813
+          },
+          "golf": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.3057383944590886
+          },
+          "juliet": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0009601619094610214
+          },
+          "mike": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0013371634995564818
+          }
+        },
+        "by_generator": {
+          "human": {
+            "correct": 11,
+            "total": 12,
+            "accuracy": 0.9166666666666666,
+            "mean_pfake": 0.09644506218804356
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "foxtrot-en-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.00150823756121099
+        },
+        {
+          "filename": "foxtrot-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.22988849878311157
+        },
+        {
+          "filename": "foxtrot-en-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0018368503078818321
+        },
+        {
+          "filename": "golf-en-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.8343201875686646
+        },
+        {
+          "filename": "golf-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.03968542441725731
+        },
+        {
+          "filename": "golf-en-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.04320957139134407
+        },
+        {
+          "filename": "juliet-cs-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0009073897963389754
+        },
+        {
+          "filename": "juliet-cs-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0010198208037763834
+        },
+        {
+          "filename": "juliet-cs-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0009532751282677054
+        },
+        {
+          "filename": "mike-sk-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0012753998162224889
+        },
+        {
+          "filename": "mike-sk-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0015119512099772692
+        },
+        {
+          "filename": "mike-sk-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0012241394724696875
+        }
+      ]
+    }
+  },
+  "Deployed (control)": {
+    "val": {
+      "metrics": {
+        "accuracy": 0.9,
+        "balanced_accuracy": 0.8958333333333333,
+        "roc_auc": 0.8645833333333333,
+        "total_correct": 18,
+        "total": 20,
+        "real_accuracy": 0.875,
+        "real_correct": 7,
+        "real_total": 8,
+        "fake_accuracy": 0.9166666666666666,
+        "fake_correct": 11,
+        "fake_total": 12,
+        "fpr": 0.125,
+        "fnr": 0.08333333333333337,
+        "pfake_dist_real": {
+          "min": 0.0011166735785081983,
+          "median": 0.12268264032900333,
+          "mean": 0.2357147050788626,
+          "max": 0.9686179161071777
+        },
+        "pfake_dist_fake": {
+          "min": 0.00873823557049036,
+          "median": 0.8902464509010315,
+          "mean": 0.7875875297468156,
+          "max": 0.9912017583847046
+        },
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8296263813972473
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8767017960548401
+          },
+          "XTTS clone": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.45970473485067487
+          },
+          "anton": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.2243296504020691
+          },
+          "echo": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0027383272536098957
+          },
+          "hotel": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0017990873893722892
+          },
+          "india": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0011166735785081983
+          },
+          "jveverka": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9686179161071777
+          },
+          "lima": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.4384477734565735
+          },
+          "miska": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.024338562041521072
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 9,
+            "total": 10,
+            "accuracy": 0.9,
+            "mean_pfake": 0.5668896893505007
+          },
+          "en": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571,
+            "mean_pfake": 0.5745335372297892
+          },
+          "sk": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.5487121144930521
+          }
+        },
+        "by_speaker": {
+          "anton": {
+            "correct": 7,
+            "total": 7,
+            "accuracy": 1.0,
+            "mean_pfake": 0.7001115850039891
+          },
+          "barbora": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.642071008682251
+          },
+          "echo": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0027383272536098957
+          },
+          "hotel": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.005268661479931325
+          },
+          "india": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0011166735785081983
+          },
+          "jveverka": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0.0,
+            "mean_pfake": 0.9686179161071777
+          },
+          "lima": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.6745595037937164
+          },
+          "miska": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0,
+            "mean_pfake": 0.6285938369110227
+          },
+          "tammie": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.947411298751831
+          }
+        },
+        "by_generator": {
+          "fish": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8767017960548401
+          },
+          "human": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875,
+            "mean_pfake": 0.2357147050788626
+          },
+          "xtts": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8296263813972473
+          },
+          "xtts-clone": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.45970473485067487
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "xtts-lima-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "lima",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.9106712341308594
+        },
+        {
+          "filename": "xtts-anton-kontejnerizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.6251410841941833
+        },
+        {
+          "filename": "xtts-tammie-hybridni.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "tammie",
+          "origin": "v4-original",
+          "prob_fake": 0.947411298751831
+        },
+        {
+          "filename": "xtts-barbora-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "barbora",
+          "origin": "v4-original",
+          "prob_fake": 0.642071008682251
+        },
+        {
+          "filename": "fish-miska-devops.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.7165814638137817
+        },
+        {
+          "filename": "fish-miska-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.8311485648155212
+        },
+        {
+          "filename": "fish-anton-ai-transforms.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.9859012961387634
+        },
+        {
+          "filename": "fish-anton-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.8698216676712036
+        },
+        {
+          "filename": "xtts-miska-container.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.9423067569732666
+        },
+        {
+          "filename": "xtts-hotel-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "hotel",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.00873823557049036
+        },
+        {
+          "filename": "xtts-anton-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.9912017583847046
+        },
+        {
+          "filename": "fish-anton-inteligencia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.9800559878349304
+        },
+        {
+          "filename": "hotel-cs-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "hotel",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "hotel",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0017990873893722892
+        },
+        {
+          "filename": "jveverka-kontejnerizace-je-budoucnost-cloudu.flac",
+          "label": 0,
+          "label_name": "real",
+          "source": "jveverka",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "jveverka",
+          "origin": "v4-original",
+          "prob_fake": 0.9686179161071777
+        },
+        {
+          "filename": "miska-cs-3.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "miska",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.024338562041521072
+        },
+        {
+          "filename": "india-cs-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "india",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "india",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0011166735785081983
+        },
+        {
+          "filename": "anton-en-3.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "anton",
+          "generator": "human",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.2210267186164856
+        },
+        {
+          "filename": "echo-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "echo",
+          "generator": "human",
+          "language": "en",
+          "speaker": "echo",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0027383272536098957
+        },
+        {
+          "filename": "anton-sk-2.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "anton",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.2276325821876526
+        },
+        {
+          "filename": "lima-sk-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "lima",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "lima",
+          "origin": "diverse-natural",
+          "prob_fake": 0.4384477734565735
+        }
+      ]
+    },
+    "jakub_holdout": {
+      "metrics": {
+        "accuracy": 0.9285714285714286,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.7692307692307693,
+        "total_correct": 13,
+        "total": 14,
+        "real_accuracy": 0.0,
+        "real_correct": 0,
+        "real_total": 1,
+        "fake_accuracy": 1.0,
+        "fake_correct": 13,
+        "fake_total": 13,
+        "fpr": 1.0,
+        "fnr": 0.0,
+        "pfake_dist_real": {
+          "min": 0.757274329662323,
+          "median": 0.757274329662323,
+          "mean": 0.757274329662323,
+          "max": 0.757274329662323
+        },
+        "pfake_dist_fake": {
+          "min": 0.6112198233604431,
+          "median": 0.9916422367095947,
+          "mean": 0.9001614588957566,
+          "max": 0.9964672327041626
+        },
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.7903899252414703
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 7,
+            "total": 7,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9942513448851449
+          },
+          "jakub": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0.0,
+            "mean_pfake": 0.757274329662323
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8261392712593079
+          },
+          "en": {
+            "correct": 5,
+            "total": 6,
+            "accuracy": 0.8333333333333334,
+            "mean_pfake": 0.8909482459227244
+          },
+          "sk": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9943291544914246
+          }
+        },
+        "by_speaker": {
+          "jakub": {
+            "correct": 13,
+            "total": 14,
+            "accuracy": 0.9285714285714286,
+            "mean_pfake": 0.8899552353790828
+          }
+        },
+        "by_generator": {
+          "fish": {
+            "correct": 7,
+            "total": 7,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9942513448851449
+          },
+          "human": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0.0,
+            "mean_pfake": 0.757274329662323
+          },
+          "xtts": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.7903899252414703
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "fish-jakub-kubernetes.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9937267303466797
+        },
+        {
+          "filename": "fish-jakub-otevreny.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9949357509613037
+        },
+        {
+          "filename": "xtts-jakub-automatizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.6183783411979675
+        },
+        {
+          "filename": "xtts-jakub-inteligence.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9124357104301453
+        },
+        {
+          "filename": "xtts-jakub-kontejnerizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.6112198233604431
+        },
+        {
+          "filename": "fish-jakub-hybrid.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9964672327041626
+        },
+        {
+          "filename": "fish-jakub-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9916422367095947
+        },
+        {
+          "filename": "xtts-jakub-infrastructure.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.6241393089294434
+        },
+        {
+          "filename": "xtts-jakub-kubernetes.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9902812242507935
+        },
+        {
+          "filename": "xtts-jakub-security.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9858851432800293
+        },
+        {
+          "filename": "fish-jakub-inteligencia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9945946335792542
+        },
+        {
+          "filename": "fish-jakub-kontajnerizacia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9939861297607422
+        },
+        {
+          "filename": "fish-jakub-openshift.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9944067001342773
+        },
+        {
+          "filename": "jakub-en-clone.mp3",
+          "label": 0,
+          "label_name": "real",
+          "source": "jakub",
+          "generator": "human",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.757274329662323
+        }
+      ]
+    },
+    "test_unseen_synthetic": {
+      "metrics": {
+        "accuracy": 0.7142857142857143,
+        "balanced_accuracy": 0.7142857142857143,
+        "roc_auc": NaN,
+        "total_correct": 5,
+        "total": 7,
+        "real_accuracy": 0.0,
+        "real_correct": 0,
+        "real_total": 0,
+        "fake_accuracy": 0.7142857142857143,
+        "fake_correct": 5,
+        "fake_total": 7,
+        "fpr": 0.0,
+        "fnr": 0.2857142857142857,
+        "pfake_dist_real": {
+          "min": null,
+          "median": null,
+          "mean": null,
+          "max": null
+        },
+        "pfake_dist_fake": {
+          "min": 0.1896664798259735,
+          "median": 0.8159818649291992,
+          "mean": 0.6739636531897953,
+          "max": 0.9971480965614319
+        },
+        "by_source": {
+          "XTTS clone": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143,
+            "mean_pfake": 0.6739636531897953
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75,
+            "mean_pfake": 0.6710253283381462
+          },
+          "en": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.6778814196586609
+          }
+        },
+        "by_speaker": {
+          "foxtrot": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.7494304180145264
+          },
+          "golf": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9065649807453156
+          },
+          "juliet": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0.0,
+            "mean_pfake": 0.20682142674922943
+          },
+          "mike": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9921119213104248
+          }
+        },
+        "by_generator": {
+          "xtts-clone": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143,
+            "mean_pfake": 0.6739636531897953
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "xtts-foxtrot-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.9936860203742981
+        },
+        {
+          "filename": "xtts-foxtrot-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "foxtrot",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.5051748156547546
+        },
+        {
+          "filename": "xtts-golf-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.8159818649291992
+        },
+        {
+          "filename": "xtts-juliet-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.1896664798259735
+        },
+        {
+          "filename": "xtts-juliet-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "juliet",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.22397637367248535
+        },
+        {
+          "filename": "xtts-mike-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "mike",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.9921119213104248
+        },
+        {
+          "filename": "xtts-golf-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "golf",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.9971480965614319
+        }
+      ]
+    },
+    "test_unseen_natural": {
+      "metrics": {
+        "accuracy": 0.8333333333333334,
+        "balanced_accuracy": 0.8333333333333334,
+        "roc_auc": NaN,
+        "total_correct": 10,
+        "total": 12,
+        "real_accuracy": 0.8333333333333334,
+        "real_correct": 10,
+        "real_total": 12,
+        "fake_accuracy": 0.0,
+        "fake_correct": 0,
+        "fake_total": 0,
+        "fpr": 0.16666666666666663,
+        "fnr": 0.0,
+        "pfake_dist_real": {
+          "min": 0.0010093009332194924,
+          "median": 0.03970362897962332,
+          "mean": 0.17254098127402054,
+          "max": 0.8675726056098938
+        },
+        "pfake_dist_fake": {
+          "min": null,
+          "median": null,
+          "mean": null,
+          "max": null
+        },
+        "by_source": {
+          "foxtrot": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.21847283529738584
+          },
+          "golf": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.4159059077501297
+          },
+          "juliet": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0010709748215352495
+          },
+          "mike": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.05471420722703139
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0010709748215352495
+          },
+          "en": {
+            "correct": 4,
+            "total": 6,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.31718937152375776
+          },
+          "sk": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.05471420722703139
+          }
+        },
+        "by_speaker": {
+          "foxtrot": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.21847283529738584
+          },
+          "golf": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.4159059077501297
+          },
+          "juliet": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0010709748215352495
+          },
+          "mike": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.05471420722703139
+          }
+        },
+        "by_generator": {
+          "human": {
+            "correct": 10,
+            "total": 12,
+            "accuracy": 0.8333333333333334,
+            "mean_pfake": 0.17254098127402054
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "foxtrot-en-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.002441625576466322
+        },
+        {
+          "filename": "foxtrot-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.6497626900672913
+        },
+        {
+          "filename": "foxtrot-en-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.003214190248399973
+        },
+        {
+          "filename": "golf-en-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.8675726056098938
+        },
+        {
+          "filename": "golf-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.17926225066184998
+        },
+        {
+          "filename": "golf-en-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.20088286697864532
+        },
+        {
+          "filename": "juliet-cs-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0010093009332194924
+        },
+        {
+          "filename": "juliet-cs-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0011789028067141771
+        },
+        {
+          "filename": "juliet-cs-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.001024720724672079
+        },
+        {
+          "filename": "mike-sk-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.00797935388982296
+        },
+        {
+          "filename": "mike-sk-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.07142790406942368
+        },
+        {
+          "filename": "mike-sk-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.08473536372184753
+        }
+      ]
+    }
+  },
+  "V4.1": {
+    "val": {
+      "metrics": {
+        "accuracy": 0.9,
+        "balanced_accuracy": 0.9166666666666667,
+        "roc_auc": 0.9375,
+        "total_correct": 18,
+        "total": 20,
+        "real_accuracy": 1.0,
+        "real_correct": 8,
+        "real_total": 8,
+        "fake_accuracy": 0.8333333333333334,
+        "fake_correct": 10,
+        "fake_total": 12,
+        "fpr": 0.0,
+        "fnr": 0.16666666666666663,
+        "pfake_dist_real": {
+          "min": 0.001533251372165978,
+          "median": 0.17638622969388962,
+          "mean": 0.1566888792294776,
+          "max": 0.33402496576309204
+        },
+        "pfake_dist_fake": {
+          "min": 0.006231158971786499,
+          "median": 0.8293673396110535,
+          "mean": 0.6940526440739632,
+          "max": 0.9295509457588196
+        },
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8243276596069335
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 4,
+            "total": 5,
+            "accuracy": 0.8,
+            "mean_pfake": 0.7361671447753906
+          },
+          "XTTS clone": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.26307885348796844
+          },
+          "anton": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.20214123278856277
+          },
+          "echo": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0074300216510891914
+          },
+          "hotel": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.002100220648571849
+          },
+          "india": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.001533251372165978
+          },
+          "jveverka": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.30298393964767456
+          },
+          "lima": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.20115616917610168
+          },
+          "miska": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.33402496576309204
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 10,
+            "total": 10,
+            "accuracy": 1.0,
+            "mean_pfake": 0.5005778047139756
+          },
+          "en": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143,
+            "mean_pfake": 0.47042536589183975
+          },
+          "sk": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.42779571811358136
+          }
+        },
+        "by_speaker": {
+          "anton": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571,
+            "mean_pfake": 0.5683938371283668
+          },
+          "barbora": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8564249873161316
+          },
+          "echo": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0074300216510891914
+          },
+          "hotel": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.004165689810179174
+          },
+          "india": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.001533251372165978
+          },
+          "jveverka": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.30298393964767456
+          },
+          "lima": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.36054135859012604
+          },
+          "miska": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0,
+            "mean_pfake": 0.6970690786838531
+          },
+          "tammie": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9173232913017273
+          }
+        },
+        "by_generator": {
+          "fish": {
+            "correct": 4,
+            "total": 5,
+            "accuracy": 0.8,
+            "mean_pfake": 0.7361671447753906
+          },
+          "human": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0,
+            "mean_pfake": 0.1566888792294776
+          },
+          "xtts": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8243276596069335
+          },
+          "xtts-clone": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.26307885348796844
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "xtts-lima-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "lima",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.5199265480041504
+        },
+        {
+          "filename": "xtts-anton-kontejnerizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.5220944881439209
+        },
+        {
+          "filename": "xtts-tammie-hybridni.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "tammie",
+          "origin": "v4-original",
+          "prob_fake": 0.9173232913017273
+        },
+        {
+          "filename": "xtts-barbora-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "barbora",
+          "origin": "v4-original",
+          "prob_fake": 0.8564249873161316
+        },
+        {
+          "filename": "fish-miska-devops.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.7201964855194092
+        },
+        {
+          "filename": "fish-miska-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.8291698694229126
+        },
+        {
+          "filename": "fish-anton-ai-transforms.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.9295509457588196
+        },
+        {
+          "filename": "fish-anton-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.37235361337661743
+        },
+        {
+          "filename": "xtts-miska-container.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.9048849940299988
+        },
+        {
+          "filename": "xtts-hotel-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "hotel",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.006231158971786499
+        },
+        {
+          "filename": "xtts-anton-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.9209105372428894
+        },
+        {
+          "filename": "fish-anton-inteligencia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.8295648097991943
+        },
+        {
+          "filename": "hotel-cs-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "hotel",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "hotel",
+          "origin": "diverse-natural",
+          "prob_fake": 0.002100220648571849
+        },
+        {
+          "filename": "jveverka-kontejnerizace-je-budoucnost-cloudu.flac",
+          "label": 0,
+          "label_name": "real",
+          "source": "jveverka",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "jveverka",
+          "origin": "v4-original",
+          "prob_fake": 0.30298393964767456
+        },
+        {
+          "filename": "miska-cs-3.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "miska",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "miska",
+          "origin": "v4-original",
+          "prob_fake": 0.33402496576309204
+        },
+        {
+          "filename": "india-cs-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "india",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "india",
+          "origin": "diverse-natural",
+          "prob_fake": 0.001533251372165978
+        },
+        {
+          "filename": "anton-en-3.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "anton",
+          "generator": "human",
+          "language": "en",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.15161629021167755
+        },
+        {
+          "filename": "echo-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "echo",
+          "generator": "human",
+          "language": "en",
+          "speaker": "echo",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0074300216510891914
+        },
+        {
+          "filename": "anton-sk-2.m4a",
+          "label": 0,
+          "label_name": "real",
+          "source": "anton",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "anton",
+          "origin": "v4-original",
+          "prob_fake": 0.252666175365448
+        },
+        {
+          "filename": "lima-sk-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "lima",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "lima",
+          "origin": "diverse-natural",
+          "prob_fake": 0.20115616917610168
+        }
+      ]
+    },
+    "jakub_holdout": {
+      "metrics": {
+        "accuracy": 0.6428571428571429,
+        "balanced_accuracy": 0.8076923076923077,
+        "roc_auc": 1.0,
+        "total_correct": 9,
+        "total": 14,
+        "real_accuracy": 1.0,
+        "real_correct": 1,
+        "real_total": 1,
+        "fake_accuracy": 0.6153846153846154,
+        "fake_correct": 8,
+        "fake_total": 13,
+        "fpr": 0.0,
+        "fnr": 0.3846153846153846,
+        "pfake_dist_real": {
+          "min": 0.09291104227304459,
+          "median": 0.09291104227304459,
+          "mean": 0.09291104227304459,
+          "max": 0.09291104227304459
+        },
+        "pfake_dist_fake": {
+          "min": 0.18260665237903595,
+          "median": 0.9399046897888184,
+          "mean": 0.7001985128109272,
+          "max": 0.9809134602546692
+        },
+        "by_source": {
+          "Coqui XTTS v2": {
+            "correct": 1,
+            "total": 6,
+            "accuracy": 0.16666666666666666,
+            "mean_pfake": 0.3942686716715495
+          },
+          "Fish Audio S2 Pro": {
+            "correct": 7,
+            "total": 7,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9624240909303937
+          },
+          "jakub": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.09291104227304459
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 3,
+            "total": 5,
+            "accuracy": 0.6,
+            "mean_pfake": 0.6487498909235001
+          },
+          "en": {
+            "correct": 3,
+            "total": 6,
+            "accuracy": 0.5,
+            "mean_pfake": 0.5083427963157495
+          },
+          "sk": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9672284921010336
+          }
+        },
+        "by_speaker": {
+          "jakub": {
+            "correct": 9,
+            "total": 14,
+            "accuracy": 0.6428571428571429,
+            "mean_pfake": 0.6568208363439355
+          }
+        },
+        "by_generator": {
+          "fish": {
+            "correct": 7,
+            "total": 7,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9624240909303937
+          },
+          "human": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.09291104227304459
+          },
+          "xtts": {
+            "correct": 1,
+            "total": 6,
+            "accuracy": 0.16666666666666666,
+            "mean_pfake": 0.3942686716715495
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "fish-jakub-kubernetes.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.947683572769165
+        },
+        {
+          "filename": "fish-jakub-otevreny.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9667814373970032
+        },
+        {
+          "filename": "xtts-jakub-automatizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.18260665237903595
+        },
+        {
+          "filename": "xtts-jakub-inteligence.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.7598369717597961
+        },
+        {
+          "filename": "xtts-jakub-kontejnerizace.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "cs",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.3868408203125
+        },
+        {
+          "filename": "fish-jakub-hybrid.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9809134602546692
+        },
+        {
+          "filename": "fish-jakub-redhat.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9399046897888184
+        },
+        {
+          "filename": "xtts-jakub-infrastructure.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.2116294652223587
+        },
+        {
+          "filename": "xtts-jakub-kubernetes.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.40176117420196533
+        },
+        {
+          "filename": "xtts-jakub-security.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Coqui XTTS v2",
+          "generator": "xtts",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.42293694615364075
+        },
+        {
+          "filename": "fish-jakub-inteligencia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9698832035064697
+        },
+        {
+          "filename": "fish-jakub-kontajnerizacia.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.960580587387085
+        },
+        {
+          "filename": "fish-jakub-openshift.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "Fish Audio S2 Pro",
+          "generator": "fish",
+          "language": "sk",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.9712216854095459
+        },
+        {
+          "filename": "jakub-en-clone.mp3",
+          "label": 0,
+          "label_name": "real",
+          "source": "jakub",
+          "generator": "human",
+          "language": "en",
+          "speaker": "jakub",
+          "origin": "v4-original",
+          "prob_fake": 0.09291104227304459
+        }
+      ]
+    },
+    "test_unseen_synthetic": {
+      "metrics": {
+        "accuracy": 0.5714285714285714,
+        "balanced_accuracy": 0.5714285714285714,
+        "roc_auc": NaN,
+        "total_correct": 4,
+        "total": 7,
+        "real_accuracy": 0.0,
+        "real_correct": 0,
+        "real_total": 0,
+        "fake_accuracy": 0.5714285714285714,
+        "fake_correct": 4,
+        "fake_total": 7,
+        "fpr": 0.0,
+        "fnr": 0.4285714285714286,
+        "pfake_dist_real": {
+          "min": null,
+          "median": null,
+          "mean": null,
+          "max": null
+        },
+        "pfake_dist_fake": {
+          "min": 0.3116537928581238,
+          "median": 0.8642210364341736,
+          "mean": 0.6792508448873248,
+          "max": 0.9879369139671326
+        },
+        "by_source": {
+          "XTTS clone": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714,
+            "mean_pfake": 0.6792508448873248
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5,
+            "mean_pfake": 0.647643968462944
+          },
+          "en": {
+            "correct": 2,
+            "total": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_pfake": 0.721393346786499
+          }
+        },
+        "by_speaker": {
+          "foxtrot": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5,
+            "mean_pfake": 0.6432324349880219
+          },
+          "golf": {
+            "correct": 2,
+            "total": 2,
+            "accuracy": 1.0,
+            "mean_pfake": 0.9311625361442566
+          },
+          "juliet": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0.0,
+            "mean_pfake": 0.37087246775627136
+          },
+          "mike": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1.0,
+            "mean_pfake": 0.8642210364341736
+          }
+        },
+        "by_generator": {
+          "xtts-clone": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714,
+            "mean_pfake": 0.6792508448873248
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "xtts-foxtrot-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.9748110771179199
+        },
+        {
+          "filename": "xtts-foxtrot-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "foxtrot",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.3116537928581238
+        },
+        {
+          "filename": "xtts-golf-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.8743881583213806
+        },
+        {
+          "filename": "xtts-juliet-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.4267641305923462
+        },
+        {
+          "filename": "xtts-juliet-en.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "en",
+          "speaker": "juliet",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.31498080492019653
+        },
+        {
+          "filename": "xtts-mike-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "mike",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.8642210364341736
+        },
+        {
+          "filename": "xtts-golf-cs.wav",
+          "label": 1,
+          "label_name": "fake",
+          "source": "XTTS clone",
+          "generator": "xtts-clone",
+          "language": "cs",
+          "speaker": "golf",
+          "origin": "diverse-xtts-clone",
+          "prob_fake": 0.9879369139671326
+        }
+      ]
+    },
+    "test_unseen_natural": {
+      "metrics": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "roc_auc": NaN,
+        "total_correct": 12,
+        "total": 12,
+        "real_accuracy": 1.0,
+        "real_correct": 12,
+        "real_total": 12,
+        "fake_accuracy": 0.0,
+        "fake_correct": 0,
+        "fake_total": 0,
+        "fpr": 0.0,
+        "fnr": 0.0,
+        "pfake_dist_real": {
+          "min": 0.0016548343701288104,
+          "median": 0.00863521290011704,
+          "mean": 0.04667028570353674,
+          "max": 0.2959589958190918
+        },
+        "pfake_dist_fake": {
+          "min": null,
+          "median": null,
+          "mean": null,
+          "max": null
+        },
+        "by_source": {
+          "foxtrot": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.10046528962751229
+          },
+          "golf": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.04215741685281197
+          },
+          "juliet": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0017351756105199456
+          },
+          "mike": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.04232326072330276
+          }
+        },
+        "by_language": {
+          "cs": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0017351756105199456
+          },
+          "en": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "mean_pfake": 0.07131135324016213
+          },
+          "sk": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.04232326072330276
+          }
+        },
+        "by_speaker": {
+          "foxtrot": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.10046528962751229
+          },
+          "golf": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.04215741685281197
+          },
+          "juliet": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.0017351756105199456
+          },
+          "mike": {
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1.0,
+            "mean_pfake": 0.04232326072330276
+          }
+        },
+        "by_generator": {
+          "human": {
+            "correct": 12,
+            "total": 12,
+            "accuracy": 1.0,
+            "mean_pfake": 0.04667028570353674
+          }
+        }
+      },
+      "per_clip": [
+        {
+          "filename": "foxtrot-en-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.002620992250740528
+        },
+        {
+          "filename": "foxtrot-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.2959589958190918
+        },
+        {
+          "filename": "foxtrot-en-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "foxtrot",
+          "generator": "human",
+          "language": "en",
+          "speaker": "foxtrot",
+          "origin": "diverse-natural",
+          "prob_fake": 0.002815880812704563
+        },
+        {
+          "filename": "golf-en-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.077005535364151
+        },
+        {
+          "filename": "golf-en-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.009490643627941608
+        },
+        {
+          "filename": "golf-en-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "golf",
+          "generator": "human",
+          "language": "en",
+          "speaker": "golf",
+          "origin": "diverse-natural",
+          "prob_fake": 0.03997607156634331
+        },
+        {
+          "filename": "juliet-cs-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0016804694896563888
+        },
+        {
+          "filename": "juliet-cs-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0018702229717746377
+        },
+        {
+          "filename": "juliet-cs-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "juliet",
+          "generator": "human",
+          "language": "cs",
+          "speaker": "juliet",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0016548343701288104
+        },
+        {
+          "filename": "mike-sk-1.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.007779782172292471
+        },
+        {
+          "filename": "mike-sk-2.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.03212263435125351
+        },
+        {
+          "filename": "mike-sk-3.wav",
+          "label": 0,
+          "label_name": "real",
+          "source": "mike",
+          "generator": "human",
+          "language": "sk",
+          "speaker": "mike",
+          "origin": "diverse-natural",
+          "prob_fake": 0.0870673656463623
+        }
+      ]
+    }
+  }
+}

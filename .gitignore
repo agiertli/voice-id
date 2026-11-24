@@ -6,9 +6,63 @@ __pycache__/
 .DS_Store
 venv/
 .venv/
-data/
-samples/**/*.wav
-samples/**/*.mp3
-samples/**/*.m4a
-samples/**/*.ogg
-samples/**/*.flac
+**/data/
+**/samples/**/*.wav
+**/samples/**/*.mp3
+**/samples/**/*.m4a
+**/samples/**/*.ogg
+**/samples/**/*.flac
+
+# ============================================================
+# AUDIO AND DATABASES NEVER GO TO GIT (public repo).
+# Voice recordings of real people + SQLite DBs (audio BLOBs, player emails).
+# Enforced additionally by .githooks/pre-commit (git config core.hooksPath .githooks)
+# ============================================================
+*.wav
+*.WAV
+*.mp3
+*.m4a
+*.flac
+*.ogg
+*.oga
+*.opus
+*.webm
+*.aac
+*.aif
+*.aiff
+*.wma
+*.amr
+*.3gp
+*.mka
+*.caf
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.db.backup
+*.backup
+# seed packs (audio archives for distribution) — share privately, never via git
+*.seedpack.zip
+seedpacks/
+# audio data directories
+apps/deepfake-detector/data*/
+apps/deepfake-detector/demo_test/
+apps/deepfake-detector/generated_data/
+feedback-*/
+**/voice-data/
+**/exports/
+# local sample audio folder — never tracked
+samples/
+apps/voice-id/samples/
+
+# Model weights / training checkpoints: huge (>1 GB) and trained on real voices — never in git (Rule Zero)
+apps/deepfake-detector/models/
+**/checkpoint-*/
+*.safetensors
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.onnx
+apps/voice-id/src/static/real-person.jpg

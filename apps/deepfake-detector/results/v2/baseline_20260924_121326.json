@@ -1,0 +1,862 @@
+{
+  "base": {
+    "model_path": "garystafford/wav2vec2-deepfake-voice-detector",
+    "best_threshold": 0.9000000000000002,
+    "train": {
+      "threshold": 0.9000000000000002,
+      "accuracy": 0.6551724137931034,
+      "balanced_accuracy": 0.6936274509803921,
+      "roc_auc": 0.5637254901960784,
+      "total_correct": 19,
+      "total": 29,
+      "real_correct": 11,
+      "real_total": 12,
+      "fake_correct": 8,
+      "fake_total": 17,
+      "fpr": 0.08333333333333333,
+      "fnr": 0.5294117647058824,
+      "confusion_matrix": {
+        "tn": 11,
+        "fp": 1,
+        "fn": 9,
+        "tp": 8
+      },
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 2,
+          "total": 6,
+          "accuracy": 0.3333333333333333,
+          "mean_prob_fake": 0.6967617819706599
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 6,
+          "total": 11,
+          "accuracy": 0.5454545454545454,
+          "mean_prob_fake": 0.7357133247635581
+        },
+        "anton": {
+          "correct": 2,
+          "total": 3,
+          "accuracy": 0.6666666666666666,
+          "mean_prob_fake": 0.897614856561025
+        },
+        "miska": {
+          "correct": 9,
+          "total": 9,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.71957837873035
+        }
+      }
+    },
+    "validation": {
+      "threshold": 0.9000000000000002,
+      "accuracy": 0.75,
+      "balanced_accuracy": 0.8,
+      "roc_auc": 0.6,
+      "total_correct": 6,
+      "total": 8,
+      "real_correct": 3,
+      "real_total": 3,
+      "fake_correct": 3,
+      "fake_total": 5,
+      "fpr": 0.0,
+      "fnr": 0.4,
+      "confusion_matrix": {
+        "tn": 3,
+        "fp": 0,
+        "fn": 2,
+        "tp": 3
+      },
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 1,
+          "total": 2,
+          "accuracy": 0.5,
+          "mean_prob_fake": 0.9152830243110657
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 2,
+          "total": 3,
+          "accuracy": 0.6666666666666666,
+          "mean_prob_fake": 0.7930717865626017
+        },
+        "anton": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.8826159834861755
+        }
+      }
+    },
+    "validation_at_05": {
+      "threshold": 0.5,
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.4,
+      "roc_auc": 0.6,
+      "total_correct": 4,
+      "total": 8,
+      "real_correct": 0,
+      "real_total": 3,
+      "fake_correct": 4,
+      "fake_total": 5,
+      "fpr": 1.0,
+      "fnr": 0.2,
+      "confusion_matrix": {
+        "tn": 0,
+        "fp": 3,
+        "fn": 1,
+        "tp": 4
+      },
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 2,
+          "total": 2,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.9152830243110657
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 2,
+          "total": 3,
+          "accuracy": 0.6666666666666666,
+          "mean_prob_fake": 0.7930717865626017
+        },
+        "anton": {
+          "correct": 0,
+          "total": 3,
+          "accuracy": 0.0,
+          "mean_prob_fake": 0.8826159834861755
+        }
+      }
+    },
+    "train_per_clip": [
+      {
+        "filename": "anton_en_69585211.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "en",
+        "prob_fake": 0.8973084092140198
+      },
+      {
+        "filename": "miska_cs_542f99c1.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "cs",
+        "prob_fake": 0.807637095451355
+      },
+      {
+        "filename": "miska_en_717e4924.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "en",
+        "prob_fake": 0.7893719673156738
+      },
+      {
+        "filename": "miska_en_09a93a51.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "en",
+        "prob_fake": 0.5547834634780884
+      },
+      {
+        "filename": "miska_en_219d0973.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "en",
+        "prob_fake": 0.7094895243644714
+      },
+      {
+        "filename": "miska_cs_08c00ea9.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "cs",
+        "prob_fake": 0.8183721899986267
+      },
+      {
+        "filename": "miska_sk_d5d4defb.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "sk",
+        "prob_fake": 0.70635986328125
+      },
+      {
+        "filename": "anton_sk_264052d2.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "sk",
+        "prob_fake": 0.908991277217865
+      },
+      {
+        "filename": "miska_sk_4c78617b.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "sk",
+        "prob_fake": 0.6445668935775757
+      },
+      {
+        "filename": "miska_sk_4996bc20.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "sk",
+        "prob_fake": 0.5661017894744873
+      },
+      {
+        "filename": "miska_cs_bab9af8c.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "cs",
+        "prob_fake": 0.8795226216316223
+      },
+      {
+        "filename": "anton_en_55ddc95f.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "en",
+        "prob_fake": 0.8865448832511902
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_40e08604.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.9620992541313171
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_4131a01f.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.9620662927627563
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_a554373c.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.28452619910240173
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_55ce4259.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.9482924342155457
+      },
+      {
+        "filename": "Coqui XTTS v2_en_47a1fa26.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "en",
+        "prob_fake": 0.7855204343795776
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_347d60db.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.935241162776947
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_89931c9e.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.2649158835411072
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_a32133d0.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.8495261669158936
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_93adf4a8.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.988881528377533
+      },
+      {
+        "filename": "Fish Audio S2 Pro_sk_48299a9c.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "sk",
+        "prob_fake": 0.942752480506897
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_ad5d184c.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.5274339318275452
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_061bcf84.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.9422436952590942
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_8d11011c.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.18693336844444275
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_553e5a1b.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.9428099393844604
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_83737cbd.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.8066808581352234
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_4cf02a19.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.5535901784896851
+      },
+      {
+        "filename": "Coqui XTTS v2_en_65f2a3e1.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "en",
+        "prob_fake": 0.3899034559726715
+      }
+    ],
+    "val_per_clip": [
+      {
+        "filename": "anton_en_431f082d.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "en",
+        "prob_fake": 0.8589857816696167
+      },
+      {
+        "filename": "anton_sk_6cc590a7.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "sk",
+        "prob_fake": 0.8952668905258179
+      },
+      {
+        "filename": "anton_sk_921b752a.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "sk",
+        "prob_fake": 0.893595278263092
+      },
+      {
+        "filename": "Coqui XTTS v2_en_2f87d94d.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "en",
+        "prob_fake": 0.9779300689697266
+      },
+      {
+        "filename": "Fish Audio S2 Pro_sk_312fe0d7.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "sk",
+        "prob_fake": 0.9644672274589539
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_54be3db6.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.44795507192611694
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_16c63aee.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.9667930603027344
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_d14345d8.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.8526359796524048
+      }
+    ]
+  },
+  "heavy": {
+    "model_path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/models/wav2vec2-heavy",
+    "best_threshold": 0.1,
+    "train": {
+      "threshold": 0.1,
+      "accuracy": 0.7586206896551724,
+      "balanced_accuracy": 0.7941176470588236,
+      "roc_auc": 0.9852941176470589,
+      "total_correct": 22,
+      "total": 29,
+      "real_correct": 12,
+      "real_total": 12,
+      "fake_correct": 10,
+      "fake_total": 17,
+      "fpr": 0.0,
+      "fnr": 0.4117647058823529,
+      "confusion_matrix": {
+        "tn": 12,
+        "fp": 0,
+        "fn": 7,
+        "tp": 10
+      },
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 4,
+          "total": 6,
+          "accuracy": 0.6666666666666666,
+          "mean_prob_fake": 0.6673017333378084
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 6,
+          "total": 11,
+          "accuracy": 0.5454545454545454,
+          "mean_prob_fake": 0.47557563147314463
+        },
+        "anton": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.00010450878471601754
+        },
+        "miska": {
+          "correct": 9,
+          "total": 9,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.00012385129391784884
+        }
+      }
+    },
+    "validation": {
+      "threshold": 0.1,
+      "accuracy": 1.0,
+      "balanced_accuracy": 1.0,
+      "roc_auc": 1.0,
+      "total_correct": 8,
+      "total": 8,
+      "real_correct": 3,
+      "real_total": 3,
+      "fake_correct": 5,
+      "fake_total": 5,
+      "fpr": 0.0,
+      "fnr": 0.0,
+      "confusion_matrix": {
+        "tn": 3,
+        "fp": 0,
+        "fn": 0,
+        "tp": 5
+      },
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 2,
+          "total": 2,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.9998478293418884
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.9984912077585856
+        },
+        "anton": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.00010517547586156677
+        }
+      }
+    },
+    "validation_at_05": {
+      "threshold": 0.5,
+      "accuracy": 1.0,
+      "balanced_accuracy": 1.0,
+      "roc_auc": 1.0,
+      "total_correct": 8,
+      "total": 8,
+      "real_correct": 3,
+      "real_total": 3,
+      "fake_correct": 5,
+      "fake_total": 5,
+      "fpr": 0.0,
+      "fnr": 0.0,
+      "confusion_matrix": {
+        "tn": 3,
+        "fp": 0,
+        "fn": 0,
+        "tp": 5
+      },
+      "by_source": {
+        "Coqui XTTS v2": {
+          "correct": 2,
+          "total": 2,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.9998478293418884
+        },
+        "Fish Audio S2 Pro": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.9984912077585856
+        },
+        "anton": {
+          "correct": 3,
+          "total": 3,
+          "accuracy": 1.0,
+          "mean_prob_fake": 0.00010517547586156677
+        }
+      }
+    },
+    "train_per_clip": [
+      {
+        "filename": "anton_en_69585211.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "en",
+        "prob_fake": 0.00010447680688230321
+      },
+      {
+        "filename": "miska_cs_542f99c1.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "cs",
+        "prob_fake": 0.00011155634274473414
+      },
+      {
+        "filename": "miska_en_717e4924.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "en",
+        "prob_fake": 0.00010652785567799583
+      },
+      {
+        "filename": "miska_en_09a93a51.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "en",
+        "prob_fake": 0.00010375344572821632
+      },
+      {
+        "filename": "miska_en_219d0973.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "en",
+        "prob_fake": 0.00010301957081537694
+      },
+      {
+        "filename": "miska_cs_08c00ea9.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "cs",
+        "prob_fake": 0.00026837686891667545
+      },
+      {
+        "filename": "miska_sk_d5d4defb.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "sk",
+        "prob_fake": 0.00010416563600301743
+      },
+      {
+        "filename": "anton_sk_264052d2.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "sk",
+        "prob_fake": 0.00010403857595520094
+      },
+      {
+        "filename": "miska_sk_4c78617b.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "sk",
+        "prob_fake": 0.00010568714787950739
+      },
+      {
+        "filename": "miska_sk_4996bc20.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "sk",
+        "prob_fake": 0.00010414339340059087
+      },
+      {
+        "filename": "miska_cs_bab9af8c.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "miska",
+        "language": "cs",
+        "prob_fake": 0.00010743138409452513
+      },
+      {
+        "filename": "anton_en_55ddc95f.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "en",
+        "prob_fake": 0.00010501097131054848
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_40e08604.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.999565064907074
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_4131a01f.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.9998581409454346
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_a554373c.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.0009125724318437278
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_55ce4259.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.9997324347496033
+      },
+      {
+        "filename": "Coqui XTTS v2_en_47a1fa26.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "en",
+        "prob_fake": 0.9998663663864136
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_347d60db.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.9998488426208496
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_89931c9e.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.02114439196884632
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_a32133d0.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.00018490689399186522
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_93adf4a8.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.9998878240585327
+      },
+      {
+        "filename": "Fish Audio S2 Pro_sk_48299a9c.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "sk",
+        "prob_fake": 0.9997326731681824
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_ad5d184c.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.9985764026641846
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_061bcf84.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.9998321533203125
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_8d11011c.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.20731085538864136
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_553e5a1b.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.00010758350981632248
+      },
+      {
+        "filename": "Fish Audio S2 Pro_en_83737cbd.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "en",
+        "prob_fake": 0.0029511689208447933
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_4cf02a19.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.004430962726473808
+      },
+      {
+        "filename": "Coqui XTTS v2_en_65f2a3e1.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "en",
+        "prob_fake": 0.0012000015703961253
+      }
+    ],
+    "val_per_clip": [
+      {
+        "filename": "anton_en_431f082d.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "en",
+        "prob_fake": 0.00010362351895309985
+      },
+      {
+        "filename": "anton_sk_6cc590a7.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "sk",
+        "prob_fake": 0.00010831416147993878
+      },
+      {
+        "filename": "anton_sk_921b752a.wav",
+        "label": 0,
+        "label_name": "real",
+        "source": "anton",
+        "language": "sk",
+        "prob_fake": 0.00010358874715166166
+      },
+      {
+        "filename": "Coqui XTTS v2_en_2f87d94d.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "en",
+        "prob_fake": 0.999854564666748
+      },
+      {
+        "filename": "Fish Audio S2 Pro_sk_312fe0d7.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "sk",
+        "prob_fake": 0.9998674392700195
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_54be3db6.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.9957504272460938
+      },
+      {
+        "filename": "Fish Audio S2 Pro_cs_16c63aee.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Fish Audio S2 Pro",
+        "language": "cs",
+        "prob_fake": 0.9998557567596436
+      },
+      {
+        "filename": "Coqui XTTS v2_cs_d14345d8.wav",
+        "label": 1,
+        "label_name": "fake",
+        "source": "Coqui XTTS v2",
+        "language": "cs",
+        "prob_fake": 0.9998410940170288
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Rejects audio files and databases from ever being committed (this repo is PUBLIC).
+# Checks extension AND file content (magic bytes), so renamed files are caught too.
+# Enable once per clone:  git config core.hooksPath .githooks
+set -euo pipefail
+bad=()
+while IFS= read -r -d '' f; do
+  [ -f "$f" ] || continue
+  lower=$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')
+  case "$lower" in
+    *.wav|*.mp3|*.m4a|*.flac|*.ogg|*.oga|*.opus|*.webm|*.aac|*.aif|*.aiff|*.wma|*.amr|*.3gp|*.mka|*.caf|*.mp4|*.db|*.db-wal|*.db-shm|*.sqlite|*.sqlite3|*.backup|*.seedpack.zip)
+      bad+=("$f (extension)"); continue ;;
+  esac
+  head8=$(head -c 12 "$f" | od -An -tx1 | tr -d ' \n')
+  case "$head8" in
+    52494646????????57415645*) bad+=("$f (WAV content)") ;;      # RIFF....WAVE
+    494433*|fffb*|fff3*|fff2*) bad+=("$f (MP3 content)") ;;      # ID3 / MPEG frame
+    664c6143*)                 bad+=("$f (FLAC content)") ;;     # fLaC
+    4f676753*)                 bad+=("$f (Ogg/Opus content)") ;; # OggS
+    1a45dfa3*)                 bad+=("$f (WebM/Matroska content)") ;;
+    ????????66747970*)         bad+=("$f (MP4/M4A content)") ;;  # ....ftyp
+    53514c69746520666f726d61*) bad+=("$f (SQLite database)") ;;  # "SQLite forma"
+  esac
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+if [ ${#bad[@]} -gt 0 ]; then
+  echo "BLOCKED: audio/database files must NEVER be committed to this public repo:" >&2
+  printf '  %s\n' "${bad[@]}" >&2
+  echo "Unstage them: git restore --staged <file>. Distribute audio only as a private seed pack." >&2
+  exit 1
+fi

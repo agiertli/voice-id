@@ -1,0 +1,444 @@
+{
+  "train": [
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/anton_en_69585211.wav",
+      "filename": "anton_en_69585211.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "anton",
+      "language": "en",
+      "duration": 2.944
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_cs_542f99c1.wav",
+      "filename": "miska_cs_542f99c1.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "cs",
+      "duration": 3.4133125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_en_717e4924.wav",
+      "filename": "miska_en_717e4924.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "en",
+      "duration": 3.8613125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_en_09a93a51.wav",
+      "filename": "miska_en_09a93a51.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "en",
+      "duration": 4.48
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_en_219d0973.wav",
+      "filename": "miska_en_219d0973.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "en",
+      "duration": 3.6053125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_cs_08c00ea9.wav",
+      "filename": "miska_cs_08c00ea9.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "cs",
+      "duration": 3.2213125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_sk_d5d4defb.wav",
+      "filename": "miska_sk_d5d4defb.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "sk",
+      "duration": 3.7333125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/anton_sk_264052d2.wav",
+      "filename": "anton_sk_264052d2.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "anton",
+      "language": "sk",
+      "duration": 3.4346875
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_sk_4c78617b.wav",
+      "filename": "miska_sk_4c78617b.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "sk",
+      "duration": 4.9493125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_sk_4996bc20.wav",
+      "filename": "miska_sk_4996bc20.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "sk",
+      "duration": 4.7146875
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_cs_bab9af8c.wav",
+      "filename": "miska_cs_bab9af8c.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "cs",
+      "duration": 2.2613125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/anton_en_55ddc95f.wav",
+      "filename": "anton_en_55ddc95f.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "anton",
+      "language": "en",
+      "duration": 3.2
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_40e08604.wav",
+      "filename": "Fish Audio S2 Pro_cs_40e08604.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 2.0898125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_4131a01f.wav",
+      "filename": "Fish Audio S2 Pro_cs_4131a01f.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 2.8793125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_en_a554373c.wav",
+      "filename": "Fish Audio S2 Pro_en_a554373c.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "en",
+      "duration": 3.5294375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_en_55ce4259.wav",
+      "filename": "Fish Audio S2 Pro_en_55ce4259.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "en",
+      "duration": 2.461375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_en_47a1fa26.wav",
+      "filename": "Coqui XTTS v2_en_47a1fa26.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "en",
+      "duration": 2.9226875
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_cs_347d60db.wav",
+      "filename": "Coqui XTTS v2_cs_347d60db.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "cs",
+      "duration": 2.133375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_89931c9e.wav",
+      "filename": "Fish Audio S2 Pro_cs_89931c9e.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 3.483
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_en_a32133d0.wav",
+      "filename": "Fish Audio S2 Pro_en_a32133d0.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "en",
+      "duration": 2.0835
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_cs_93adf4a8.wav",
+      "filename": "Coqui XTTS v2_cs_93adf4a8.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "cs",
+      "duration": 2.645375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_sk_48299a9c.wav",
+      "filename": "Fish Audio S2 Pro_sk_48299a9c.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "sk",
+      "duration": 3.0123125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_cs_ad5d184c.wav",
+      "filename": "Coqui XTTS v2_cs_ad5d184c.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "cs",
+      "duration": 3.104
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_061bcf84.wav",
+      "filename": "Fish Audio S2 Pro_cs_061bcf84.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 2.461375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_8d11011c.wav",
+      "filename": "Fish Audio S2 Pro_cs_8d11011c.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 3.8545625
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_en_553e5a1b.wav",
+      "filename": "Fish Audio S2 Pro_en_553e5a1b.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "en",
+      "duration": 3.6688125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_en_83737cbd.wav",
+      "filename": "Fish Audio S2 Pro_en_83737cbd.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "en",
+      "duration": 2.3684375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_cs_4cf02a19.wav",
+      "filename": "Coqui XTTS v2_cs_4cf02a19.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "cs",
+      "duration": 3.061375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_en_65f2a3e1.wav",
+      "filename": "Coqui XTTS v2_en_65f2a3e1.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "en",
+      "duration": 2.688
+    }
+  ],
+  "val": [
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/anton_en_431f082d.wav",
+      "filename": "anton_en_431f082d.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "anton",
+      "language": "en",
+      "duration": 2.8373125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/anton_sk_6cc590a7.wav",
+      "filename": "anton_sk_6cc590a7.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "anton",
+      "language": "sk",
+      "duration": 4.352
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/anton_sk_921b752a.wav",
+      "filename": "anton_sk_921b752a.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "anton",
+      "language": "sk",
+      "duration": 2.88
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_en_2f87d94d.wav",
+      "filename": "Coqui XTTS v2_en_2f87d94d.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "en",
+      "duration": 3.52
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_sk_312fe0d7.wav",
+      "filename": "Fish Audio S2 Pro_sk_312fe0d7.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "sk",
+      "duration": 2.7864375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_54be3db6.wav",
+      "filename": "Fish Audio S2 Pro_cs_54be3db6.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 3.1115
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_16c63aee.wav",
+      "filename": "Fish Audio S2 Pro_cs_16c63aee.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 2.461375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_cs_d14345d8.wav",
+      "filename": "Coqui XTTS v2_cs_d14345d8.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "cs",
+      "duration": 2.3146875
+    }
+  ],
+  "held_out": [
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_cs_eb17466a.wav",
+      "filename": "Coqui XTTS v2_cs_eb17466a.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "cs",
+      "duration": 3.104
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Coqui XTTS v2_en_6c2270f2.wav",
+      "filename": "Coqui XTTS v2_en_6c2270f2.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Coqui XTTS v2",
+      "language": "en",
+      "duration": 2.453375
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_a189b6d2.wav",
+      "filename": "Fish Audio S2 Pro_cs_a189b6d2.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 2.2228125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_cs_d6d7e65d.wav",
+      "filename": "Fish Audio S2 Pro_cs_d6d7e65d.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "cs",
+      "duration": 3.1115
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_en_b291e52e.wav",
+      "filename": "Fish Audio S2 Pro_en_b291e52e.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "en",
+      "duration": 2.92575
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/fake/Fish Audio S2 Pro_sk_c6bbef81.wav",
+      "filename": "Fish Audio S2 Pro_sk_c6bbef81.wav",
+      "label": 1,
+      "label_name": "fake",
+      "source": "Fish Audio S2 Pro",
+      "language": "sk",
+      "duration": 2.2228125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/anton_en_79d6729b.wav",
+      "filename": "anton_en_79d6729b.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "anton",
+      "language": "en",
+      "duration": 3.3493125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/anton_sk_f12a424b.wav",
+      "filename": "anton_sk_f12a424b.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "anton",
+      "language": "sk",
+      "duration": 3.264
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_cs_fa779860.wav",
+      "filename": "miska_cs_fa779860.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "cs",
+      "duration": 3.4133125
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_en_7e1e899c.wav",
+      "filename": "miska_en_7e1e899c.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "en",
+      "duration": 3.136
+    },
+    {
+      "path": "/Users/agiertli/Documents/work/voice-id/apps/deepfake-detector/data_normalized/real/miska_sk_fc34e007.wav",
+      "filename": "miska_sk_fc34e007.wav",
+      "label": 0,
+      "label_name": "real",
+      "source": "miska",
+      "language": "sk",
+      "duration": 2.8373125
+    }
+  ],
+  "normalization": {
+    "sample_rate": 16000,
+    "target_rms": 0.05
+  }
+}
