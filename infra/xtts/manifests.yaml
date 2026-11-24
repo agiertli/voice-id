@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: xtts
-        image: ghcr.io/coqui-ai/xtts-streaming-server:latest-cuda121
+        image: ghcr.io/coqui-ai/xtts-streaming-server@sha256:6fb1f39f4e0950837ec68b442e6139d6649d067fa8c837a560ea1149d47a9f76
         workingDir: /tmp
         command: ["uvicorn"]
         args: ["main:app", "--host", "0.0.0.0", "--port", "8080", "--app-dir", "/app"]

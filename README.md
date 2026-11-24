@@ -31,7 +31,25 @@ Full rule: top of [AGENTS.md](AGENTS.md).
 
 ## Install
 
-About 35 minutes on a fresh OpenShift AI 3 cluster with four GPU nodes.
+Three install profiles; Voice Clone Studio and its GPUs are optional because the
+game only plays pre-recorded clips:
+
+| Profile | GPUs (NVIDIA L4) | Opponents | Voice cloning | Approx. GPU cost* |
+|---|---:|---|---|---|
+| `minimal` | 0 | Gary, Gary 2.0 | no | none |
+| `standard` (recommended for booths) | 2 | all four | no | ≈ $2/h |
+| `full` (voice collection) | 4 | all four | Clone Studio, XTTS, Fish | ≈ $4/h |
+
+\* About $1/h per `g6.2xlarge` on demand, approximate; check current AWS pricing.
+
+```bash
+export KUBECONFIG=~/.kube/voice-id-<event>.kubeconfig   # log in yourself; the script never runs oc login
+./install.sh --profile standard --admin-token-file ~/.voice-id-admin-token --dry-run
+./install.sh --profile standard --admin-token-file ~/.voice-id-admin-token
+```
+
+`install.sh` is checked with ShellCheck and mocked dry runs but not yet on a live
+cluster. About 35 minutes for `full` on a fresh OpenShift AI 3 cluster.
 
 - [Installation runbook](docs/INSTALLATION.md): GPU nodes, opponents, TTS engines,
   the game, Voice Clone Studio, verification, troubleshooting.

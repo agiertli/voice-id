@@ -17,9 +17,13 @@ oc get route voice-id -n voice-id -o jsonpath='https://{.spec.host}{"\n"}'
 
 ## Admin password
 
-The `/admin` page asks for a password and sends it as a Bearer token. It protects
-the player list, per-player game history, CSV export, **Reset all scores** and the
-speaker endpoints.
+The `/admin` page asks for a password and sends it as a Bearer token. The same
+token protects **every** `/api/admin/*` endpoint: the player list, per-player game
+history, CSV export, **Reset all scores** (and the older `POST /api/admin/reset`),
+clip management (`GET /api/admin/clips`, `POST /api/admin/upload`,
+`DELETE /api/admin/delete-clip/<id>`), spectrograms, seed packs, backups and the
+speaker endpoints. Scripts send it as `-H "Authorization: Bearer ${TOKEN}"`;
+`tools/import_from_clone_studio.py` takes `--game-token` or `VOICEID_ADMIN_TOKEN`.
 
 - The image has a built-in default password: `v01c3@r3dh4t!`. It is in the public
   source code, so treat it as known to everyone.
@@ -75,14 +79,17 @@ Limits of this mechanism:
 
 ## Known risks
 
-- **Clip management is unauthenticated.** `GET /api/admin/clips`,
-  `POST /api/admin/upload` and `DELETE /api/admin/delete-clip/<id>` accept requests
-  from anyone who can reach the route. Someone could add, list or delete clips.
-- **`POST /api/admin/reset` is unauthenticated** and deletes all games and the
-  leaderboard, exactly like the protected **Reset all scores** button
-  (`/api/admin/reset-scores`).
-- **Points are trusted from the browser.** See
+- **One shared admin token** protects all admin endpoints, and the image default
+  is public. If you keep the default, anyone can list, upload or delete clips and
+  wipe the leaderboard. Override `adminToken` for every event.
+- **Points are computed server-side**, one guess per clip of the game, and
+  `/complete` is idempotent. A scripted client can still listen to the (public,
+  preloaded) clip audio before starting the clock, so a very fast answer time is
+  not proof of a human reaction. See
   [scoring known limitations](scoring.md#known-limitations).
+- The game endpoints are public by design: anyone who can reach the route can start
+  games, fetch the audio of the clips in a game and trigger opponent analyses (GPU
+  load).
 - The stats endpoints `/api/stats/most-mistaken-humans` and
   `/api/stats/most-mistaken-clips` are public (no personal data).
 

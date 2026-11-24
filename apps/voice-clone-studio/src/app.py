@@ -27,15 +27,73 @@ TRIM_SILENCE_FILTER = (
 )
 
 
-def convert_to_wav(input_bytes, sample_rate=22050, trim_silence=False):
+# Loudness target for sentence recordings. Quiet laptop mics (mean around -55 dB) were
+# trimmed to nothing by the absolute -45 dB silence threshold, so normalize first.
+SENTENCE_TARGET_LUFS = -18
+NORMALIZE_FILTER = f"highpass=f=60,loudnorm=I={SENTENCE_TARGET_LUFS}:TP=-1.5:LRA=11"
+# Clone references quieter than this (mean dBFS) are normalized before registering.
+CLONE_NORMALIZE_BELOW_DB = -35.0
+# Speech-presence check: loud frames must stand out from the noise floor. Stationary room
+# noise or silence has a small spread (a few dB), speech over the same noise has 20+ dB.
+MIN_SPEECH_SPREAD_DB = 12.0
+MIN_PEAK_DB = -75.0
+
+
+def convert_to_wav(input_bytes, sample_rate=22050, trim_silence=False, normalize=False):
     cmd = [FFMPEG, "-i", "pipe:0", "-ac", "1", "-ar", str(sample_rate), "-sample_fmt", "s16"]
+    filters = []
+    if normalize:
+        filters.append(NORMALIZE_FILTER)
     if trim_silence:
-        cmd += ["-af", TRIM_SILENCE_FILTER]
+        filters.append(TRIM_SILENCE_FILTER)
+    if filters:
+        cmd += ["-af", ",".join(filters)]
     cmd += ["-f", "wav", "pipe:1"]
     proc = subprocess.run(cmd, input=input_bytes, capture_output=True)
     if proc.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {proc.stderr.decode()[-200:]}")
     return proc.stdout
+
+
+def analyze_levels(input_bytes):
+    """Measure the input level before any processing.
+    Returns mean_db (RMS over the clip), peak_db, floor_db (10th percentile of 50 ms
+    frame RMS), speech_db (95th percentile), all dBFS, plus the input length in seconds."""
+    import array
+    import math
+    proc = subprocess.run(
+        [FFMPEG, "-v", "error", "-i", "pipe:0", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"],
+        input=input_bytes, capture_output=True)
+    if proc.returncode != 0:
+        raise RuntimeError(f"ffmpeg failed: {proc.stderr.decode()[-200:]}")
+    pcm = array.array("h")
+    pcm.frombytes(proc.stdout[: len(proc.stdout) // 2 * 2])
+
+    def db(x):
+        return round(20 * math.log10(x), 1) if x > 0 else -120.0
+
+    if not pcm:
+        return {"mean_db": -120.0, "peak_db": -120.0, "floor_db": -120.0, "speech_db": -120.0, "seconds": 0.0}
+    frame = 800  # 50 ms at 16 kHz
+    total, frames = 0, []
+    for i in range(0, len(pcm), frame):
+        chunk = pcm[i:i + frame]
+        sq = sum(v * v for v in chunk)
+        total += sq
+        if len(chunk) == frame:
+            frames.append(math.sqrt(sq / frame) / 32768.0)
+    frames.sort()
+
+    def pick(q):
+        return frames[min(len(frames) - 1, int(q * len(frames)))] if frames else 0.0
+
+    return {
+        "mean_db": db(math.sqrt(total / len(pcm)) / 32768.0),
+        "peak_db": db(max(abs(min(pcm)), abs(max(pcm))) / 32768.0),
+        "floor_db": db(pick(0.10)),
+        "speech_db": db(pick(0.95)),
+        "seconds": round(len(pcm) / 16000.0, 2),
+    }
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
@@ -57,6 +115,13 @@ PROMPTS = {
         "Open source komunita pohání inovace rychleji než jakákoliv firma sama. Tisíce vývojářů po celém světě přispívají do projektů jako Linux, Kubernetes nebo PyTorch. Spolupráce napříč firmami a zeměmi vytváří software, který je transparentní, bezpečný a neustále se zlepšuje. Red Hat staví svůj obchodní model na tom, že přináší podporu a stabilitu do open source projektů pro podnikové zákazníky. Otevřené standardy zajišťují, že technologie zůstane dostupná všem, nejen velkým korporacím.",
         "Velké jazykové modely dokážou generovat text, kód i zvuk, ale stále potřebují lidský dohled. Klonování hlasu je jednou z nejpůsobivějších aplikací moderní umělé inteligence. Stačí několik sekund nahrávky vašeho hlasu a model dokáže vytvořit syntetický hlas, který zní téměř identicky. Tato technologie má obrovský potenciál v přístupnosti, lokalizaci a zábavním průmyslu. Zároveň ale přináší nové výzvy v oblasti bezpečnosti a ověřování identity, které musíme jako společnost řešit.",
         "Automatizace s nástrojem Ansible šetří čas a snižuje riziko lidských chyb při správě serverů a síťových zařízení. Místo ručního přihlašování na každý server můžeme definovat požadovaný stav v jednoduchých souborech a nechat Ansible, aby zajistil, že všechny systémy odpovídají tomuto stavu. Díky tomu dokážeme spravovat stovky nebo tisíce serverů stejně snadno jako jeden jediný. Automatizace je klíčovým pilířem moderního IT a pomáhá týmům soustředit se na inovace místo opakující se manuální práce.",
+    ],
+    "sk": [
+        "Umelá inteligencia mení spôsob, akým vyvíjame a nasadzujeme softvér. Dnes dokážeme pomocou veľkých jazykových modelov generovať kód, analyzovať dokumentáciu a automatizovať testovanie. Tieto modely sa neustále zlepšujú a ich schopnosti rastú každým mesiacom. Otázkou zostáva, ako zabezpečiť kvalitu a bezpečnosť kódu, ktorý tieto systémy produkujú. Ľudský dohľad je stále nevyhnutný, ale hranica medzi tým, čo zvládne stroj a čo človek, sa každým dňom posúva.",
+        "Kontajnery a Kubernetes tvoria základ modernej cloudovej infraštruktúry. Red Hat OpenShift pridáva podnikové funkcie, ako je bezpečnosť, monitoring a správa životného cyklu aplikácií. Vďaka operátorom môžeme automatizovať nasadenie zložitých systémov, ktoré by predtým vyžadovali ručnú konfiguráciu. Hybridný cloud umožňuje firmám prevádzkovať rovnaké aplikácie v dátovom centre aj vo verejnom cloude. Táto flexibilita je kľúčová pre organizácie, ktoré potrebujú splniť regulačné požiadavky a zároveň využívať výhody cloudových služieb.",
+        "Open source komunita poháňa inovácie rýchlejšie ako akákoľvek firma sama. Tisíce vývojárov na celom svete prispievajú do projektov ako Linux, Kubernetes či PyTorch. Spolupráca naprieč firmami a krajinami vytvára softvér, ktorý je transparentný, bezpečný a neustále sa zlepšuje. Red Hat stavia svoj obchodný model na tom, že prináša podporu a stabilitu do open source projektov pre podnikových zákazníkov. Otvorené štandardy zabezpečujú, že technológia zostane dostupná všetkým, nielen veľkým korporáciám.",
+        "Veľké jazykové modely dokážu generovať text, kód aj zvuk, ale stále potrebujú ľudský dohľad. Klonovanie hlasu je jednou z najpôsobivejších aplikácií modernej umelej inteligencie. Stačí niekoľko sekúnd nahrávky vášho hlasu a model dokáže vytvoriť syntetický hlas, ktorý znie takmer identicky. Táto technológia má obrovský potenciál v prístupnosti, lokalizácii a zábavnom priemysle. Zároveň však prináša nové výzvy v oblasti bezpečnosti a overovania identity, ktoré musíme ako spoločnosť riešiť.",
+        "Automatizácia s nástrojom Ansible šetrí čas a znižuje riziko ľudských chýb pri správe serverov a sieťových zariadení. Namiesto ručného prihlasovania na každý server môžeme definovať požadovaný stav v jednoduchých súboroch a nechať Ansible, aby zabezpečil, že všetky systémy zodpovedajú tomuto stavu. Vďaka tomu dokážeme spravovať stovky alebo tisíce serverov rovnako ľahko ako jeden jediný. Automatizácia je kľúčovým pilierom moderného IT a pomáha tímom sústrediť sa na inovácie namiesto opakujúcej sa manuálnej práce.",
     ],
     "en": [
         "Artificial intelligence is transforming how we develop and deploy software in the modern enterprise. Large language models can now generate code, analyze documentation, and automate testing pipelines with remarkable accuracy. These models continue to improve month after month, pushing the boundaries of what machines can accomplish. The key question remains how to ensure the quality and security of AI-generated code in production environments. Human oversight is still essential, but the line between machine capability and human expertise shifts every single day.",
@@ -245,7 +310,7 @@ OPENAPI_SPEC = {
     "openapi": "3.0.3",
     "info": {
         "title": "Voice Clone Studio API",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "description": "TTS voice cloning demo — record your voice, generate speech with multiple AI models, and record one-shot sentences as human clips. Audio stored in SQLite.",
     },
     "paths": {
@@ -258,7 +323,7 @@ OPENAPI_SPEC = {
         "/api/prompts": {
             "get": {
                 "summary": "Get reading prompts",
-                "parameters": [{"name": "lang", "in": "query", "schema": {"type": "string", "enum": ["cs", "en"], "default": "cs"}, "description": "Language code"}],
+                "parameters": [{"name": "lang", "in": "query", "schema": {"type": "string", "enum": ["cs", "sk", "en"], "default": "cs"}, "description": "Language code"}],
                 "responses": {"200": {"description": "List of prompt texts", "content": {"application/json": {"schema": {"type": "array", "items": {"type": "string"}}}}}},
             }
         },
@@ -381,7 +446,7 @@ OPENAPI_SPEC = {
             },
             "post": {
                 "summary": "Save a one-shot sentence recording (replaces previous take of the same speaker/language/sentence)",
-                "description": "Audio is converted to mono 16-bit 44.1 kHz WAV with leading/trailing silence trimmed.",
+                "description": "Audio is converted to mono 16-bit 44.1 kHz WAV: 60 Hz high-pass, loudness-normalized to -18 LUFS (single-pass loudnorm, so quiet microphones work), then leading/trailing silence trimmed. Recordings that are silent, contain only background noise, or are shorter than 0.5 s after trimming are rejected with 400 and a machine-readable reason.",
                 "requestBody": {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["audio", "speaker", "language", "sentence_idx"], "properties": {
                     "audio": {"type": "string", "format": "binary", "description": "Audio file (webm/wav/mp4), max 10 MB"},
                     "speaker": {"type": "string"},
@@ -391,7 +456,13 @@ OPENAPI_SPEC = {
                 }}}}},
                 "responses": {
                     "200": {"description": "Recording saved", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Recording"}}}},
-                    "400": {"description": "Invalid input or empty recording"},
+                    "400": {"description": "Invalid input or unusable recording", "content": {"application/json": {"schema": {"type": "object", "properties": {
+                        "error": {"type": "string"},
+                        "reason": {"type": "string", "enum": ["silent", "no_speech", "too_short"], "description": "Present when the audio itself was rejected"},
+                        "mean_db": {"type": "number", "description": "Measured input mean level (dBFS)"},
+                        "peak_db": {"type": "number", "description": "Measured input peak level (dBFS)"},
+                        "duration_s": {"type": "number"},
+                    }}}}},
                 },
             },
         },
@@ -464,7 +535,7 @@ def create_voice():
     raw_bytes = audio_file.read()
 
     try:
-        wav_bytes = convert_to_wav(raw_bytes)
+        wav_bytes = convert_to_wav(raw_bytes, normalize=_reference_too_quiet(raw_bytes))
     except Exception:
         logger.exception("Audio conversion failed")
         return jsonify({"error": "Failed to process audio. Try a different recording."}), 400
@@ -508,7 +579,7 @@ def replace_voice(voice_id):
 
     raw_bytes = audio_file.read()
     try:
-        wav_bytes = convert_to_wav(raw_bytes)
+        wav_bytes = convert_to_wav(raw_bytes, normalize=_reference_too_quiet(raw_bytes))
     except Exception:
         logger.exception("Audio conversion failed")
         return jsonify({"error": "Failed to process audio."}), 400
@@ -722,6 +793,19 @@ def delete_clip(clip_id):
 
 # --- One-shot sentence recordings (human clips) ---
 
+def _reference_too_quiet(raw_bytes):
+    """Clone references: normalize (no trimming) when the input is very quiet."""
+    try:
+        levels = analyze_levels(raw_bytes)
+    except Exception:
+        logger.exception("Audio analysis failed")
+        return False
+    quiet = levels["mean_db"] < CLONE_NORMALIZE_BELOW_DB
+    logger.info("Voice reference input mean=%.1f dB peak=%.1f dB%s", levels["mean_db"], levels["peak_db"],
+                " -> normalizing" if quiet else "")
+    return quiet
+
+
 def _fix_wav_header(wav_bytes):
     """ffmpeg writing WAV to a pipe can't seek back, so RIFF/data sizes are bogus (0xFFFFFFFF).
     Rewrite them so browsers, the game and training tools read the right length.
@@ -781,7 +865,26 @@ def create_recording():
         voice_id = None
 
     try:
-        wav_bytes = convert_to_wav(raw, sample_rate=SENTENCE_SAMPLE_RATE, trim_silence=True)
+        levels = analyze_levels(raw)
+    except Exception:
+        logger.exception("Audio analysis failed")
+        return jsonify({"error": "Failed to process audio. Try a different recording."}), 400
+
+    def reject(reason, message, **extra):
+        logger.warning("Recording rejected (%s): speaker=%s lang=%s idx=%d mean=%.1f dB peak=%.1f dB "
+                       "floor=%.1f dB speech=%.1f dB input=%.1fs %s", reason, speaker, language, idx,
+                       levels["mean_db"], levels["peak_db"], levels["floor_db"], levels["speech_db"],
+                       levels["seconds"], extra or "")
+        return jsonify({"error": message, "reason": reason, "mean_db": levels["mean_db"],
+                        "peak_db": levels["peak_db"], **extra}), 400
+
+    if levels["peak_db"] < MIN_PEAK_DB:
+        return reject("silent", "Recording is silent. Check the microphone and try again.")
+    if levels["speech_db"] - levels["floor_db"] < MIN_SPEECH_SPREAD_DB:
+        return reject("no_speech", "No speech detected, only background noise. Speak closer to the microphone.")
+
+    try:
+        wav_bytes = convert_to_wav(raw, sample_rate=SENTENCE_SAMPLE_RATE, trim_silence=True, normalize=True)
     except Exception:
         logger.exception("Audio conversion failed")
         return jsonify({"error": "Failed to process audio. Try a different recording."}), 400
@@ -792,7 +895,8 @@ def create_recording():
         logger.exception("Bad WAV from ffmpeg")
         return jsonify({"error": "Failed to process audio."}), 400
     if duration < 0.5:
-        return jsonify({"error": "Recording is empty or too quiet. Try again."}), 400
+        return reject("too_short", "Recording is too short after trimming silence. Read the whole sentence.",
+                      duration_s=duration)
 
     recording_id = new_id()
     text = SENTENCES[language][idx]
@@ -806,7 +910,8 @@ def create_recording():
         (recording_id, speaker, language, idx, text, voice_id, wav_bytes, duration, created_at),
     )
     db.commit()
-    logger.info("Recording %s: speaker=%s lang=%s idx=%d %.1fs", recording_id, speaker, language, idx, duration)
+    logger.info("Recording %s: speaker=%s lang=%s idx=%d %.1fs (input mean=%.1f dB peak=%.1f dB)",
+                recording_id, speaker, language, idx, duration, levels["mean_db"], levels["peak_db"])
 
     return jsonify({"recording_id": recording_id, "speaker": speaker, "language": language,
                     "sentence_idx": idx, "text": text, "voice_id": voice_id,

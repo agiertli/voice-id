@@ -24,7 +24,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: download
-        image: registry.access.redhat.com/ubi9/python-312:latest
+        image: registry.access.redhat.com/ubi9/python-312@sha256:2efa5e6b314025805f2add5ec53922f98872dfa545d5ec330d3e86dd52df63c2
         command:
         - bash
         - -c

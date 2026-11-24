@@ -1,6 +1,6 @@
 ---
 name: voice-id-operations
-description: "Primary interface for the Voice ID (AI or Alive?) conference booth stack on OpenShift: install on a fresh cluster, verify, operate, troubleshoot, manage clips and speakers, voice cloning with Voice Clone Studio, seed packs and backups, AI opponents, and explain scoring. Not for unrelated apps or generic TTS/LLM questions."
+description: "Primary interface for the Voice ID (AI or Alive?) conference booth stack on OpenShift: install on a fresh cluster with a minimal/standard/full profile, switch profiles, verify, operate, troubleshoot, manage clips and speakers, voice cloning with Voice Clone Studio, seed packs and backups, AI opponents, and explain scoring. Not for unrelated apps or generic TTS/LLM questions."
 ---
 
 # Voice ID operations
@@ -37,9 +37,13 @@ overrides everything else.
 - Never write passwords, tokens, cluster hostnames or credentials into repository
   files, docs or reports. Pass the admin password via a mode-600 temp file and
   `--set-file adminToken=...`, then delete the file.
-- Do not reset scores, delete clips, delete PVCs/namespaces or stop pre-existing
-  workloads (for example a sandbox's preinstalled model) without explicit owner
-  approval. A readiness check authorises no changes.
+- Do not reset scores, delete clips, delete PVCs/namespaces, stop pre-existing
+  workloads (for example a sandbox's preinstalled model), or **scale down or remove
+  any component** (Clone Studio, XTTS, Fish, opponents, GPU nodes) without explicit
+  owner confirmation in this session. A readiness check authorises no changes.
+- The project is in its **voice collection phase**: Clone Studio, XTTS and Fish stay
+  running. Never propose scaling them down as a routine step; it is an owner decision
+  for after the recording phase.
 
 ## Start here
 
@@ -53,19 +57,42 @@ overrides everything else.
    read-only discovery.
 4. For cluster work, confirm `oc whoami --show-server` under the dedicated kubeconfig.
 
-## Install the full stack on a fresh cluster
+## Install on a fresh cluster
 
 Follow [docs/INSTALLATION.md](../../../docs/INSTALLATION.md) and the owner settings in
-[docs/AGENT-INSTALLATION.md](../../../docs/AGENT-INSTALLATION.md). Target about 35
-minutes by parallelising:
+[docs/AGENT-INSTALLATION.md](../../../docs/AGENT-INSTALLATION.md).
+
+**First, ask which profile** (default `standard`) and show this table. Provision
+only what the chosen profile needs.
+
+| Profile | Components | GPUs (`g6.2xlarge`, 1× L4) | Opponents | Approx. GPU cost |
+|---|---|---:|---|---|
+| minimal | game + Gary + Gary 2.0 (CPU) | 0 | Gary, Gary 2.0 | none |
+| standard (recommended for booths) | minimal + Teddy (qwen2-audio) + Iris (gemma) | 2 | all four | ≈ $2/h |
+| full (voice collection, cloning) | standard + xtts-v2 + fish-native + voice-clone-studio | 4 | all four | ≈ $4/h |
+
+About $1/h per `g6.2xlarge` on demand; approximate, tell the owner to check current
+AWS pricing. Helm flags: minimal = `aiJudge.enabled=false`, `aiJudge2.enabled=false`;
+standard/full = both true. `detector`/`detectorBase` true in all profiles. Opponent
+lists in the API, game picker and `/tv` (refresh 10 s) follow these flags automatically.
+
+Preferred path: `./install.sh --profile <p> --kubeconfig <file> --admin-token-file
+<file> --dry-run`, show the plan, then run it without `--dry-run` (add `--yes` only
+after the owner confirmed). It never runs `oc login`, clones the worker MachineSet
+with replicas = profile GPU count (none for minimal), labels it
+`voice-id/gpu-machineset=true`, never scales it down, and prints URLs plus the seed
+pack command. It is **untested on a live cluster**: watch each step and fall back to
+the manual runbook steps if it stops.
+
+Manual order (target ~35 min for full, minutes for minimal):
 
 | t | Action |
 |---|---|
-| 0 | Clone the cluster's **own** worker MachineSet into a GPU MachineSet: `g6.2xlarge`, 4 replicas (XTTS, Fish, Qwen, Gemma; 2 if no Clone Studio), taint `nvidia.com/gpu=true:NoSchedule`, label `node-role.kubernetes.io/gpu-worker`, 200 GiB root. `infra/gpu-machineset.yaml` is only an example from another cluster (AMI/subnet/SG/IAM differ). |
-| 0 | `oc new-project voice-id`; apply `infra/qwen2-audio`, `infra/gemma` (download Jobs start on CPU), `infra/deepfake-detector-base`, `infra/deepfake-detector`. |
-| 0 | `helm upgrade --install voice-id apps/voice-id/helm/voice-id -n voice-id -f <values> --set-file adminToken=<file>`; then import the seed pack. |
-| ~5 min | GPU nodes Ready, driver up about 4 min after join (0 allocatable GPU until then). Apply `infra/xtts`, `infra/fish-speech`. Install Clone Studio. |
-| ~15–30 min | vLLM loads, Fish downloads ~9 GB then needs a ~4 min compile on first request: warm it up. |
+| 0 | standard/full: clone the cluster's **own** worker MachineSet into a GPU MachineSet: `g6.2xlarge`, replicas 2 (standard) or 4 (full), taint `nvidia.com/gpu=true:NoSchedule`, labels `node-role.kubernetes.io/gpu-worker` and `voice-id/gpu-machineset=true`, 200 GiB root. `infra/gpu-machineset.yaml` is only an example from another cluster. minimal: skip. |
+| 0 | `oc new-project voice-id`; apply `infra/deepfake-detector-base`, `infra/deepfake-detector`; standard/full also `infra/qwen2-audio`, `infra/gemma` (download Jobs start on CPU). |
+| 0 | `helm upgrade --install voice-id apps/voice-id/helm/voice-id -n voice-id -f <values> --set-file adminToken=<file>` plus the profile's `aiJudge*` flags; then import the seed pack. |
+| ~5 min | GPU nodes Ready, driver up about 4 min after join. full: apply `infra/xtts`, `infra/fish-speech`, install Clone Studio. |
+| ~15–30 min | vLLM loads; full: Fish downloads ~9 GB then needs a ~4 min compile on first request: warm it up. |
 | end | Smoke test, report. |
 
 Hard-won facts (do not rediscover):
@@ -99,14 +126,37 @@ Hard-won facts (do not rediscover):
 - Clips: **seed pack** import (admin UI "Seed pack & backup" or
   `python3 apps/voice-id/tools/seedpack.py import --game URL --token T --file PACK --mode skip`).
   Low-level fallback: loop over `POST /api/admin/upload` (86 clips at first install).
-  Upload does not deduplicate.
+  Upload does not deduplicate. All `/api/admin/*` calls need
+  `-H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}"`.
 - Opponents are listed whenever their URL is set, healthy or not; failed analyses
-  become coin flips. Verify each before opening; disable unhealthy ones via Helm.
+  become server-recorded coin flips (`fallback: true`). Verify each before opening;
+  disable unhealthy ones via Helm.
 
 Smoke test: runbook section "6. Verify" (clip count, `/api/battle/opponents`, every
-opponent returns a `guess`, one game). Report URLs (game, `/tv`, `/admin`, Clone
+opponent analyses with `fallback: false` in its own game, one game). Analysis
+responses are sealed (no `guess`); the answer comes with `/guess`. Report URLs (game, `/tv`, `/admin`, Clone
 Studio), versions, verified items, owner browser checks still needed. Do not print the
 admin password unless the owner explicitly asks for the handoff.
+
+## Switch profiles, add or remove Clone Studio
+
+Guide: [INSTALLATION.md#switch-profiles](../../../docs/INSTALLATION.md#switch-profiles).
+Every scale-down or removal needs **explicit owner confirmation**; restate what will
+stop, what persists and the GPU saving, then wait for "yes".
+
+- Scale up: re-run `./install.sh --profile <bigger>` (scales the labelled MachineSet
+  up, applies missing manifests, upgrades Helm flags). Re-adding Clone Studio:
+  MachineSet to 4, `oc scale deploy/xtts-v2 deploy/fish-native -n voice-id --replicas=1`,
+  warm Fish, then `oc scale deploy/voice-clone-studio -n voice-clone-studio --replicas=1`
+  (it re-registers stored voices with XTTS/Fish on startup; recordings and voices
+  persist on its PVC; Fish weights persist on `fish-data`).
+- Remove Clone Studio (only after the recording phase, owner-confirmed): scale
+  Clone Studio, then XTTS/Fish to 0, annotate the machines that hosted XTTS/Fish with
+  `machine.openshift.io/delete-machine=true`, then scale the MachineSet to 2. Never
+  scale the MachineSet down first (a node running Teddy or Iris could be removed).
+- standard → minimal: `helm upgrade` with `aiJudge.enabled=false aiJudge2.enabled=false`
+  first, then delete the two LLMInferenceServices (weights PVCs stay), then the
+  MachineSet to 0.
 
 ## Operate the booth
 
@@ -116,9 +166,11 @@ Guide: [booth-operations.md](../../../docs/customization/booth-operations.md).
   players and history, Export CSV, Reset all scores, Speakers, Seed pack & backup.
 - Admin password: Helm value `adminToken` (env `ADMIN_TOKEN`); empty = public image
   default. Override per event.
-- Known risks to state, not fix: `/api/admin/upload`, `/api/admin/delete-clip`,
-  `/api/admin/clips` and `POST /api/admin/reset` are unauthenticated; points are
-  trusted from the browser; Clone Studio's API is unauthenticated.
+- Every `/api/admin/*` endpoint (incl. clips, upload, delete-clip, `POST
+  /api/admin/reset`, spectrogram) needs the admin token. Known risks to state, not
+  fix: one shared token whose image default is public; a scripted client can listen
+  to the public clip audio before starting the speed clock; Clone Studio's API is
+  unauthenticated.
 - Daily: full backup + CSV before any reset; reset only with owner approval.
 
 ## Clips, speakers and voice cloning
@@ -126,10 +178,10 @@ Guide: [booth-operations.md](../../../docs/customization/booth-operations.md).
 Guides: [clips-and-speakers.md](../../../docs/customization/clips-and-speakers.md),
 [backups.md](../../../docs/customization/backups.md).
 
-- Game clip API: `GET /api/admin/clips`, `POST /api/admin/upload` (multipart `audio`,
-  `is_ai`, `language`, `source` = `Fish Audio S2 Pro` | `Coqui XTTS v2`, `speaker`
-  lower case, `filename`), `DELETE /api/admin/delete-clip/<id>`. Use `--form-string`
-  for text fields.
+- Game clip API (admin token, `Authorization: Bearer`): `GET /api/admin/clips`,
+  `POST /api/admin/upload` (multipart `audio`, `is_ai`, `language`, `source` =
+  `Fish Audio S2 Pro` | `Coqui XTTS v2`, `speaker` lower case, `filename`),
+  `DELETE /api/admin/delete-clip/<id>`. Use `--form-string` for text fields.
 - Voice Clone Studio (`apps/voice-clone-studio`, namespace `voice-clone-studio`):
   - Cloning: a **~30 s reference** is enough for XTTS and Fish; longer adds nothing.
     `POST /api/voices` (multipart `audio`, `name`) registers with both engines;
@@ -154,6 +206,42 @@ Guides: [clips-and-speakers.md](../../../docs/customization/clips-and-speakers.m
   `experiment_v4.py`, new image tag, update `infra/deepfake-detector/manifests.yaml`,
   re-measure accuracy and false positives on real voices.
 
+## Create a seed pack (task)
+
+Trigger: "create a seed pack", "make a seedpack", "package the clips", "I want to share the clips".
+A seed pack is ONE file `voice-id-seedpack-<YYYYMMDD-HHMM>.seedpack.zip`. Never zip files by
+hand; the tool builds and validates it.
+
+1. **Ask the source** (one question, default A if the user says "my samples/files"):
+   - A) **A local folder** of audio files (e.g. `apps/voice-id/samples/`, which is git-ignored, or `~/voice-id-audio/samples/`).
+   - B) **The running game** (exactly the clips it plays now, incl. speaker names/photos).
+2. **A — from a local folder:**
+   - Check the layout first and list problems (don't rename the user's files without asking):
+     `natural/<cs|sk|en>/<speaker>-<desc>.<ext>`, `ai/<cs|sk|en>/<model>-<speaker>-<desc>.<ext>`
+     (`<model>`: `fish` → "Fish Audio S2 Pro", `xtts` → "Coqui XTTS v2"), optional `speakers/<speaker>.jpg|png|webp`,
+     optional `manifest.json` (takes precedence over filenames). Audio: wav, mp3, m4a, flac, ogg.
+   - Run (from the repo root):
+     ```bash
+     python3 apps/voice-id/tools/seedpack.py pack --dir <folder>
+     ```
+     Output goes to `~/voice-id-audio/seedpacks/` (outside Git; the tool refuses a Git tree unless the target is git-ignored).
+     Exit code 1 = some files were skipped: show the skipped list and why.
+3. **B — from the running game** (needs the cluster's route and admin token; dedicated KUBECONFIG, never `oc login`):
+   ```bash
+   ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
+   python3 apps/voice-id/tools/seedpack.py export --game "https://${ROUTE}" --token "$VOICEID_ADMIN_TOKEN"
+   ```
+   Or tell the user: `/admin` → **Seed pack & backup** → **Export seed pack**.
+4. **Report**: full path of the zip, size, number of clips (human/AI per language), speaker profiles,
+   skipped files, and — for source A — how it differs from the live game's clip list if a cluster is available
+   (clips never played yet). Remind: contains real voices, Rule zero applies.
+5. **Offer protection + sharing** (don't do it unasked): encrypt with `age -p -o <pack>.age <pack>`
+   (passphrase via a different channel); share via a Red Hat Google Drive folder with named @redhat.com
+   people only (never "anyone with the link"), set an access expiry; record version/recipient/date in the owner's
+   private register (needed if someone withdraws consent). Never GitHub, Quay, public Slack, external email.
+6. **Recipient side**: `/admin` → **Seed pack & backup** → **Import seed pack** (mode `skip`), or
+   `seedpack.py import --game URL --token T --file PACK --mode skip`; then delete the zip.
+
 ## Seeding (clips into the game)
 
 Guide: [docs/SEEDING.md](../../../docs/SEEDING.md). Seed pack =
@@ -169,7 +257,7 @@ ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
 read -r -s -p 'Admin password: ' VOICEID_ADMIN_TOKEN; printf '\n'; export VOICEID_ADMIN_TOKEN
 python3 apps/voice-id/tools/seedpack.py import --game "https://${ROUTE}" \
   --file ~/voice-id-audio/seedpacks/<pack>.seedpack.zip --mode skip
-curl -sk "https://${ROUTE}/api/admin/clips" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))'
+curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/clips" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))'
 ```
 
 Or admin UI: `/admin` → **Seed pack & backup** → **Import seed pack**. Modes: `skip`
@@ -196,7 +284,8 @@ Local folder view (offline, no server): `seedpack.py unpack --file PACK --out ~/
 Pro, `xtts`/`coqui` → Coqui XTTS v2, `moss` → MOSS-TTS-Nano.
 
 Grow: Clone Studio recordings → `import_from_clone_studio.py` (dry run, `--apply`,
-`--with-ai`) → export a fresh seed pack. Low level: `POST /api/admin/upload` per clip
+`--with-ai`; `--apply` requires `--game-token` or env `VOICEID_ADMIN_TOKEN`) →
+export a fresh seed pack. Low level: `POST /api/admin/upload` per clip
 (no dedup). If a tool or subcommand is missing in the checkout, say so; never invent
 options.
 
@@ -210,21 +299,25 @@ Enable/disable with `aiJudge`, `aiJudge2`, `detectorBase`, `detector` values.
 
 ## Explain scoring
 
-Guide: [scoring.md](../../../docs/customization/scoring.md). Re-read the constants in
-`apps/voice-id/src/templates/index.html` before answering; flag any drift.
+Guide: [scoring.md](../../../docs/customization/scoring.md). Re-read the constants at
+the top of `apps/voice-id/src/app.py` (scoring is server-side; the browser only
+displays) before answering; flag any drift.
 
-- Correct answer = 100 + max(0, round(200 × (1 − t/10))), t = seconds from first press
-  of play to the guess (includes listening). Wrong = 0. 300 at 0 s, 240 at 3 s, 100 at
-  ≥ 10 s.
+- Correct answer = 100 + max(0, round(200 × (1 − t/10))), t = seconds the server
+  measures from the first `POST /play` of the clip to its `/guess` (includes
+  listening; never played = 10 s). Wrong = 0. 300 at 0 s, 240 at 3 s, 100 at ≥ 10 s.
+  One guess per clip of the game (repeat 409, foreign clip 400).
 - Battle bonus if the player beats the opponent's correct count, or ties with a perfect
   score: Teddy +50, Iris +100, Gary +150, Gary 2.0 +250. Opponent score = correct
   count, not points.
 - Prize = server-counted correct answers ≥ `game.prizeThreshold` (default 4 of 5);
   points irrelevant. Leaderboard = best game per nickname by points, then correct;
   API top 20, TV top 10; ties beyond that unordered.
-- Known limitations: browser-computed points are trusted; `/complete` not idempotent;
-  a failed completion request loses the game (no retry); opponent failures become
-  coin flips.
+- `/complete` is idempotent, ignores client points and returns a breakdown
+  (`correct`, `speed`, `opp_bonus`, `opponent`, `opponent_score`).
+- Known limitations: a scripted client can pre-listen (public, preloaded audio) and
+  then play+guess instantly; a failed completion request is not retried by the
+  browser; opponent failures become server-recorded coin flips.
 
 ## Diagnose an incident
 

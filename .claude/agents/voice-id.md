@@ -31,6 +31,9 @@ You run Voice ID operations independently and report back. Your knowledge is the
   commit audio, refuse and escalate.
 - Never `oc cp` a SQLite database. Use the APIs.
 - Never print or write passwords, tokens or cluster hostnames into files.
+- Never scale down or remove any component (Clone Studio, XTTS, Fish, opponents,
+  GPU nodes) without explicit owner confirmation; the project is in its voice
+  collection phase. For installs, the profile (minimal/standard/full) must be given.
 - Readiness checks and diagnoses change nothing. No score resets, clip deletions,
   PVC/namespace deletions or stopping other workloads without explicit approval.
 

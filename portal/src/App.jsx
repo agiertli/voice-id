@@ -217,14 +217,14 @@ battle bonus     + Teddy 50 | Iris 100 | Gary 150 | Gary 2.0 250
               <div className="card"><h3>Ties</h3><p>Equal points: more correct answers first. Still equal: no defined order, so agree a tie-break before the prize ceremony.</p></div>
               <div className="card"><h3>Your rank</h3><p>Ranked by each player's best game, the same way as the leaderboard. Equal points share a rank.</p></div>
             </div>
-            <p className="small muted">Limits: 1,500 points solo, 1,750 against Gary 2.0. The event owner can change the number of clips and the prize threshold. Points are computed in the browser; see the <a href={doc('docs/customization/scoring.md#known-limitations')}>known limitations</a> and the <a href={doc('docs/customization/scoring.md')}>full scoring rules</a>.</p>
+            <p className="small muted">Limits: 1,500 points solo, 1,750 against Gary 2.0. The event owner can change the number of clips and the prize threshold. Points are computed on the game server; see the <a href={doc('docs/customization/scoring.md#known-limitations')}>known limitations</a> and the <a href={doc('docs/customization/scoring.md')}>full scoring rules</a>.</p>
           </div>
         </section>
 
         <section id="architecture" className="section">
           <div className="wrap">
             <h2>Architecture</h2>
-            <p className="lede">One small web app, four opponents, two voice-cloning engines. Four NVIDIA L4 GPUs, everything else on CPU.</p>
+            <p className="lede">One small web app, four opponents, two voice-cloning engines. Up to four NVIDIA L4 GPUs (two for a standard booth, none for minimal), everything else on CPU.</p>
             <Architecture />
             <ul className="facts-list">
               <li><b>The game never calls the TTS engines.</b> Clips are made beforehand with Voice Clone Studio and stored in the game’s database.</li>
@@ -238,12 +238,21 @@ battle bonus     + Teddy 50 | Iris 100 | Gary 150 | Gary 2.0 250
         <section id="install" className="section tint">
           <div className="wrap">
             <h2>Run it at your event</h2>
-            <p className="lede">About 35 minutes on a fresh OpenShift AI cluster, most of it waiting for GPUs and models. An agent can do it for you.</p>
+            <p className="lede">Pick a profile, run one script or let an agent drive. Voice cloning is optional: the game only plays pre-recorded clips.</p>
+            <div className="tbl-scroll"><table className="tbl profiles">
+              <thead><tr><th>Profile</th><th>GPUs</th><th>Opponents</th><th>Voice cloning</th><th>GPU cost*</th></tr></thead>
+              <tbody>
+                <tr><td><b>minimal</b></td><td>0</td><td>Gary, Gary 2.0</td><td>no</td><td>none</td></tr>
+                <tr><td><b>standard</b> (recommended)</td><td>2</td><td>all four</td><td>no</td><td>≈ $2/h</td></tr>
+                <tr><td><b>full</b></td><td>4</td><td>all four</td><td>Clone Studio, XTTS, Fish</td><td>≈ $4/h</td></tr>
+              </tbody>
+            </table></div>
+            <p className="small muted">* About $1 per hour per g6.2xlarge (one NVIDIA L4) on demand; approximate, check current AWS pricing. Use full while collecting voices; dropping to standard afterwards is the owner’s call.</p>
             <ol className="steps compact">
-              <li><Icon name="gpu" /><div><h3>Get a cluster</h3><p>OpenShift on AWS with OpenShift AI 3 and the NVIDIA GPU Operator, plus quota for four g6.2xlarge GPU nodes.</p></div></li>
-              <li><Icon name="support" /><div><h3>Let the agent drive</h3><p>Open Claude Code or Codex in the repository and start with the skill:</p>
+              <li><Icon name="gpu" /><div><h3>Get a cluster</h3><p>OpenShift on AWS with OpenShift AI 3 and the NVIDIA GPU Operator, plus quota for the profile’s g6.2xlarge GPU nodes (0, 2 or 4).</p></div></li>
+              <li><Icon name="support" /><div><h3>Run the installer, or let the agent drive</h3><p>Already logged in with a dedicated kubeconfig: <code>./install.sh --profile standard</code> (try <code>--dry-run</code> first). Or open Claude Code or Codex in the repository and start with the skill:</p>
                 <pre className="cmd">{`export KUBECONFIG=~/.kube/voice-id-<event>.kubeconfig
-/voice-id-operations Install the full stack on this cluster.
+/voice-id-operations Install profile standard on this cluster.
 Event: <name>. Default language: cs.
 Admin password: <your choice>.
 Seed pack: ~/voice-id-audio/seedpacks/<file>.seedpack.zip`}</pre></div></li>

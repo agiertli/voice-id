@@ -4,6 +4,39 @@ The game is useless without clips, and the repository contains none on purpose.
 This guide covers the whole life of seed data: getting it, loading it, inspecting
 it, growing it, sharing it and recovering it.
 
+## Create a seed pack (copy-paste)
+
+A seed pack is one file, `voice-id-seedpack-<date>.seedpack.zip`. You never zip files by hand.
+Run everything from the repo root (`cd ~/Documents/work/voice-id`).
+
+**From audio files on your disk** (for example `apps/voice-id/samples/`):
+
+```bash
+python3 apps/voice-id/tools/seedpack.py pack --dir apps/voice-id/samples
+```
+
+The folder must look like this (the tool reads metadata from paths and names):
+
+```text
+<folder>/
+  natural/<cs|sk|en>/<speaker>-<anything>.wav       human clip   e.g. natural/cs/anton-pozdrav.wav
+  ai/<cs|sk|en>/<fish|xtts>-<speaker>-<anything>.wav AI clip      e.g. ai/en/fish-anton-hello.wav
+  speakers/<speaker>.jpg                            optional photo for the reveal
+```
+
+**From the running game** (exactly the clips it plays now, incl. speaker names and photos):
+`/admin` → **Seed pack & backup** → **Export seed pack**, or
+
+```bash
+python3 apps/voice-id/tools/seedpack.py export --game https://<game-route> --token <admin-password>
+```
+
+Either way the file lands in `~/voice-id-audio/seedpacks/` (outside Git, readable only by you).
+
+**Share it:** optionally encrypt (`age -p -o pack.zip.age pack.zip`, send the passphrase separately),
+put it in a Red Hat Google Drive folder shared with named people only, set an access expiry, and note
+who got which version. **Import it:** recipient opens `/admin` → **Seed pack & backup** → **Import seed pack**.
+
 ## Rule zero
 
 Seed data is **voices of real people** (and AI clones of them) plus speaker
@@ -87,7 +120,7 @@ replaced and invalid, and speakers added, updated, skipped.
 **Verify:**
 
 ```bash
-curl -sk "https://${ROUTE}/api/admin/clips" | python3 -c '
+curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/clips" | python3 -c '
 import json, sys, collections
 c = json.load(sys.stdin)
 print(len(c), "clips"); print(collections.Counter((x["language"], "AI" if x["is_ai"] else "human") for x in c))'
@@ -188,7 +221,8 @@ Details (filters, idempotency, re-recorded sentences, Fish warm-up):
 ## Low-level fallback
 
 `POST /api/admin/upload` adds one clip (multipart `audio`, `is_ai`, `language`,
-`source`, `speaker`, `filename`). It is unauthenticated and does not deduplicate.
+`source`, `speaker`, `filename`). It needs the admin token
+(`Authorization: Bearer`) and does not deduplicate.
 A bulk loop over a local database is in
 [clips and speakers](customization/clips-and-speakers.md#low-level-bulk-upload-from-a-local-database).
 **Never `oc cp` a database into or out of the pod**: SQLite in WAL mode corrupts.

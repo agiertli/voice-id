@@ -50,6 +50,19 @@ The game never calls the TTS engines. Clips are made beforehand (Clone Studio or
 offline scripts) and stored in the game database. XTTS and Fish serve Clone Studio
 only.
 
+## Install profiles
+
+| Profile | Workloads | GPU nodes |
+|---|---|---:|
+| minimal | `voice-id`, `deepfake-detector-base`, `deepfake-detector-fine-tuned` (all CPU) | 0 |
+| standard | minimal + `qwen2-audio`, `gemma` | 2 |
+| full | standard + `xtts-v2`, `fish-native`, `voice-clone-studio` | 4 |
+
+The game's runtime path never touches XTTS or Fish, so `minimal` and `standard` are
+complete booths; `full` adds the clip-making side. Opponents not deployed are
+disabled with Helm flags and disappear from the API, the game and `/tv`. See
+[install profiles](INSTALLATION.md#install-profiles).
+
 ## Components
 
 | Component | Image / model | Hardware (requests / limits) | Storage | Exposure |
@@ -63,7 +76,7 @@ only.
 | `fish-native` | `fishaudio/fish-speech:server-cuda`, S2 Pro, `--compile` | 1 L4, 4 CPU, 16 Gi | PVC `fish-data` 20 Gi (weights); references in memory | Service :8080, route (300 s) |
 | `voice-clone-studio` | `quay.io/agiertli/voice-clone-studio:v2.1.0` | 0.1 / 0.5 CPU, 128 / 256 Mi | PVC `voice-clone-studio-data` 1 Gi | Route, 300 s timeout |
 
-GPU nodes: four `g6.2xlarge` (1× NVIDIA L4 24 GB, 8 vCPU, 32 GiB), tainted
+GPU nodes (`full`; `standard` has the first two): four `g6.2xlarge` (1× NVIDIA L4 24 GB, 8 vCPU, 32 GiB), tainted
 `nvidia.com/gpu=true:NoSchedule`, one GPU workload each. Every GPU workload
 requests a whole GPU; there is no sharing.
 
@@ -140,7 +153,8 @@ repository; nothing in this pipeline touches Git.
 
 - Single replica, SQLite on a RWO volume: no HA. A pod restart interrupts games in
   progress; completed results survive on the PVC.
-- No authentication for players; admin features use one shared Bearer token;
-  clip management and Clone Studio APIs are unauthenticated.
+- No authentication for players; all game admin endpoints (including clip
+  management and score reset) use one shared Bearer token; the Clone Studio API is
+  unauthenticated. Game scoring is server-side.
 - LLM endpoints are cluster-internal and called with TLS verification off; external
   exposure needs Red Hat Connectivity Link.

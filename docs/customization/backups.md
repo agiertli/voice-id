@@ -55,7 +55,7 @@ Import is idempotent (filename plus SHA-256) and all-or-nothing: an invalid pack
 rejected before anything is written. Check the result:
 
 ```bash
-curl -sk "https://${ROUTE}/api/admin/clips" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)), "clips")'
+curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/clips" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)), "clips")'
 ```
 
 ## Export a seed pack

@@ -1,20 +1,24 @@
 # Scoring
 
-These are the rules as implemented in the code, not as intended. Sources:
+These are the rules as implemented in the code, not as intended. All scoring is
+**server-side** in `apps/voice-id/src/app.py`:
 
-- `apps/voice-id/src/templates/index.html`: the browser computes **points**
-  (constants `POINTS_BASE`, `POINTS_SPEED_MAX`, `SPEED_WINDOW_SEC`,
-  `OPPONENT_BONUS`; functions `submitGuess`, `battleSubmitGuess`,
-  `battleRevealTruth`, `battleShowFinal`, `completeGame`).
-- `apps/voice-id/src/app.py`: the server judges each guess, counts **correct
-  answers**, decides the **prize** and serves the **leaderboard**
-  (`/api/game/<id>/guess`, `/api/game/<id>/complete`, `/api/leaderboard`).
+- constants `POINTS_BASE`, `POINTS_SPEED_MAX`, `SPEED_WINDOW_SEC`, `OPPONENT_BONUS`
+  (top of the file);
+- `POST /api/game/<id>/play` starts the clock for a clip, `POST /api/game/<id>/guess`
+  judges the guess and stores its points, the `ai-analyze*` endpoints record the
+  battle opponent's answers, `POST /api/game/<id>/complete` computes the result,
+  `GET /api/leaderboard` serves the board.
 
-Checked against the code on 2026-11-24, including the redesigned UI (the
-redesign changed presentation, navigation and the results screen, not the scoring
-constants or rules). The results screen shows the breakdown: correct answers ×
-100, total speed bonus, opponent bonus, rank and prize. If you change a scoring constant, update this
-page, the portal calculator (`portal/src/scoring.js`) and the skill together.
+The browser (`index.html`) only displays what the server returns; it receives the
+constants from the server for labels such as "+250 if you win". The results screen
+shows the server's breakdown: correct answers × 100, total speed bonus, opponent
+bonus, rank and prize.
+
+Checked against the code on 2026-11-24 (server-side scoring introduced the same
+day; the rules and constants did not change). If you change a scoring constant,
+update this page, the portal calculator (`portal/src/scoring.js`) and the skill
+together.
 
 ## Two numbers, two purposes
 
@@ -23,14 +27,14 @@ Every game produces two independent results:
 | Result | What it is | Who computes it | Used for |
 |---|---|---|---|
 | **Correct answers** (`score`, e.g. 4/5) | How many clips you labelled correctly | Server, from the guesses it recorded | **Prize** |
-| **Points** (`points`, e.g. 1040) | Correct answers weighted by speed, plus an opponent bonus | Browser, sent to the server at the end | **Leaderboard rank** |
+| **Points** (`points`, e.g. 1040) | Correct answers weighted by speed, plus an opponent bonus | Server, from the play/guess times and opponent answers it recorded | **Leaderboard rank** |
 
 A player can win a prize and rank low, or rank above someone with more correct
 answers. Both are expected.
 
 ## The points formula
 
-Constants (in `index.html`):
+Constants (in `app.py`):
 
 ```text
 POINTS_BASE      = 100   points for every correct answer
@@ -42,7 +46,8 @@ OPPONENT_BONUS   = { qwen: 50, gemma: 100, gary-base: 150, gary-finetuned: 250 }
 For each clip:
 
 ```text
-t           = seconds from the FIRST press of play on this clip to the guess click
+t           = seconds from the FIRST press of play on this clip to the guess,
+              measured by the server (POST /play -> POST /guess)
 speed_bonus = max(0, round(200 * (1 - t / 10)))
 clip_points = 100 + speed_bonus    if the guess is correct
             = 0                    if the guess is wrong
@@ -60,8 +65,13 @@ battle game points = sum of clip_points
 ### When the clock runs
 
 - The clock for a clip starts the **first time the player presses play** on that
-  clip. Pausing does not stop it and replaying does not restart it.
-- It stops when the player clicks **AI generated** or **Natural voice**.
+  clip: the browser sends `POST /api/game/<id>/play` and the server stores the
+  time (first call wins). Pausing does not stop it and replaying does not restart it.
+- It stops when the server receives the guess, sent the moment the player clicks
+  **AI generated** or **Natural voice** (in battle mode too: the opponent's
+  thinking animation runs after the guess is recorded). Network latency counts,
+  typically a few hundredths of a second.
+- If the server never received a play for the clip, t = 10 s: zero speed bonus.
 - The guess buttons are enabled the moment play is pressed (in battle mode, once
   the browser confirms playback started). Players may answer **before the clip
   finishes**. Listening to the whole clip costs speed bonus: game clips are
@@ -87,8 +97,8 @@ battle game points = sum of clip_points
 | 10 s or more | 0 | 100 |
 | wrong answer (any time) | 0 | 0 |
 
-Rounding is JavaScript `Math.round` (halves round up): 2.5 s gives 150, 2.6 s
-gives 148. Wrong answers never cost points; they just earn none.
+Rounding is half up (the same as JavaScript `Math.round`): 2.5 s gives 150,
+2.6 s gives 148. Wrong answers never cost points; they just earn none.
 
 Limits with the default 5 clips: the theoretical maximum is 1,500 points solo and
 1,750 in a battle against Gary 2.0 (5 × 300 + 250). A realistic excellent game
@@ -113,8 +123,10 @@ and 11 s plus one wrong answer is 260 + 220 + 160 + 100 + 0 = 740.
 ## Worked examples: battle
 
 In a battle the player and an AI opponent label the same clips. The opponent
-analyses all clips during the loading screen; its answer for each clip is revealed
-after the player has answered. The **opponent's score is a count of correct
+analyses all clips during the loading screen and the **server records** each
+answer; the analysis response does not contain it (sealed), and the server reveals
+it in the `/guess` response after the player has answered. The opponent of a game
+is fixed by the first analysis request and must be chosen before the first guess. The **opponent's score is a count of correct
 answers (0 to 5), not points**. It only decides whether the player earns the
 opponent bonus. The opponent never appears on the leaderboard.
 
@@ -144,13 +156,14 @@ or not the player beat the opponent.
 prize = correct_answers >= PRIZE_THRESHOLD        (server, /api/game/<id>/complete)
 ```
 
-- `correct_answers` is counted by the server from the guesses it recorded, so it
-  cannot be inflated by the points value the browser sends.
+- `correct_answers` is counted by the server from the guesses it recorded (one
+  guess per clip of the game).
 - Points, answer time and opponent result have **no effect** on the prize.
 - The results screen (solo and battle) shows "You won a prize! Show this to the
   booth staff." when the server says so. If the completion request failed, the
-  screen shows neither banner (and an error toast); apply the rule by hand from
-  the correct-answer count.
+  screen shows neither banner (and an error toast) and falls back to the running
+  totals from the per-guess responses; apply the rule by hand from the
+  correct-answer count.
 - Prize eligibility is per game. Nothing in the app stops a player from replaying
   until they reach the threshold or limits prizes per person; that is a booth
   policy decision.
@@ -176,6 +189,9 @@ with correct answers, points, opponent (if any) and answer time.
 - **Ties:** equal points are broken by more correct answers. If both are equal, the
   order is whatever SQLite returns and is not guaranteed. Agree a tie-break for the
   prize ceremony in advance (for example, shorter answer time shown on the TV).
+- **Completion is idempotent:** a second `/complete` for the same game returns the
+  stored result (`already_completed: true`) and adds no leaderboard row. Points,
+  `duration_sec` and the opponent sent by a client are ignored.
 - **Results screen rank** ("rank N of M") comes from `/complete`:
   `N = 1 + number of players whose best game has strictly more points than this
   player's best game`, and `M` = distinct players. This is the same basis as the
@@ -204,42 +220,38 @@ helm upgrade voice-id apps/voice-id/helm/voice-id -n voice-id \
 Use `-f` (or `--reset-values`) on every upgrade; a bare `helm upgrade` reuses the
 previous release's values and silently ignores edits to `values.yaml`.
 
-The point constants and opponent bonuses are hard-coded in `index.html`. Changing
-them needs a new image. Changing `game.size` changes the maximum points
+The point constants and opponent bonuses are hard-coded in `app.py` (the browser
+reads them from the server). Changing them needs a new image. Changing `game.size` changes the maximum points
 proportionally (300 per clip plus the bonus).
 
 ## Known limitations
 
 Factual observations from the code, without fixes:
 
-1. **Points are computed in the browser.** `/api/game/<id>/complete` stores the
-   `points` integer it receives without validating or recomputing it, so anyone
-   who can reach the route can post arbitrary points and top the leaderboard. The
-   correct-answer count and the prize are computed server-side.
-2. **Completion is not idempotent.** Calling `/complete` again for the same game
-   inserts another leaderboard row. The server does not check that all clips were
-   answered: `total` is the number of guesses recorded.
-3. **Guesses are not tied to the game's clips.** `/api/game/<id>/guess` accepts any
-   existing `clip_id` and overwrites earlier guesses for the same clip, so a
-   scripted client could record more than `game.size` correct guesses.
-4. **The speed clock includes listening time** and is measured in the browser
-   (`performance.now()`), starting at the first press of play and ignoring pauses.
-5. **Not pressing play:** the guess buttons stay disabled until play is pressed,
-   so a player cannot answer without starting the clip. The code's fallback for a
-   missing start time is 10 seconds, which means zero speed bonus, not maximum.
-   In battle mode an elapsed time of exactly 0 would also be treated as 10 seconds
-   (`_lastElapsed || SPEED_WINDOW_SEC`); this is practically unreachable.
-6. **Opponent failures become coin flips.** If an opponent's analysis request fails
-   for a clip, the browser substitutes a random guess ("Analysis failed"). That
-   random answer counts towards the opponent's score and therefore the bonus.
-7. **A failed completion request loses the game.** If `/complete` fails, the
-   results screen falls back to the browser's own numbers with no prize banner and
-   an error toast; there is no retry, so the game is missing from the leaderboard.
-   (Before the 2026-11 UI redesign, battle mode did not wait for this request at
-   all.)
-8. **Answer time on the TV** is `duration_sec`, the sum of per-clip answer times
-   sent by the browser, not wall-clock time. If the browser sends 0, the server
-   falls back to the time since the game started.
-9. **Two reset endpoints with different protection.** `POST /api/admin/reset`
-   (no authentication) and `POST /api/admin/reset-scores` (admin token) both delete
-   every game and leaderboard row. See [booth operations](booth-operations.md).
+1. **The speed clock trusts the moment the browser says "play".** Clips are
+   preloaded (downloaded) before the game starts, and the audio endpoint
+   `/api/clip/<id>/audio` is public, so a scripted client could listen first and
+   then send play and guess back to back for the maximum speed bonus. The server
+   can only guarantee that points follow the formula from the times it saw, and
+   that each clip is guessed once.
+2. **The speed clock includes listening time** and network latency, starting at the
+   first play request and ignoring pauses.
+3. **Completion does not require all clips.** `total` is the number of guesses
+   recorded; a game completed early simply has fewer points.
+4. **Opponent failures become coin flips.** If an opponent's analysis fails for a
+   clip (or never reaches the server), the server records a random answer
+   (`fallback: true`, reasoning "Analysis failed"). It counts towards the
+   opponent's score and therefore the bonus, and is the same answer the player sees.
+5. **A failed completion request leaves the game off the leaderboard** unless the
+   browser retries: there is no automatic retry. Calling `/complete` again later is
+   safe (idempotent).
+6. **Answer time on the TV** is `duration_sec`, the sum of the server-measured
+   per-clip answer times (10 s for a clip never played), not wall-clock time.
+7. **The admin token is shared.** All `/api/admin/*` endpoints, including
+   `POST /api/admin/reset` and `POST /api/admin/reset-scores` (both delete every
+   game and leaderboard row), need the admin token. The image default is public;
+   override it per event. See [booth operations](booth-operations.md).
+8. **Games open during the upgrade** to server-side scoring complete with the
+   correct-answer count, but clips guessed before the new pod started earn no
+   points, and a browser still running the old page sends no play requests (no
+   speed bonus). Leaderboard rows from older versions are kept unchanged.

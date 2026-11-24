@@ -1,6 +1,6 @@
 image:
   repository: quay.io/agiertli/voice-id
-  tag: "v3.0.0"
+  tag: "v3.1.0"
   pullPolicy: IfNotPresent
 
 replicas: 1
@@ -8,7 +8,8 @@ replicas: 1
 clusterDomain: ""
 
 conference:
-  name: "Red Hat Summit"
+  # Shown on registration, TV, admin. Set per event.
+  name: "Jesenná ITAPA 2026 - Alpha"
 
 game:
   size: 5

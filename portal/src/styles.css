@@ -154,6 +154,8 @@ input[type='range'] { accent-color: var(--red); width: 100%; }
 .calc-out p { margin: 10px 0 0; }
 
 .facts { margin-top: 32px; }
+.tbl-scroll { overflow-x: auto; max-width: 100%; }
+.tbl.profiles { min-width: 520px;  max-width: 860px; margin: 8px 0 6px; }
 
 /* Architecture */
 .arch { display: grid; grid-template-columns: minmax(200px, 0.6fr) auto 2fr; gap: 16px; align-items: stretch; margin: 28px 0; }

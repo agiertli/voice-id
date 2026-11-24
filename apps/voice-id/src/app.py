@@ -58,7 +58,7 @@ DATA_DIR = Path(os.environ.get("DATA_DIR", "/app/data"))
 CONFIG_DIR = Path(os.environ.get("CONFIG_DIR", "/app/config"))
 GAME_SIZE = int(os.environ.get("GAME_SIZE", "5"))
 PRIZE_THRESHOLD = int(os.environ.get("PRIZE_THRESHOLD", "4"))
-CONFERENCE_NAME = os.environ.get("CONFERENCE_NAME", "Red Hat Summit")
+CONFERENCE_NAME = os.environ.get("CONFERENCE_NAME", "Voice ID")
 DEFAULT_LANG = os.environ.get("DEFAULT_LANG", "en")
 AI_JUDGE_URL = os.environ.get("AI_JUDGE_URL", "")
 AI_JUDGE_MODEL = os.environ.get("AI_JUDGE_MODEL", "gemma-4-12b")
@@ -67,6 +67,15 @@ AI_JUDGE2_MODEL = os.environ.get("AI_JUDGE2_MODEL", "Qwen2-Audio-7B-Instruct")
 DETECTOR_URL = os.environ.get("DETECTOR_URL", "")
 DETECTOR_BASE_URL = os.environ.get("DETECTOR_BASE_URL", "")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "v01c3@r3dh4t!")
+
+# --- Scoring (server-authoritative; the browser only displays these numbers) ---
+# Per correct answer: POINTS_BASE + speed bonus max(0, round(POINTS_SPEED_MAX * (1 - t / SPEED_WINDOW_SEC)))
+# where t = seconds from the first POST /play of that clip to its /guess (no /play -> t = SPEED_WINDOW_SEC).
+# Battle: OPPONENT_BONUS[opponent] if the player beats the opponent, or ties with a perfect score.
+POINTS_BASE = 100
+POINTS_SPEED_MAX = 200
+SPEED_WINDOW_SEC = 10
+OPPONENT_BONUS = {"qwen": 50, "gemma": 100, "gary-base": 150, "gary-finetuned": 250}
 
 
 def _ensure_wav(audio_data, content_type):
@@ -209,6 +218,32 @@ def init_db():
             updated_at REAL
         )
     """)
+    # Server-authoritative scoring (additive migration; old rows keep working).
+    # One row per (game, clip): first play time, the player's single guess with its
+    # points, and the battle opponent's recorded answer.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS game_rounds (
+            game_id TEXT NOT NULL,
+            clip_id TEXT NOT NULL,
+            played_at REAL,
+            guess TEXT,
+            correct INTEGER,
+            guessed_at REAL,
+            elapsed_sec REAL,
+            speed_points INTEGER DEFAULT 0,
+            points INTEGER DEFAULT 0,
+            opp_guess TEXT,
+            opp_reasoning TEXT,
+            opp_fallback INTEGER DEFAULT 0,
+            PRIMARY KEY (game_id, clip_id)
+        )
+    """)
+    game_cols = {r[1] for r in conn.execute("PRAGMA table_info(games)").fetchall()}
+    for col, col_type in [("correct_points", "INTEGER"), ("speed_points", "INTEGER"),
+                          ("opp_bonus", "INTEGER"), ("opponent_score", "INTEGER"),
+                          ("completed_at", "REAL")]:
+        if col not in game_cols:
+            conn.execute(f"ALTER TABLE games ADD COLUMN {col} {col_type}")
     conn.commit()
     conn.close()
 
@@ -231,7 +266,14 @@ def index():
                            conference_name=CONFERENCE_NAME,
                            game_size=GAME_SIZE,
                            prize_threshold=PRIZE_THRESHOLD,
-                           default_lang=DEFAULT_LANG)
+                           default_lang=DEFAULT_LANG,
+                           scoring=_scoring_config())
+
+
+def _scoring_config():
+    """Scoring constants for display only; the server computes all points."""
+    return {"points_base": POINTS_BASE, "points_speed_max": POINTS_SPEED_MAX,
+            "speed_window_sec": SPEED_WINDOW_SEC, "opponent_bonus": OPPONENT_BONUS}
 
 
 @app.route("/api/i18n")
@@ -242,6 +284,11 @@ def api_i18n():
 @app.route("/tv")
 def tv():
     return render_template("tv.html", conference_name=CONFERENCE_NAME)
+
+
+@app.route("/architecture")
+def architecture():
+    return render_template("architecture.html", conference_name=CONFERENCE_NAME)
 
 
 @app.route("/admin")
@@ -354,9 +401,65 @@ def start_game():
     })
 
 
+def _game_clip_ids(game_row):
+    try:
+        ids = json.loads(game_row["clip_ids"] or "[]")
+    except (TypeError, ValueError):
+        return []
+    return [str(i) for i in ids] if isinstance(ids, list) else []
+
+
+def _speed_points(elapsed):
+    """Same rounding as the old browser code: JS Math.round (half up), floored at 0."""
+    x = POINTS_SPEED_MAX * (1 - elapsed / SPEED_WINDOW_SEC)
+    return max(0, int(x + 0.5))
+
+
+def _record_opp_answer(db, game_id, clip_id, guess, reasoning, fallback):
+    """Store the battle opponent's answer for a clip. First answer wins; returns the stored row."""
+    db.execute("INSERT OR IGNORE INTO game_rounds (game_id, clip_id) VALUES (?, ?)", (game_id, clip_id))
+    db.execute(
+        "UPDATE game_rounds SET opp_guess = ?, opp_reasoning = ?, opp_fallback = ? "
+        "WHERE game_id = ? AND clip_id = ? AND opp_guess IS NULL",
+        (guess, reasoning, 1 if fallback else 0, game_id, clip_id),
+    )
+    db.commit()
+    return db.execute(
+        "SELECT opp_guess, opp_reasoning, opp_fallback FROM game_rounds WHERE game_id = ? AND clip_id = ?",
+        (game_id, clip_id),
+    ).fetchone()
+
+
+@app.route("/api/game/<game_id>/play", methods=["POST"])
+def play_clip(game_id):
+    """Record the first play press for a clip (starts the server-side speed clock). Idempotent."""
+    data = request.get_json(silent=True) or {}
+    clip_id = data.get("clip_id")
+    if not clip_id:
+        return jsonify({"error": "clip_id required"}), 400
+    db = get_db()
+    game = db.execute("SELECT clip_ids, completed FROM games WHERE id = ?", (game_id,)).fetchone()
+    if not game:
+        return jsonify({"error": "unknown game_id"}), 404
+    if str(clip_id) not in _game_clip_ids(game):
+        return jsonify({"error": "clip_id is not part of this game"}), 400
+    if game["completed"]:
+        return jsonify({"error": "game already completed"}), 409
+    now = time.time()
+    db.execute(
+        "INSERT INTO game_rounds (game_id, clip_id, played_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(game_id, clip_id) DO UPDATE SET played_at = COALESCE(game_rounds.played_at, excluded.played_at)",
+        (game_id, clip_id, now),
+    )
+    db.commit()
+    row = db.execute("SELECT played_at FROM game_rounds WHERE game_id = ? AND clip_id = ?",
+                     (game_id, clip_id)).fetchone()
+    return jsonify({"clip_id": clip_id, "first": row["played_at"] == now})
+
+
 @app.route("/api/game/<game_id>/guess", methods=["POST"])
 def submit_guess(game_id):
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     clip_id = data.get("clip_id")
     guess = data.get("guess")
 
@@ -364,23 +467,43 @@ def submit_guess(game_id):
         return jsonify({"error": "clip_id and guess (ai|human) required"}), 400
 
     db = get_db()
-    clip = db.execute("SELECT is_ai, source, speaker, language FROM clips WHERE id = ?", (clip_id,)).fetchone()
+    game = db.execute("SELECT clip_ids, guesses, completed, opponent FROM games WHERE id = ?",
+                      (game_id,)).fetchone()
+    if not game:
+        return jsonify({"error": "unknown game_id"}), 404
+    if str(clip_id) not in _game_clip_ids(game):
+        return jsonify({"error": "clip_id is not part of this game"}), 400
+    if game["completed"]:
+        return jsonify({"error": "game already completed"}), 409
+    guesses = json.loads(game["guesses"] or "{}")
+    if clip_id in guesses:
+        return jsonify({"error": "clip already guessed in this game"}), 409
+
+    clip = db.execute("SELECT is_ai, source, speaker, language, filename FROM clips WHERE id = ?",
+                      (clip_id,)).fetchone()
     if not clip:
         return jsonify({"error": "unknown clip_id"}), 404
 
+    now = time.time()
     actual_is_ai = bool(clip["is_ai"])
     correct = (guess == "ai") == actual_is_ai
     actual_label = "ai" if actual_is_ai else "human"
 
-    clip_row = db.execute("SELECT filename FROM clips WHERE id = ?", (clip_id,)).fetchone()
-    logger.info("GUESS game=%s clip=%s file=%s guess=%s actual=%s correct=%s",
-                game_id, clip_id, clip_row["filename"], guess, actual_label, correct)
+    db.execute("INSERT OR IGNORE INTO game_rounds (game_id, clip_id) VALUES (?, ?)", (game_id, clip_id))
+    rnd = db.execute("SELECT played_at FROM game_rounds WHERE game_id = ? AND clip_id = ?",
+                     (game_id, clip_id)).fetchone()
+    elapsed = max(0.0, now - rnd["played_at"]) if rnd["played_at"] else float(SPEED_WINDOW_SEC)
+    speed = _speed_points(elapsed) if correct else 0
+    points = POINTS_BASE + speed if correct else 0
+    cur = db.execute(
+        "UPDATE game_rounds SET guess = ?, correct = ?, guessed_at = ?, elapsed_sec = ?, speed_points = ?, points = ? "
+        "WHERE game_id = ? AND clip_id = ? AND guess IS NULL",
+        (guess, int(correct), now, elapsed, speed, points, game_id, clip_id),
+    )
+    if cur.rowcount != 1:
+        db.rollback()
+        return jsonify({"error": "clip already guessed in this game"}), 409
 
-    row = db.execute("SELECT guesses FROM games WHERE id = ?", (game_id,)).fetchone()
-    if not row:
-        return jsonify({"error": "unknown game_id"}), 404
-
-    guesses = json.loads(row["guesses"])
     guesses[clip_id] = {"guess": guess, "correct": correct}
     db.execute("UPDATE games SET guesses = ? WHERE id = ?", (json.dumps(guesses), game_id))
 
@@ -392,45 +515,114 @@ def submit_guess(game_id):
     )
     db.commit()
 
-    reveal = _speaker_reveal(db, clip["speaker"])
+    logger.info("GUESS game=%s clip=%s file=%s guess=%s actual=%s correct=%s t=%.2fs points=%d",
+                game_id, clip_id, clip["filename"], guess, actual_label, correct, elapsed, points)
 
-    return jsonify({
+    reveal = _speaker_reveal(db, clip["speaker"])
+    resp = {
         "correct": correct,
-        "actual": "ai" if actual_is_ai else "human",
+        "actual": actual_label,
         "source": clip["source"] or "",
         "speaker": clip["speaker"] or "",
         "language": clip["language"],
         "speaker_display": reveal["speaker_display"],
         "speaker_photo": reveal["speaker_photo"],
         "speaker_is_real_person": reveal["speaker_is_real_person"],
-    })
+        "elapsed_sec": round(elapsed, 2),
+        "speed_points": speed,
+        "points": points,
+    }
+    if game["opponent"]:
+        # Battle: the opponent's answer is sealed until the player has guessed. If the
+        # pre-analysis never reached the server, the coin-flip fallback is decided here.
+        opp = _record_opp_answer(db, game_id, clip_id, random.choice(("ai", "human")),
+                                 "Analysis failed", True)
+        resp.update({
+            "opponent": game["opponent"],
+            "opponent_guess": opp["opp_guess"],
+            "opponent_reasoning": opp["opp_reasoning"] or "",
+            "opponent_fallback": bool(opp["opp_fallback"]),
+            "opponent_correct": opp["opp_guess"] == actual_label,
+        })
+    return jsonify(resp)
+
+
+def _compute_game_result(db, game):
+    """Score a game purely from server-side records."""
+    n_clips = len(_game_clip_ids(game))
+    rounds = {r["clip_id"]: r for r in db.execute(
+        "SELECT clip_id, guess, correct, elapsed_sec, speed_points, points, opp_guess "
+        "FROM game_rounds WHERE game_id = ? AND guess IS NOT NULL", (game["id"],)).fetchall()}
+    legacy = json.loads(game["guesses"] or "{}")  # guesses made before the scoring migration
+    score = total = speed = opp_score = 0
+    duration = 0.0
+    for clip_id, r in rounds.items():
+        total += 1
+        if r["correct"]:
+            score += 1
+            speed += r["speed_points"] or 0
+        duration += r["elapsed_sec"] if r["elapsed_sec"] is not None else SPEED_WINDOW_SEC
+        actual = r["guess"] if r["correct"] else ("human" if r["guess"] == "ai" else "ai")
+        if r["opp_guess"] and r["opp_guess"] == actual:
+            opp_score += 1
+    for clip_id, g in legacy.items():
+        if clip_id not in rounds:
+            total += 1
+            score += 1 if g.get("correct") else 0
+    correct_points = score * POINTS_BASE
+    opponent = game["opponent"] or None
+    opp_bonus = 0
+    if opponent and (score > opp_score or (score == opp_score and score == n_clips)):
+        opp_bonus = OPPONENT_BONUS.get(opponent, 0)
+    return {
+        "score": score, "total": total, "correct_points": correct_points, "speed_points": speed,
+        "opp_bonus": opp_bonus, "opponent": opponent,
+        "opponent_score": opp_score if opponent else None,
+        "points": correct_points + speed + opp_bonus,
+        "duration": duration if rounds else time.time() - game["created_at"],
+    }
 
 
 @app.route("/api/game/<game_id>/complete", methods=["POST"])
 def complete_game(game_id):
+    """Finish a game. Server-authoritative and idempotent: client-sent points/duration/opponent
+    are ignored; a second call returns the stored result without a new leaderboard row."""
     db = get_db()
     row = db.execute("SELECT * FROM games WHERE id = ?", (game_id,)).fetchone()
     if not row:
         return jsonify({"error": "unknown game_id"}), 404
 
-    data = request.get_json(silent=True) or {}
+    already = bool(row["completed"])
+    if not already:
+        res = _compute_game_result(db, row)
+        cur = db.execute(
+            "UPDATE games SET score = ?, total = ?, completed = 1, points = ?, duration_sec = ?, opponent = ?, "
+            "correct_points = ?, speed_points = ?, opp_bonus = ?, opponent_score = ?, completed_at = ? "
+            "WHERE id = ? AND completed = 0",
+            (res["score"], res["total"], res["points"], res["duration"], res["opponent"],
+             res["correct_points"], res["speed_points"], res["opp_bonus"], res["opponent_score"],
+             time.time(), game_id),
+        )
+        if cur.rowcount == 1:
+            db.execute(
+                "INSERT INTO leaderboard (player_name, score, total, points, duration_sec, game_id, opponent, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (row["player_name"], res["score"], res["total"], res["points"], res["duration"],
+                 game_id, res["opponent"], time.time()),
+            )
+            logger.info("GAME_COMPLETE game=%s player=%s score=%d/%d points=%d (correct=%d speed=%d opp_bonus=%d) "
+                        "opponent=%s opp_score=%s", game_id, row["player_name"], res["score"], res["total"],
+                        res["points"], res["correct_points"], res["speed_points"], res["opp_bonus"],
+                        res["opponent"] or "-", res["opponent_score"])
+        else:
+            already = True  # a concurrent /complete won the race
+        db.commit()
+        row = db.execute("SELECT * FROM games WHERE id = ?", (game_id,)).fetchone()
 
-    guesses = json.loads(row["guesses"])
-    score = sum(1 for g in guesses.values() if g["correct"])
-    total = len(guesses)
-    points = int(data.get("points", 0))
-    duration = float(data.get("duration_sec", 0)) or (time.time() - row["created_at"])
-    opponent = data.get("opponent") or None
-
-    db.execute(
-        "UPDATE games SET score = ?, total = ?, completed = 1, points = ?, duration_sec = ?, opponent = ? WHERE id = ?",
-        (score, total, points, duration, opponent, game_id),
-    )
-    db.execute(
-        "INSERT INTO leaderboard (player_name, score, total, points, duration_sec, game_id, opponent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (row["player_name"], score, total, points, duration, game_id, opponent, time.time()),
-    )
-    db.commit()
+    score, points = row["score"] or 0, row["points"] or 0
+    correct_points = row["correct_points"] if row["correct_points"] is not None else score * POINTS_BASE
+    opp_bonus = row["opp_bonus"] or 0
+    speed = row["speed_points"] if row["speed_points"] is not None else max(0, points - correct_points - opp_bonus)
 
     # Rank among players by their BEST game (same basis as /api/leaderboard and
     # total_players), so "#rank of N players" is consistent. Ties share a rank.
@@ -450,11 +642,23 @@ def complete_game(game_id):
 
     return jsonify({
         "score": score,
-        "total": total,
+        "total": row["total"] or 0,
         "points": points,
-        "duration_sec": round(duration, 1),
+        "duration_sec": round(row["duration_sec"] or 0, 1),
         "rank": rank,
         "prize": score >= PRIZE_THRESHOLD,
+        "opponent": row["opponent"] or None,
+        "opponent_score": row["opponent_score"],
+        "already_completed": already,
+        "breakdown": {
+            "correct": score,
+            "correct_points": correct_points,
+            "points_base": POINTS_BASE,
+            "speed": speed,
+            "opp_bonus": opp_bonus,
+            "opponent": row["opponent"] or None,
+            "opponent_score": row["opponent_score"],
+        },
     })
 
 
@@ -483,6 +687,7 @@ def api_leaderboard():
 
 
 @app.route("/api/admin/clips")
+@require_admin
 def admin_clips():
     db = get_db()
     rows = db.execute(
@@ -492,6 +697,7 @@ def admin_clips():
 
 
 @app.route("/api/admin/upload", methods=["POST"])
+@require_admin
 def admin_upload_clip():
     audio_file = request.files.get("audio")
     if not audio_file:
@@ -520,6 +726,7 @@ def admin_upload_clip():
 
 
 @app.route("/api/admin/delete-clip/<clip_id>", methods=["DELETE"])
+@require_admin
 def admin_delete_clip(clip_id):
     db = get_db()
     db.execute("DELETE FROM clips WHERE id = ?", (clip_id,))
@@ -528,6 +735,7 @@ def admin_delete_clip(clip_id):
 
 
 @app.route("/api/admin/reset", methods=["POST"])
+@require_admin
 def admin_reset():
     db = get_db()
     db.execute("DELETE FROM leaderboard")
@@ -1410,6 +1618,7 @@ def ai_judge_analyze(spectrogram_png):
 
 
 @app.route("/api/admin/spectrogram/<clip_id>")
+@require_admin
 def admin_spectrogram(clip_id):
     if not HAS_SPECTROGRAM:
         return jsonify({"error": "spectrogram libs not available"}), 503
@@ -1526,98 +1735,108 @@ def battle_opponents():
             "analyzeEndpoint": "ai-analyze-detector",
             "available": True,
         })
+    for o in opponents:
+        o["bonus"] = OPPONENT_BONUS.get(o["id"], 0)
     return jsonify(opponents)
 
 
-@app.route("/api/game/<game_id>/ai-analyze", methods=["POST"])
-def ai_analyze_clip(game_id):
-    if not AI_JUDGE_URL or not HAS_SPECTROGRAM or not HAS_REQUESTS:
-        return jsonify({"error": "AI judge not configured"}), 503
+# --- Battle opponent analysis ---
+#
+# POST /api/game/<game_id>/<analyzeEndpoint> {clip_id}
+#   The client pre-analyses every clip of a battle game before round 1. The server
+#   records the opponent's answer per (game, clip); the first recorded answer wins.
+#   The opponent of a game is fixed by the first call (409 for a different opponent,
+#   409 once the player has guessed). If the model call fails, the server records a
+#   coin-flip fallback (fallback=true) instead of returning 5xx.
+#   The answer itself is SEALED: the response is {status:"ready", opponent, clip_id,
+#   fallback[, spectrogram (Gemma only)]}; guess + reasoning are revealed by /guess
+#   (opponent_guess, opponent_reasoning, opponent_correct, opponent_fallback).
 
-    data = request.get_json(force=True)
+def _battle_begin(game_id, clip_id, opponent_id):
+    """Validate the request and fix the game's opponent. Returns (error_response, existing_round)."""
+    db = get_db()
+    game = db.execute("SELECT clip_ids, guesses, completed, opponent FROM games WHERE id = ?",
+                      (game_id,)).fetchone()
+    if not game:
+        return (jsonify({"error": "unknown game_id"}), 404), None
+    if str(clip_id) not in _game_clip_ids(game):
+        return (jsonify({"error": "clip_id is not part of this game"}), 400), None
+    if game["completed"]:
+        return (jsonify({"error": "game already completed"}), 409), None
+    if not game["opponent"]:
+        guessed = db.execute("SELECT COUNT(*) AS n FROM game_rounds WHERE game_id = ? AND guess IS NOT NULL",
+                             (game_id,)).fetchone()["n"]
+        if guessed or json.loads(game["guesses"] or "{}"):
+            return (jsonify({"error": "the opponent must be chosen before the first guess"}), 409), None
+        db.execute("UPDATE games SET opponent = ? WHERE id = ? AND (opponent IS NULL OR opponent = '')",
+                   (opponent_id, game_id))
+        db.commit()
+    current = db.execute("SELECT opponent FROM games WHERE id = ?", (game_id,)).fetchone()["opponent"]
+    if current != opponent_id:
+        return (jsonify({"error": f"this game is already a battle against {current}"}), 409), None
+    rnd = db.execute("SELECT opp_guess, opp_reasoning, opp_fallback FROM game_rounds "
+                     "WHERE game_id = ? AND clip_id = ? AND opp_guess IS NOT NULL",
+                     (game_id, clip_id)).fetchone()
+    return None, rnd
+
+
+def _battle_analyze(game_id, opponent_id, analyze_fn):
+    """analyze_fn(clip_row) -> (guess, reasoning, public_extra). Exceptions -> recorded coin flip."""
+    data = request.get_json(silent=True) or {}
     clip_id = data.get("clip_id")
     if not clip_id:
         return jsonify({"error": "clip_id required"}), 400
-
+    err, existing = _battle_begin(game_id, clip_id, opponent_id)
+    if err:
+        return err
     db = get_db()
-
-    game = db.execute("SELECT id FROM games WHERE id = ?", (game_id,)).fetchone()
-    if not game:
-        return jsonify({"error": "unknown game_id"}), 404
-
     clip = db.execute("SELECT audio_data, content_type FROM clips WHERE id = ?", (clip_id,)).fetchone()
     if not clip:
         return jsonify({"error": "unknown clip_id"}), 404
 
-    try:
+    extra = {}
+    if existing is None:
+        try:
+            guess, reasoning, extra = analyze_fn(clip)
+            if guess not in ("ai", "human"):
+                raise ValueError(f"invalid guess {guess!r}")
+            fallback = False
+        except Exception:
+            logger.exception("Opponent %s analysis failed for clip %s, using coin-flip fallback", opponent_id, clip_id)
+            guess, reasoning, extra, fallback = random.choice(("ai", "human")), "Analysis failed", {}, True
+        rnd = _record_opp_answer(db, game_id, clip_id, guess, reasoning, fallback)
+    else:
+        rnd = existing
+    if opponent_id == "gemma" and "spectrogram" not in extra and not rnd["opp_fallback"]:
+        try:  # repeated call: re-render the (answer-free) spectrogram for display
+            png = generate_spectrogram(convert_to_wav_pcm(clip["audio_data"]))
+            extra = {"spectrogram": "data:image/png;base64," + base64.b64encode(png).decode()}
+        except Exception:
+            extra = {}
+    logger.info("OPPONENT_ANSWER game=%s clip=%s opponent=%s guess=%s fallback=%s",
+                game_id, clip_id, opponent_id, rnd["opp_guess"], bool(rnd["opp_fallback"]))
+    return jsonify({"status": "ready", "opponent": opponent_id, "clip_id": clip_id,
+                    "fallback": bool(rnd["opp_fallback"]), **extra})
+
+
+def _gemma_analyze(clip):
+    wav_bytes = convert_to_wav_pcm(clip["audio_data"])
+    spectrogram_png = generate_spectrogram(wav_bytes)
+    result = ai_judge_analyze(spectrogram_png)
+    logger.info("AI_JUDGE guess=%s reasoning=%s", result.get("guess"), result.get("reasoning", "")[:80])
+    return (result.get("guess", "ai"), result.get("reasoning", ""),
+            {"spectrogram": "data:image/png;base64," + base64.b64encode(spectrogram_png).decode()})
+
+
+def _qwen_analyze(clip):
+    result = ai_judge2_analyze(convert_to_wav_pcm(clip["audio_data"]))
+    logger.info("AI_JUDGE2 guess=%s reasoning=%s", result.get("guess"), result.get("reasoning", "")[:80])
+    return result.get("guess", "ai"), result.get("reasoning", ""), {}
+
+
+def _detector_analyze(detector_url):
+    def run(clip):
         wav_bytes = convert_to_wav_pcm(clip["audio_data"])
-        spectrogram_png = generate_spectrogram(wav_bytes)
-        spectrogram_b64 = base64.b64encode(spectrogram_png).decode()
-
-        result = ai_judge_analyze(spectrogram_png)
-
-        logger.info("AI_JUDGE clip=%s guess=%s reasoning=%s", clip_id,
-                     result.get("guess"), result.get("reasoning", "")[:80])
-
-        return jsonify({
-            "guess": result.get("guess", "ai"),
-            "reasoning": result.get("reasoning", ""),
-            "spectrogram": f"data:image/png;base64,{spectrogram_b64}",
-        })
-    except Exception:
-        logger.exception("AI analysis failed for clip %s", clip_id)
-        return jsonify({"error": "Analysis failed"}), 500
-
-
-@app.route("/api/game/<game_id>/ai-analyze2", methods=["POST"])
-def ai_analyze2_clip(game_id):
-    if not AI_JUDGE2_URL or not HAS_REQUESTS:
-        return jsonify({"error": "AI judge 2 not configured"}), 503
-
-    data = request.get_json(force=True)
-    clip_id = data.get("clip_id")
-    if not clip_id:
-        return jsonify({"error": "clip_id required"}), 400
-
-    db = get_db()
-
-    game = db.execute("SELECT id FROM games WHERE id = ?", (game_id,)).fetchone()
-    if not game:
-        return jsonify({"error": "unknown game_id"}), 404
-
-    clip = db.execute("SELECT audio_data, content_type FROM clips WHERE id = ?", (clip_id,)).fetchone()
-    if not clip:
-        return jsonify({"error": "unknown clip_id"}), 404
-
-    try:
-        wav_bytes = convert_to_wav_pcm(clip["audio_data"])
-        result = ai_judge2_analyze(wav_bytes)
-
-        logger.info("AI_JUDGE2 clip=%s guess=%s reasoning=%s", clip_id,
-                     result.get("guess"), result.get("reasoning", "")[:80])
-
-        return jsonify({
-            "guess": result.get("guess", "ai"),
-            "reasoning": result.get("reasoning", ""),
-        })
-    except Exception:
-        logger.exception("AI judge2 analysis failed for clip %s", clip_id)
-        return jsonify({"error": "Analysis failed"}), 500
-
-
-def _analyze_with_detector(game_id, clip_id, detector_url):
-    db = get_db()
-    game = db.execute("SELECT id FROM games WHERE id = ?", (game_id,)).fetchone()
-    if not game:
-        return jsonify({"error": "unknown game_id"}), 404
-
-    clip = db.execute("SELECT audio_data, content_type FROM clips WHERE id = ?", (clip_id,)).fetchone()
-    if not clip:
-        return jsonify({"error": "unknown clip_id"}), 404
-
-    try:
-        wav_bytes = convert_to_wav_pcm(clip["audio_data"])
-
         resp = http_requests.post(
             f"{detector_url}/predict",
             files={"audio": ("clip.wav", wav_bytes, "audio/wav")},
@@ -1626,45 +1845,40 @@ def _analyze_with_detector(game_id, clip_id, detector_url):
         )
         resp.raise_for_status()
         result = resp.json()
-
         guess = "ai" if result["verdict"] == "SYNTHETIC" else "human"
         reasoning = f'{result["verdict"]} (confidence: {result["confidence"]:.1%}, p_fake: {result["prob_fake"]:.4f})'
+        logger.info("DETECTOR verdict=%s confidence=%.3f p_fake=%.4f",
+                    result["verdict"], result["confidence"], result["prob_fake"])
+        return guess, reasoning, {}
+    return run
 
-        logger.info("DETECTOR clip=%s verdict=%s confidence=%.3f p_fake=%.4f",
-                     clip_id, result["verdict"], result["confidence"], result["prob_fake"])
 
-        return jsonify({
-            "guess": guess,
-            "reasoning": reasoning,
-            "verdict": result["verdict"],
-            "confidence": result["confidence"],
-            "prob_fake": result["prob_fake"],
-        })
-    except Exception:
-        logger.exception("Detector analysis failed for clip %s", clip_id)
-        return jsonify({"error": "Analysis failed"}), 500
+@app.route("/api/game/<game_id>/ai-analyze", methods=["POST"])
+def ai_analyze_clip(game_id):
+    if not AI_JUDGE_URL or not HAS_SPECTROGRAM or not HAS_REQUESTS:
+        return jsonify({"error": "AI judge not configured"}), 503
+    return _battle_analyze(game_id, "gemma", _gemma_analyze)
+
+
+@app.route("/api/game/<game_id>/ai-analyze2", methods=["POST"])
+def ai_analyze2_clip(game_id):
+    if not AI_JUDGE2_URL or not HAS_REQUESTS:
+        return jsonify({"error": "AI judge 2 not configured"}), 503
+    return _battle_analyze(game_id, "qwen", _qwen_analyze)
 
 
 @app.route("/api/game/<game_id>/ai-analyze-detector", methods=["POST"])
 def ai_analyze_detector(game_id):
     if not DETECTOR_URL or not HAS_REQUESTS:
         return jsonify({"error": "Detector not configured"}), 503
-    data = request.get_json(force=True)
-    clip_id = data.get("clip_id")
-    if not clip_id:
-        return jsonify({"error": "clip_id required"}), 400
-    return _analyze_with_detector(game_id, clip_id, DETECTOR_URL)
+    return _battle_analyze(game_id, "gary-finetuned", _detector_analyze(DETECTOR_URL))
 
 
 @app.route("/api/game/<game_id>/ai-analyze-detector-base", methods=["POST"])
 def ai_analyze_detector_base(game_id):
     if not DETECTOR_BASE_URL or not HAS_REQUESTS:
         return jsonify({"error": "Detector base not configured"}), 503
-    data = request.get_json(force=True)
-    clip_id = data.get("clip_id")
-    if not clip_id:
-        return jsonify({"error": "clip_id required"}), 400
-    return _analyze_with_detector(game_id, clip_id, DETECTOR_BASE_URL)
+    return _battle_analyze(game_id, "gary-base", _detector_analyze(DETECTOR_BASE_URL))
 
 
 with app.app_context():

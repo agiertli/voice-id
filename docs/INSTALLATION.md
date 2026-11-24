@@ -27,22 +27,87 @@ The game's clips come from a private **seed pack** you receive from the game own
 
 ## What you get
 
+What gets installed depends on the [install profile](#install-profiles).
+
 All in namespace `voice-id` unless noted.
 
-| Component | Kind | Runs on | Purpose |
-|---|---|---|---|
-| `voice-id` | Helm chart `apps/voice-id/helm/voice-id`, Flask/gunicorn, SQLite on 1 Gi PVC | CPU (0.5–2 cores) | The game, `/tv`, `/admin` |
-| `qwen2-audio` | LLMInferenceService (vLLM), `Qwen/Qwen2-Audio-7B-Instruct` | 1× NVIDIA L4 | Opponent Teddy |
-| `gemma` | LLMInferenceService (vLLM), `RedHatAI/gemma-4-12B-it-FP8-dynamic` | 1× NVIDIA L4 | Opponent Iris (spectrograms) |
-| `deepfake-detector-base` | Deployment `quay.io/agiertli/deepfake-detector-base:v1.0.3` | CPU (2–4 cores) | Opponent Gary |
-| `deepfake-detector-fine-tuned` | Deployment `quay.io/agiertli/deepfake-detector:v2.0.0` (model V4-A) | CPU (2–4 cores) | Opponent Gary 2.0 |
-| `xtts-v2` | Deployment, Coqui XTTS streaming server | 1× NVIDIA L4 | Voice cloning for Clone Studio |
-| `fish-native` | Deployment, Fish Speech S2 Pro with torch.compile, 20 Gi PVC | 1× NVIDIA L4 | Voice cloning for Clone Studio |
-| `voice-clone-studio` (namespace `voice-clone-studio`) | Helm chart, Flask, SQLite on 1 Gi PVC | CPU | Record voices, clone them, sentence recordings |
+| Component | Kind | Runs on | Purpose | Profiles |
+|---|---|---|---|---|
+| `voice-id` | Helm chart `apps/voice-id/helm/voice-id`, Flask/gunicorn, SQLite on 1 Gi PVC | CPU (0.5–2 cores) | The game, `/tv`, `/admin` | all |
+| `qwen2-audio` | LLMInferenceService (vLLM), `Qwen/Qwen2-Audio-7B-Instruct` | 1× NVIDIA L4 | Opponent Teddy | standard, full |
+| `gemma` | LLMInferenceService (vLLM), `RedHatAI/gemma-4-12B-it-FP8-dynamic` | 1× NVIDIA L4 | Opponent Iris (spectrograms) | standard, full |
+| `deepfake-detector-base` | Deployment `quay.io/agiertli/deepfake-detector-base:v1.0.3` | CPU (2–4 cores) | Opponent Gary | all |
+| `deepfake-detector-fine-tuned` | Deployment `quay.io/agiertli/deepfake-detector:v2.0.0` (model V4-A) | CPU (2–4 cores) | Opponent Gary 2.0 | all |
+| `xtts-v2` | Deployment, Coqui XTTS streaming server | 1× NVIDIA L4 | Voice cloning for Clone Studio | full |
+| `fish-native` | Deployment, Fish Speech S2 Pro with torch.compile, 20 Gi PVC | 1× NVIDIA L4 | Voice cloning for Clone Studio | full |
+| `voice-clone-studio` (namespace `voice-clone-studio`) | Helm chart, Flask, SQLite on 1 Gi PVC | CPU | Record voices, clone them, sentence recordings | full |
 
 The game does not call the TTS engines at runtime; clips are pre-made. XTTS and
 Fish are needed only to create new clips with Clone Studio. Component details and
 data flow: [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Install profiles
+
+Voice Clone Studio and its two TTS GPUs are only needed to **create** clips. The
+game plays pre-recorded clips and never calls XTTS or Fish. Pick the profile that
+matches what the event needs:
+
+| Profile | Components | GPUs (NVIDIA L4, `g6.2xlarge`) | Opponents in the game | Approx. GPU cost* | Use it for |
+|---|---|---:|---|---|---|
+| `minimal` | game, Gary, Gary 2.0 | 0 | Gary, Gary 2.0 | none (CPU only) | Cheapest booth, smoke tests, demos without LLMs |
+| `standard` (**recommended for booths**) | minimal + Teddy (Qwen2-Audio) + Iris (Gemma) | 2 | all four | ≈ $2/h, ≈ $20 per 10-hour day | Normal conference booth |
+| `full` | standard + XTTS v2 + Fish Speech + Voice Clone Studio | 4 | all four | ≈ $4/h, ≈ $40 per 10-hour day | Voice collection and cloning, live cloning demos |
+
+\* Rough on-demand price of about **$1 per hour per `g6.2xlarge`** (us-east-1,
+approximate; check current AWS pricing for your region). Excludes the cluster's own
+nodes, storage and sandbox pricing models.
+
+Opponent availability follows the profile automatically: `/api/battle/opponents`
+lists only opponents whose Helm flag is enabled, the game's opponent picker is built
+from that list, and the `/tv` opponent list reads the same endpoint (refreshing every
+10 s). The Helm flags per profile:
+
+| Profile | `aiJudge.enabled` (Iris) | `aiJudge2.enabled` (Teddy) | `detectorBase.enabled` (Gary) | `detector.enabled` (Gary 2.0) |
+|---|---|---|---|---|
+| minimal | false | false | true | true |
+| standard, full | true | true | true | true |
+
+Changing profile later is a `helm upgrade` with the matching flags plus scaling the
+workloads; no image rebuild. See [switch profiles](#switch-profiles).
+
+The project is currently in its **voice collection phase**: run `full` while
+recordings are being collected. After the recording phase, the owner may decide to
+drop to `standard` to save the two TTS GPUs; that is an explicit owner decision, not
+something to do automatically.
+
+### Quick path: install.sh
+
+`install.sh` in the repository root runs the steps below in the right parallel
+order for a profile:
+
+```bash
+export KUBECONFIG=~/.kube/voice-id-<event>.kubeconfig      # already logged in; the script never runs oc login
+./install.sh --profile standard --admin-token-file ~/.voice-id-admin-token --dry-run   # review
+./install.sh --profile standard --admin-token-file ~/.voice-id-admin-token
+```
+
+Options: `--profile minimal|standard|full` (required), `--namespace` (default
+`voice-id`), `--studio-namespace`, `--kubeconfig PATH`, `--admin-token-file F`,
+`--values F`, `--yes` (skip the confirmation), `--dry-run` (print every mutating
+command; read-only `oc get`/`oc whoami` discovery still runs). It prints the target
+server and asks for confirmation, clones your worker MachineSet with replicas equal
+to the profile's GPU count (none for `minimal`) and labels it
+`voice-id/gpu-machineset=true`, never scales that MachineSet down by itself, applies
+the manifests, installs the charts with the profile's flags, waits for GPUs, models
+and rollouts, warms Fish (`full`), and prints the URLs and the seed pack import
+command. It never touches audio. Re-runs are idempotent.
+
+**Status:** checked with `bash -n`, ShellCheck and a dry run against mocked
+`oc`/`helm`; **not yet run against a live cluster.** If it stops, continue with the
+manual steps below from where it stopped. Third-party images in the manifests are
+not pinned by digest (`ubi9/python-312:latest` for the download Jobs,
+`xtts-streaming-server:latest-cuda121`, `fish-speech:server-cuda`); the project's own
+images are pinned in the values files.
 
 ## Validated environment
 
@@ -66,13 +131,13 @@ AI 2.x are untested.
 
 ## Owner decisions
 
-1. **Target cluster** and a dedicated kubeconfig file for it.
-2. **Admin password** for `/admin` (the image default is public; override it).
-3. **Event name** (`conference.name`) and **default UI language** (`en`, `cs`, `sk`).
-4. **Prize rule** (`game.prizeThreshold`, default 4 of 5 correct). See [scoring](customization/scoring.md).
-5. **Which opponents** to run (all four by default).
+1. **Install profile**: `minimal`, `standard` (default, recommended for booths) or
+   `full` (voice collection, cloning). See [install profiles](#install-profiles).
+2. **Target cluster** and a dedicated kubeconfig file for it.
+3. **Admin password** for `/admin` (the image default is public; override it).
+4. **Event name** (`conference.name`) and **default UI language** (`en`, `cs`, `sk`).
+5. **Prize rule** (`game.prizeThreshold`, default 4 of 5 correct). See [scoring](customization/scoring.md).
 6. **Seed pack** to load and who provides it.
-7. Whether **Voice Clone Studio** is needed (it needs the two TTS GPUs).
 
 ## Prerequisites
 
@@ -107,7 +172,9 @@ oc whoami && oc whoami --show-server
 Run every `oc` and `helm` command of this runbook in a shell with that variable
 set. Keep credentials out of the repository and out of shared notes.
 
-## 1. Add four GPU nodes (start first, about 5 minutes)
+## 1. Add GPU nodes (start first, about 5 minutes)
+
+Skip for `minimal`. Replicas: 2 for `standard`, 4 for `full`.
 
 `infra/gpu-machineset.yaml` is an **example from another cluster**: AMI, subnet,
 security groups, IAM profile and infrastructure id differ per cluster, and it has
@@ -127,7 +194,8 @@ ms.pop("status", None)
 ms["metadata"]["name"] = name
 ms["metadata"]["annotations"] = {"machine.openshift.io/GPU": "1", "machine.openshift.io/vCPU": "8",
                                  "machine.openshift.io/memoryMb": "32768"}
-ms["spec"]["replicas"] = 4
+ms["spec"]["replicas"] = 2          # standard: 2, full: 4
+ms["metadata"].setdefault("labels", {})["voice-id/gpu-machineset"] = "true"
 ms["spec"]["selector"]["matchLabels"]["machine.openshift.io/cluster-api-machineset"] = name
 t = ms["spec"]["template"]
 t["metadata"]["labels"]["machine.openshift.io/cluster-api-machineset"] = name
@@ -143,8 +211,7 @@ oc apply -f /tmp/gpu-machineset.json
 oc get machines -n openshift-machine-api -w        # Provisioning -> Provisioned -> Running
 ```
 
-- One node per GPU workload: XTTS, Fish, Qwen, Gemma. Reduce `replicas` if you skip
-  Clone Studio (2 nodes for the two LLM opponents).
+- One node per GPU workload: Qwen and Gemma (`standard`), plus XTTS and Fish (`full`).
 - The taint keeps ordinary pods off GPU nodes; all GPU manifests tolerate
   `nvidia.com/gpu`.
 - Schedule on `nvidia.com/gpu.present: "true"` (set by GPU feature discovery).
@@ -167,7 +234,7 @@ Continue with steps 2–4 while the nodes come up.
 ```bash
 oc new-project voice-id
 
-# LLM opponents: PVC + download Job + LLMInferenceService in one file each.
+# LLM opponents (standard, full): PVC + download Job + LLMInferenceService in one file each.
 # The Jobs start now (CPU only); the vLLM pods wait for GPU nodes.
 oc apply -f infra/qwen2-audio/manifests.yaml
 oc apply -f infra/gemma/manifests.yaml
@@ -192,9 +259,7 @@ Facts that cost time on the first install:
 - **Detectors need the 4 CPU limit** in the manifests: about 5 s per clip; with 2 CPU
   it was about 20 s, which makes the battle loading screen crawl.
 
-## 3. TTS engines for Clone Studio (after GPU nodes are Ready)
-
-Skip if you do not run Voice Clone Studio.
+## 3. TTS engines for Clone Studio (`full` only, after GPU nodes are Ready)
 
 ```bash
 oc apply -f infra/xtts/manifests.yaml
@@ -229,6 +294,7 @@ helm upgrade --install voice-id apps/voice-id/helm/voice-id -n voice-id \
   -f apps/voice-id/helm/voice-id/values.yaml \
   --set-file adminToken=$HOME/.voice-id-admin-token \
   --set conference.name="<Event name>" --set game.defaultLang=cs
+# minimal profile: add  --set aiJudge.enabled=false --set aiJudge2.enabled=false
 
 oc rollout status deploy/voice-id -n voice-id --timeout=180s
 oc get route voice-id -n voice-id -o jsonpath='https://{.spec.host}{"\n"}'
@@ -257,7 +323,8 @@ seeding guide (modes, verification, local folders, sharing) is
 ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
 VOICEID_ADMIN_TOKEN="$(cat ~/.voice-id-admin-token)" python3 apps/voice-id/tools/seedpack.py import \
   --game "https://${ROUTE}" --file ~/voice-id-audio/seedpacks/<pack>.seedpack.zip --mode skip
-curl -sk "https://${ROUTE}/api/admin/clips" | python3 -c 'import json,sys; c=json.load(sys.stdin); print(len(c), "clips,", sum(x["is_ai"] for x in c), "AI")'
+curl -sk -H "Authorization: Bearer $(cat ~/.voice-id-admin-token)" "https://${ROUTE}/api/admin/clips" \
+  | python3 -c 'import json,sys; c=json.load(sys.stdin); print(len(c), "clips,", sum(x["is_ai"] for x in c), "AI")'
 ```
 
 The first install (before seed packs existed) loaded 86
@@ -290,31 +357,35 @@ done
 
 Expected: `gemma gemma-4-12b` and `qwen2-audio Qwen2-Audio-7B-Instruct`.
 
-End-to-end smoke test through the route (creates a player named `install-e2e` with no
-completed game, so nothing appears on the leaderboard):
+End-to-end smoke test through the route (creates a player named `install-e2e` with one
+uncompleted game per opponent, so nothing appears on the leaderboard). The opponent of
+a game is fixed by its first analysis, and the answer itself is sealed until the
+player guesses, so the test checks `fallback` (false = the model really answered):
 
 ```bash
 cat > /tmp/voice-id-e2e.py <<'EOF'
 import json, ssl, sys, time, urllib.request
-R = sys.argv[1]; ctx = ssl._create_unverified_context()
-def call(path, body=None):
-    req = urllib.request.Request(f"https://{R}{path}", json.dumps(body).encode() if body is not None else None,
-                                 {"Content-Type": "application/json"})
+R = sys.argv[1]; TOKEN = open(sys.argv[2]).read().strip(); ctx = ssl._create_unverified_context()
+def call(path, body=None, admin=False):
+    h = {"Content-Type": "application/json", **({"Authorization": f"Bearer {TOKEN}"} if admin else {})}
+    req = urllib.request.Request(f"https://{R}{path}", json.dumps(body).encode() if body is not None else None, h)
     try: return json.load(urllib.request.urlopen(req, context=ctx, timeout=180))
     except urllib.error.HTTPError as e: return {"HTTP": e.code}
-print("clips:", len(call("/api/admin/clips")))
+print("clips:", len(call("/api/admin/clips", admin=True)))
 opps = call("/api/battle/opponents"); print("opponents:", [o["id"] for o in opps])
-g = call("/api/game/start", {"player_name": "install-e2e", "email": ""})
-print("game", g.get("game_id"), "with", len(g.get("clips", [])), "clips")
-for c in g.get("clips", [])[:2]:
-    for o in opps:
+for o in opps:
+    g = call("/api/game/start", {"player_name": "install-e2e", "email": ""})
+    for c in g.get("clips", [])[:2]:
         t = time.time(); r = call(f"/api/game/{g['game_id']}/{o['analyzeEndpoint']}", {"clip_id": c["id"]})
-        print(f"  {o['id']:15s} {time.time()-t:5.1f}s guess={r.get('guess')} {'ERROR '+str(r) if 'guess' not in r else ''}")
+        ok = r.get("status") == "ready" and r.get("fallback") is False
+        print(f"  {o['id']:15s} {time.time()-t:5.1f}s {'OK' if ok else 'ERROR ' + str(r)[:200]}"
+              f"{' spectrogram' if r.get('spectrogram') else ''}")
 EOF
-python3 /tmp/voice-id-e2e.py "$ROUTE"
+python3 /tmp/voice-id-e2e.py "$ROUTE" ~/.voice-id-admin-token
 ```
 
-Every opponent must return a `guess`. Rough timings at install: detectors about
+Every opponent must print `OK` (`fallback: true` means the model call failed and the
+server substituted a coin flip; see `oc logs deploy/voice-id -n voice-id | grep -i opponent`). Rough timings at install: detectors about
 5 s per clip (on 4 CPU), LLM opponents a few seconds once loaded. Then:
 
 - [ ] Clip count matches the seed pack.
@@ -328,7 +399,7 @@ Every opponent must return a `guess`. Rough timings at install: detectors about
 - [ ] A seed pack export and a full backup were downloaded to `~/voice-id-audio/`
       ([backups](customization/backups.md)).
 
-## 7. Voice Clone Studio (optional)
+## 7. Voice Clone Studio (`full` only)
 
 ```bash
 helm upgrade --install voice-clone-studio apps/voice-clone-studio/helm/voice-clone-studio \
@@ -344,6 +415,63 @@ The chart's defaults point at the internal TTS services
 default (`defaultLanguage`); its API docs are at `/api/docs`. Its API has **no
 authentication**: do not publish its route. Recording and importing:
 [clips and speakers](customization/clips-and-speakers.md).
+
+## Switch profiles
+
+All switches are owner decisions. Agents must ask for explicit confirmation before
+scaling down or removing anything. Take a seed pack export first
+([SEEDING.md](SEEDING.md)).
+
+**Scale up** (`minimal` → `standard` → `full`): re-run `install.sh` with the bigger
+profile. It scales the GPU MachineSet up, applies the missing manifests and upgrades
+the game with the new Helm flags. By hand:
+
+```bash
+MS=$(oc get machineset -n openshift-machine-api -l voice-id/gpu-machineset=true -o name)
+oc scale "$MS" -n openshift-machine-api --replicas=4                 # standard: 2, full: 4
+# standard: apply infra/qwen2-audio and infra/gemma, then
+helm upgrade voice-id apps/voice-id/helm/voice-id -n voice-id -f apps/voice-id/helm/voice-id/values.yaml \
+  --set-file adminToken=$HOME/.voice-id-admin-token --set aiJudge.enabled=true --set aiJudge2.enabled=true
+# full, when XTTS/Fish/Clone Studio were scaled to 0 earlier:
+oc scale deploy/xtts-v2 deploy/fish-native -n voice-id --replicas=1
+oc rollout status deploy/fish-native -n voice-id --timeout=1200s     # weights stay on the fish-data PVC: no re-download
+# warm Fish (below), then start Clone Studio; it re-registers all stored voices with XTTS and Fish on startup
+oc scale deploy/voice-clone-studio -n voice-clone-studio --replicas=1
+```
+
+**After the recording phase, if the owner decides to** (`full` → `standard`): stop
+Clone Studio and the TTS engines, then remove two GPU nodes. Clone Studio's voices,
+generated clips and sentence recordings persist on its PVC (`voice-clone-studio-data`);
+Fish weights persist on `fish-data`.
+
+```bash
+oc scale deploy/voice-clone-studio -n voice-clone-studio --replicas=0
+NODES=$(oc get pods -n voice-id -l 'app in (xtts-v2,fish-native)' -o jsonpath='{.items[*].spec.nodeName}')
+oc scale deploy/xtts-v2 deploy/fish-native -n voice-id --replicas=0
+# Mark exactly the machines that hosted XTTS/Fish for deletion, so the MachineSet does not
+# remove a node running Teddy or Iris (standard OpenShift annotation; untested in this project):
+for n in $NODES; do
+  m=$(oc get machine -n openshift-machine-api -o jsonpath="{range .items[?(@.status.nodeRef.name=='$n')]}{.metadata.name}{end}")
+  oc annotate machine "$m" -n openshift-machine-api machine.openshift.io/delete-machine=true --overwrite
+done
+MS=$(oc get machineset -n openshift-machine-api -l voice-id/gpu-machineset=true -o name)
+oc scale "$MS" -n openshift-machine-api --replicas=2
+```
+
+To come back to `full` for another recording day, use the scale-up commands above.
+
+**`standard` → `minimal`:** disable the LLM opponents in the game first, then remove
+their workloads (the model PVCs and their downloaded weights stay), then the nodes:
+
+```bash
+helm upgrade voice-id apps/voice-id/helm/voice-id -n voice-id -f apps/voice-id/helm/voice-id/values.yaml \
+  --set-file adminToken=$HOME/.voice-id-admin-token --set aiJudge.enabled=false --set aiJudge2.enabled=false
+oc delete llminferenceservice gemma qwen2-audio -n voice-id     # re-apply infra/gemma and infra/qwen2-audio to restore
+MS=$(oc get machineset -n openshift-machine-api -l voice-id/gpu-machineset=true -o name)
+oc scale "$MS" -n openshift-machine-api --replicas=0
+```
+
+Scaling an LLMInferenceService to `replicas: 0` instead of deleting it is untested.
 
 ## Fish Speech warm-up
 
@@ -428,5 +556,5 @@ data) and scale the GPU MachineSet to zero or delete it to stop GPU costs.
 - Community / third-party: Qwen2-Audio (Alibaba), Coqui XTTS v2 (Coqui Public Model
   License; the project is no longer maintained), Fish Speech S2 Pro, the Wav2Vec2
   detectors, the game and Clone Studio themselves. No vendor support.
-- Single replicas everywhere, SQLite on RWO volumes, unauthenticated clip and
-  Clone Studio APIs: suitable for a booth, not for production.
+- Single replicas everywhere, SQLite on RWO volumes, one shared admin token, an
+  unauthenticated Clone Studio API: suitable for a booth, not for production.

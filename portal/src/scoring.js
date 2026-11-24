@@ -1,6 +1,6 @@
-// Mirror of the scoring in apps/voice-id/src/templates/index.html
-// (POINTS_BASE, POINTS_SPEED_MAX, SPEED_WINDOW_SEC, OPPONENT_BONUS) and
-// apps/voice-id/src/app.py (prize = correct >= PRIZE_THRESHOLD).
+// Mirror of the server-side scoring in apps/voice-id/src/app.py
+// (POINTS_BASE, POINTS_SPEED_MAX, SPEED_WINDOW_SEC, OPPONENT_BONUS;
+// prize = correct >= PRIZE_THRESHOLD).
 // Keep in sync with docs/customization/scoring.md.
 
 export const POINTS_BASE = 100

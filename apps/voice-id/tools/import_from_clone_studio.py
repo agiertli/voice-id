@@ -7,6 +7,8 @@ Talks only to the two HTTP APIs - never touches either SQLite DB directly.
                  GET /api/providers, GET /api/clips?voice_id=, GET /api/clips/<id>/audio,
                  POST /api/generate {voice_id, text, provider_id, language}
   Voice ID game: GET /api/admin/clips, POST /api/admin/upload (multipart)
+                 Both need the admin token (Authorization: Bearer); the token is
+                 sent only to the game, never to Clone Studio.
 
 Dry-run is the default: nothing is uploaded to the game and nothing is generated in
 Clone Studio. Pass --apply to do it. --out-dir exports every WAV plus manifest.json
@@ -17,13 +19,18 @@ Usage:
       --studio https://voice-clone-studio.apps.example.com \\
       --game   https://voice-id.apps.example.com \\
       [--speaker anton --speaker miska] [--language cs] \\
-      [--with-ai --providers xtts,fish] [--out-dir ./export] [--apply]
+      [--with-ai --providers xtts,fish] [--out-dir ./export] \\
+      [--apply --game-token "$VOICEID_ADMIN_TOKEN"]
+
+--game-token (or env VOICEID_ADMIN_TOKEN) is the game's Helm value adminToken. It is
+required for --apply; a dry-run without it cannot see which clips already exist.
 
 Stdlib only. TLS verification is off by default (demo clusters use self-signed routes);
 pass --verify-tls to enable it.
 """
 import argparse
 import json
+import os
 import re
 import ssl
 import sys
@@ -72,8 +79,9 @@ class Http:
             reason = getattr(e, "reason", e)
             raise HttpError(f"{method} {url} -> {reason}") from None
 
-    def get_json(self, url, timeout=LIST_TIMEOUT):
-        return json.loads(self.request("GET", url, timeout=timeout))
+    def get_json(self, url, timeout=LIST_TIMEOUT, auth=False):
+        headers = {"Authorization": f"Bearer {self.token}"} if auth and self.token else None
+        return json.loads(self.request("GET", url, headers=headers, timeout=timeout))
 
     def post_json(self, url, payload, timeout=LIST_TIMEOUT):
         body = json.dumps(payload).encode()
@@ -337,8 +345,12 @@ def main(argv=None):
     mode.add_argument("--apply", dest="apply", action="store_true", help="really generate and upload")
     ap.add_argument("--out-dir", help="also save every WAV + manifest.json here (training-data export)")
     ap.add_argument("--verify-tls", action="store_true", help="verify TLS certificates (off by default)")
-    ap.add_argument("--game-token", default="", help="optional Bearer token for the game admin API")
+    ap.add_argument("--game-token", default=os.environ.get("VOICEID_ADMIN_TOKEN", ""),
+                    help="game admin token (Helm value adminToken); default: env VOICEID_ADMIN_TOKEN. "
+                         "Required for --apply")
     args = ap.parse_args(argv)
+    if args.apply and not args.game_token:
+        ap.error("--apply needs the game admin token: pass --game-token or set VOICEID_ADMIN_TOKEN")
 
     providers = [p.strip() for p in args.providers.split(",") if p.strip()]
     bad = [p for p in providers if p not in PROVIDER_SOURCES]
@@ -351,7 +363,12 @@ def main(argv=None):
     print(f"Mode: {'APPLY' if args.apply else 'DRY-RUN (use --apply to upload)'}", flush=True)
     try:
         recordings = http.get_json(f"{imp.studio}/api/recordings")
-        game_clips = http.get_json(f"{imp.game}/api/admin/clips")
+        if args.game_token:
+            game_clips = http.get_json(f"{imp.game}/api/admin/clips", auth=True)
+        else:
+            print("WARNING: no --game-token / VOICEID_ADMIN_TOKEN: cannot list existing game clips "
+                  "(admin API); every matching clip is shown as planned.", flush=True)
+            game_clips = []
         if args.with_ai:
             imp.studio_providers = {p["id"] for p in http.get_json(f"{imp.studio}/api/providers")}
     except (HttpError, ValueError) as e:

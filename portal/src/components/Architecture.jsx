@@ -23,14 +23,14 @@ export default function Architecture() {
         <div className="row-nodes">
           <Box title="voice-id" sub="Flask game, SQLite on PVC" hw="CPU" kind="core" />
         </div>
-        <p className="lane">Opponents (battle mode)</p>
+        <p className="lane">Opponents (battle mode) · Teddy and Iris from profile standard</p>
         <div className="grid4">
           <Box title="Teddy" sub="Qwen2-Audio-7B · raw audio" hw="GPU · L4" kind="opp-node" />
           <Box title="Iris" sub="Gemma-4-12B · spectrogram" hw="GPU · L4" kind="opp-node" />
           <Box title="Gary" sub="Wav2Vec2 base · waveform" hw="CPU · 4 cores" kind="opp-node" />
           <Box title="Gary 2.0" sub="Wav2Vec2 fine-tuned" hw="CPU · 4 cores" kind="opp-node" />
         </div>
-        <p className="lane">Voice cloning (Clone Studio only)</p>
+        <p className="lane">Voice cloning · profile full only</p>
         <div className="grid2">
           <Box title="XTTS v2" sub="Coqui, ~5 s per clip" hw="GPU · L4" kind="tts" />
           <Box title="Fish Speech S2 Pro" sub="best quality, 4 min warm-up" hw="GPU · L4" kind="tts" />

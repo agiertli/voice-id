@@ -315,8 +315,22 @@ function opponentHtml(id) {
         '<span class="badge ' + o.cls + '">' + o.level + '</span></span>';
 }
 
+// Only advertise opponents this deployment actually runs (e.g. "minimal" profile = Gary + Gary 2.0).
+var availableIds = null;
+async function loadAvailableOpponents() {
+    try {
+        var res = await fetch('/api/battle/opponents');
+        var list = await res.json();
+        availableIds = list.filter(function(o) { return o.available !== false; }).map(function(o) { return o.id; });
+    } catch (e) { /* keep last known list */ }
+    renderLadder();
+}
+
 function renderLadder() {
-    document.getElementById('ladder').innerHTML = LADDER_ORDER.map(function(id) {
+    var ids = LADDER_ORDER.filter(function(id) { return availableIds === null ? false : availableIds.indexOf(id) !== -1; });
+    var box = document.querySelector('.ladder');
+    if (box) box.style.display = ids.length ? '' : 'none';
+    document.getElementById('ladder').innerHTML = ids.map(function(id) {
         var o = OPPONENTS[id];
         return '<li><span><span class="n">' + o.name + '</span><span class="m">' + o.desc + '</span></span>' +
             '<span class="badge ' + o.cls + '">' + o.level + '</span></li>';
@@ -369,7 +383,8 @@ async function refresh() {
     }
 }
 
-renderLadder();
+loadAvailableOpponents();
+setInterval(loadAvailableOpponents, 10000);
 refresh();
 setInterval(refresh, 10000);
 </script>

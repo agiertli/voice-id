@@ -104,19 +104,22 @@ Filename convention: `{model}-{speaker}-{description}.{ext}` for AI, `{speaker}-
 
 **NEVER use `oc cp` to copy the database to/from the pod.** This corrupts SQLite WAL and breaks the running app.
 
-Instead, use the upload API to add clips:
+Instead, use the upload API to add clips. Every `/api/admin/*` endpoint needs the admin token (Helm value `adminToken`) as `Authorization: Bearer`:
 ```bash
 ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
-curl -sk "https://${ROUTE}/api/admin/upload" \
-  -F "audio=@apps/voice-id/samples/ai/en/fish-anton-hello.wav" \
-  -F "is_ai=1" -F "language=en" \
-  -F "source=Fish Audio S2 Pro" -F "speaker=anton" \
-  -F "filename=ai/en/fish-anton-hello.wav"
+read -r -s -p 'Admin password: ' VOICEID_ADMIN_TOKEN; printf '\n'
+curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/upload" \
+  -F "audio=@$HOME/voice-id-audio/samples/ai/en/fish-anton-hello.wav" \
+  --form-string "is_ai=1" --form-string "language=en" \
+  --form-string "source=Fish Audio S2 Pro" --form-string "speaker=anton" \
+  --form-string "filename=ai/en/fish-anton-hello.wav"
 ```
 
-To delete a clip: `curl -sk -X DELETE "https://${ROUTE}/api/admin/delete-clip/<clip_id>"`
+To delete a clip: `curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" -X DELETE "https://${ROUTE}/api/admin/delete-clip/<clip_id>"`
 
-To list all clips: `curl -sk "https://${ROUTE}/api/admin/clips"`
+To list all clips: `curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/clips"`
+
+Scoring is server-side (`app.py`: `POST /api/game/<id>/play` starts a clip's clock, `/guess` scores once per clip of the game, `/complete` is idempotent and ignores client points). See `docs/customization/scoring.md`.
 
 ## Deployment
 

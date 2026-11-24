@@ -106,10 +106,9 @@
         button:hover, .btn-sm:hover { background: var(--surface); }
         button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
         button:disabled { color: var(--text-muted); border-color: var(--border); cursor: default; background: var(--surface); }
-        .auth-form button, #seedImportBtn, #seedExportBtn {
-            background: var(--rh-red); border-color: var(--rh-red); color: #ffffff;
-        }
-        .auth-form button:hover, #seedImportBtn:hover, #seedExportBtn:hover { background: var(--rh-red-dark); border-color: var(--rh-red-dark); }
+        /* single primary call to action (login); red stays a restrained accent */
+        .auth-form button { background: var(--rh-red); border-color: var(--rh-red); color: #ffffff; }
+        .auth-form button:hover { background: var(--rh-red-dark); border-color: var(--rh-red-dark); }
         button.danger, .btn-sm.danger { color: var(--rh-red-dark); border-color: var(--rh-red-dark); background: var(--bg); }
         button.danger:hover, .btn-sm.danger:hover { background: var(--rh-red-dark); color: #ffffff; }
         .btn-sm { min-height: 40px; padding: 8px 14px; font-size: 0.9rem; margin-right: 8px; }

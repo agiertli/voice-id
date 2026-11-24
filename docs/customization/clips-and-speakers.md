@@ -61,15 +61,17 @@ ffmpeg on upload or first play.
 ```bash
 export KUBECONFIG=~/.kube/<cluster>.kubeconfig     # dedicated file per cluster
 ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
+read -r -s -p 'Admin password: ' VOICEID_ADMIN_TOKEN; printf '\n'; export VOICEID_ADMIN_TOKEN
+AUTH="Authorization: Bearer ${VOICEID_ADMIN_TOKEN}"       # all /api/admin/* endpoints need it
 
-curl -sk "https://${ROUTE}/api/admin/upload" \
-  -F "audio=@apps/voice-id/samples/ai/cs/fish-anton-devops.wav" \
+curl -sk -H "$AUTH" "https://${ROUTE}/api/admin/upload" \
+  -F "audio=@$HOME/voice-id-audio/samples/ai/cs/fish-anton-devops.wav" \
   --form-string "is_ai=1" --form-string "language=cs" \
   --form-string "source=Fish Audio S2 Pro" --form-string "speaker=anton" \
   --form-string "filename=ai/cs/fish-anton-devops.wav"
 
-curl -sk "https://${ROUTE}/api/admin/clips" | python3 -m json.tool | head   # list
-curl -sk -X DELETE "https://${ROUTE}/api/admin/delete-clip/<clip_id>"      # delete
+curl -sk -H "$AUTH" "https://${ROUTE}/api/admin/clips" | python3 -m json.tool | head   # list
+curl -sk -H "$AUTH" -X DELETE "https://${ROUTE}/api/admin/delete-clip/<clip_id>"      # delete
 ```
 
 Deleting a clip does not touch games already played.
@@ -83,7 +85,7 @@ through the API. The database must never be committed or shared through Git.
 ```bash
 cat > /tmp/upload_clips.py <<'EOF'
 import os, sqlite3, subprocess, sys, tempfile
-db, route = sys.argv[1], sys.argv[2]
+db, route, token = sys.argv[1], sys.argv[2], os.environ["VOICEID_ADMIN_TOKEN"]
 out = tempfile.mkdtemp()
 con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
 ok = fail = 0
@@ -92,7 +94,7 @@ for cid, fn, is_ai, lang, src, spk, data, ct in con.execute(
     p = os.path.join(out, cid + (os.path.splitext(fn)[1] or ".wav"))
     open(p, "wb").write(data)
     r = subprocess.run(["curl", "-sk", "-o", "/dev/null", "-w", "%{http_code}",
-        f"https://{route}/api/admin/upload", "-F", f"audio=@{p};type={ct}",
+        "-H", f"Authorization: Bearer {token}", f"https://{route}/api/admin/upload", "-F", f"audio=@{p};type={ct}",
         "--form-string", f"is_ai={is_ai}", "--form-string", f"language={lang}",
         "--form-string", f"source={src or ''}", "--form-string", f"speaker={spk or ''}",
         "--form-string", f"filename={fn}"], capture_output=True, text=True)
@@ -100,8 +102,8 @@ for cid, fn, is_ai, lang, src, spk, data, ct in con.execute(
     else: fail += 1; print("FAIL", r.stdout, fn)
 print(f"uploaded={ok} failed={fail}")
 EOF
-python3 /tmp/upload_clips.py apps/voice-id/data/voiceid.db "$ROUTE"
-curl -sk "https://${ROUTE}/api/admin/clips" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))'
+python3 /tmp/upload_clips.py apps/voice-id/data/voiceid.db "$ROUTE"     # needs VOICEID_ADMIN_TOKEN exported
+curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/clips" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))'
 ```
 
 The upload endpoint does not deduplicate. Run it once against an empty game; a
@@ -152,6 +154,8 @@ only). It talks only to the two HTTP APIs and never opens either database.
 ```bash
 STUDIO=https://$(oc get route voice-clone-studio -n voice-clone-studio -o jsonpath='{.spec.host}')
 GAME=https://$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
+read -r -s -p 'Game admin password: ' VOICEID_ADMIN_TOKEN; printf '\n'; export VOICEID_ADMIN_TOKEN
+# The tool reads VOICEID_ADMIN_TOKEN (or --game-token) and sends it only to the game.
 
 # 1. See what would happen
 python3 apps/voice-id/tools/import_from_clone_studio.py --studio "$STUDIO" --game "$GAME"
@@ -179,7 +183,7 @@ python3 apps/voice-id/tools/import_from_clone_studio.py --studio "$STUDIO" --gam
 | `--apply` | Really generate and upload. Without it the run is a dry run |
 | `--out-dir DIR` | Save every WAV plus a merged `manifest.json` (label, speaker, language, provider, text). Use a path outside the repository, such as `~/voice-id-audio/...` |
 | `--verify-tls` | Verify TLS certificates (off by default for demo clusters) |
-| `--game-token TOKEN` | Optional Bearer token for the game admin API |
+| `--game-token TOKEN` | Game admin token (Helm `adminToken`), sent as Bearer to the game only. Default: env `VOICEID_ADMIN_TOKEN`. **Required for `--apply`**; a dry run without it cannot list existing game clips and shows everything as planned |
 
 Behaviour to know:
 

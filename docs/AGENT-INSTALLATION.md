@@ -59,13 +59,16 @@ Kubeconfig file: ~/.kube/voice-id-<event>.kubeconfig
 Event name: <e.g. DevConf 2026>
 Default UI language: <en | cs | sk>
 Prize threshold: <4 of 5 correct, or another number>
-Opponents: <all four | list>
-Voice Clone Studio: <yes | no>
+Install profile: <minimal | standard | full>   (standard = 2 GPUs, recommended; full = 4 GPUs incl. Clone Studio)
 Admin password: <chosen password, or path to a private mode-600 file>
 Seed pack: <~/voice-id-audio/seedpacks/<file>.seedpack.zip>
 
 INSTRUCTIONS — KEEP THESE
-Install the full Voice ID stack on this fresh cluster following docs/INSTALLATION.md.
+Install the Voice ID stack with the profile above on this fresh cluster following
+docs/INSTALLATION.md (install.sh --profile <profile> or the manual steps).
+- Show me the profile/GPU/cost table and confirm the profile before provisioning anything.
+- Provision only what the profile needs (no GPU MachineSet for minimal; replicas 2 for
+  standard, 4 for full).
 - Use only the kubeconfig above (export KUBECONFIG); never oc login into ~/.kube/config.
 - Parallelise: GPU MachineSet first (cloned from this cluster's worker MachineSet,
   4x g6.2xlarge, taint nvidia.com/gpu), model downloads and CPU components while nodes
@@ -76,26 +79,44 @@ Install the full Voice ID stack on this fresh cluster following docs/INSTALLATIO
   apps/voice-id/tools/seedpack.py import, token via $VOICEID_ADMIN_TOKEN). Never oc cp a database.
 - Never commit, attach or copy audio, seed packs, backups or databases into the repository.
 - Do not stop pre-existing models on the cluster without asking me.
-- Warm up Fish Speech if Clone Studio is enabled.
+- Warm up Fish Speech if the profile is full.
+- Never scale down or remove any component without my explicit confirmation.
 - Verify with the runbook's smoke test: clip count, every opponent answers, one game.
 - Report: URLs (game, /tv, /admin, Clone Studio), versions, what was verified, what I
   still must check in a browser, and anything that deviated from the runbook.
 ```
 
+## Install profiles
+
+| Profile | GPUs | Opponents | Clone Studio | Approx. GPU cost |
+|---|---:|---|---|---|
+| minimal | 0 | Gary, Gary 2.0 | no | none |
+| standard (default) | 2 | all four | no | ≈ $2/h |
+| full | 4 | all four | yes (XTTS, Fish) | ≈ $4/h |
+
+About $1/h per `g6.2xlarge`, approximate; check current AWS pricing. The skill asks
+for the profile at the start of every install (default `standard`) and shows this
+table. Details and switching: [install profiles](INSTALLATION.md#install-profiles).
+The project is in its voice collection phase, so `full` is the current setting for
+the recording cluster.
+
 ## What the agent does
 
 1. Checks identity and server with the given kubeconfig; confirms the cluster with
    you if anything looks unexpected (existing `voice-id` namespace, GPU nodes in use).
-2. Clones the worker MachineSet into a 4-node GPU MachineSet and applies it.
-3. Creates `voice-id`, applies Qwen and Gemma (downloads start), the two detectors,
-   then XTTS and Fish when GPUs are allocatable.
-4. Installs the game with your values and admin password; installs Clone Studio.
+2. Confirms the profile, then clones the worker MachineSet into a GPU MachineSet with
+   the profile's replicas (skipped for `minimal`).
+3. Creates `voice-id`, applies the two detectors, Qwen and Gemma (`standard`/`full`;
+   downloads start), then XTTS and Fish (`full`) when GPUs are allocatable.
+4. Installs the game with your values, admin password and the profile's opponent flags;
+   installs Clone Studio (`full`).
 5. Imports the seed pack and checks the clip count.
 6. Waits for vLLM workloads (accepting `GatewayPreconditionNotMet` on the gateway),
-   warms Fish, runs the smoke test.
+   warms Fish (`full`), runs the smoke test.
 7. Hands over URLs and the remaining manual checks.
 
-Expected duration about 35 minutes on a fresh cluster.
+Expected duration about 35 minutes for `full` on a fresh cluster; `minimal` is a few
+minutes (no GPU nodes or model downloads).
 
 ## Handover checks for the owner
 

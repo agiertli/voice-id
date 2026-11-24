@@ -27,8 +27,14 @@ the opponent card texts are i18n strings `opponent_<id>_name|label|bio` in
 All analysis runs on the **game server**, which fetches the clip from SQLite,
 converts it with ffmpeg to 22.05 kHz mono 16-bit WAV and calls the backend. The
 browser calls one endpoint per clip, in parallel, during the loading screen
-before the first clip is shown. Results are held in the browser and revealed one by
-one after the player answers.
+before the first clip is shown. The **server records** each answer for that game
+(first answer wins) and the response is sealed: `{status: "ready", opponent,
+clip_id, fallback}` plus the spectrogram for Iris, but no guess or reasoning. The
+answer is revealed in the player's `/guess` response (`opponent_guess`,
+`opponent_reasoning`, `opponent_correct`, `opponent_fallback`), so it cannot be
+read ahead of time. The first analysis request fixes the game's opponent: a
+different opponent in the same game, or choosing one after the first guess, gets
+HTTP 409.
 
 | Opponent | Game endpoint | Backend call | Answer mapping |
 |---|---|---|---|
@@ -38,8 +44,10 @@ one after the player answers.
 | Gary 2.0 | `POST /api/game/<id>/ai-analyze-detector` | `{DETECTOR_URL}/predict` | Same as Gary. Thresholds `LOW_THRESHOLD=0.3`, `HIGH_THRESHOLD=0.7` on `p_fake` |
 
 LLM calls use `temperature 0.1` and `verify=False` (the internal KServe service
-uses a cluster-internal certificate). If any call fails, the browser substitutes a
-random guess for that clip; see [scoring known limitations](scoring.md#known-limitations).
+uses a cluster-internal certificate). If any call fails, the **server** records a
+random guess for that clip (`fallback: true`, reasoning "Analysis failed"; also when
+the analysis request never arrived), and the player sees that same answer; see
+[scoring known limitations](scoring.md#known-limitations).
 
 ## Character notes for facilitators
 
@@ -98,6 +106,11 @@ detectorBase:   # Gary
 helm upgrade voice-id apps/voice-id/helm/voice-id -n voice-id \
   -f apps/voice-id/helm/voice-id/values.yaml --set aiJudge.enabled=false
 ```
+
+The game's opponent picker and the `/tv` opponent list (refresh every 10 s) both
+read `/api/battle/opponents`, so disabled opponents disappear everywhere. The
+`minimal` install profile disables Teddy and Iris (no GPUs); see
+[install profiles](../INSTALLATION.md#install-profiles).
 
 The game does not health-check opponents before listing them: an opponent whose
 URL is set but whose backend is down still appears and then plays coin flips.
