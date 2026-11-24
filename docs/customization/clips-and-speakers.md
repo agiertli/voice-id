@@ -309,3 +309,14 @@ Photos: JPEG, PNG or WebP, up to 5 MB; downscaled to 512 px and stripped of EXIF
 clip exists for them, which changes the AI reveal wording to "clone of".
 **Only upload photos of people who explicitly agreed to be shown on the booth
 screen.** Photos are public at `/api/speakers/<name>/photo`.
+
+## Loudness standard (all clips)
+
+Every game clip is normalized to **-20 LUFS integrated, true peak <= -1.5 dBTP** (single linear gain per clip;
+a 4x-oversampled true-peak limiter only where the peak would exceed the ceiling; metadata chunks stripped).
+Applied to all 109 live clips on 2026-11-24: AI mean -20.01, human mean -20.08 LUFS, so loudness no longer
+gives the answer away (before, every XTTS clip was louder than any human clip). Both Gary detectors scored
+identically before and after (no verdict flips). Voice Clone Studio levels new sentence recordings to the same
+-20 LUFS. Clips added any other way (admin upload, `seedpack.py pack` from raw files) must be normalized the same
+way before import; the audit report and scripts live outside git in `~/voice-id-audio/loudness/`.
+Booth tip: -20 LUFS is slightly quieter than typical apps; set the tablet volume about 2 dB higher once.

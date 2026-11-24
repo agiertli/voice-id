@@ -272,6 +272,13 @@ hand; the tool builds and validates it.
    `seedpack.py import --game URL --token T --file PACK --mode skip` (prints the integrity report);
    resolve any speaker warning on `/admin#speakers`; then delete the zip.
 
+## Loudness standard
+
+All game clips: -20 LUFS integrated, true peak <= -1.5 dBTP (linear gain, true-peak limiter only if needed).
+Before importing new clips from any source other than Clone Studio sentences (which are already levelled to -20),
+normalize them the same way and verify with ffmpeg `loudnorm=print_format=json` (all within ±1 LU). Never ship
+mixed loudness: it is an audible AI/human giveaway.
+
 ## Seeding (clips into the game)
 
 Guide: [docs/SEEDING.md](../../../docs/SEEDING.md). Seed pack =

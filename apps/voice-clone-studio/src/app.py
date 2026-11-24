@@ -29,7 +29,7 @@ TRIM_SILENCE_FILTER = (
 
 # Loudness target for sentence recordings. Quiet laptop mics (mean around -55 dB) were
 # trimmed to nothing by the absolute -45 dB silence threshold, so normalize first.
-SENTENCE_TARGET_LUFS = -18
+SENTENCE_TARGET_LUFS = -20  # match the game clips (all normalized to -20 LUFS, true peak <= -1.5 dBTP)
 NORMALIZE_FILTER = f"highpass=f=60,loudnorm=I={SENTENCE_TARGET_LUFS}:TP=-1.5:LRA=11"
 # Clone references quieter than this (mean dBFS) are normalized before registering.
 CLONE_NORMALIZE_BELOW_DB = -35.0
@@ -446,7 +446,7 @@ OPENAPI_SPEC = {
             },
             "post": {
                 "summary": "Save a one-shot sentence recording (replaces previous take of the same speaker/language/sentence)",
-                "description": "Audio is converted to mono 16-bit 44.1 kHz WAV: 60 Hz high-pass, loudness-normalized to -18 LUFS (single-pass loudnorm, so quiet microphones work), then leading/trailing silence trimmed. Recordings that are silent, contain only background noise, or are shorter than 0.5 s after trimming are rejected with 400 and a machine-readable reason.",
+                "description": "Audio is converted to mono 16-bit 44.1 kHz WAV: 60 Hz high-pass, loudness-normalized to -20 LUFS (same level as the game clips) (single-pass loudnorm, so quiet microphones work), then leading/trailing silence trimmed. Recordings that are silent, contain only background noise, or are shorter than 0.5 s after trimming are rejected with 400 and a machine-readable reason.",
                 "requestBody": {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["audio", "speaker", "language", "sentence_idx"], "properties": {
                     "audio": {"type": "string", "format": "binary", "description": "Audio file (webm/wav/mp4), max 10 MB"},
                     "speaker": {"type": "string"},
