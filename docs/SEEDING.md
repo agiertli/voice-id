@@ -66,7 +66,8 @@ personal and biometric data; see the rule at the top of [AGENTS.md](../AGENTS.md
 - **Never in Git.** Not in this public repository, not in a private one, not
   renamed, zipped or base64-encoded. The repository's `samples/` folders were
   removed on purpose; `.gitignore`, the pre-commit hook
-  (`git config core.hooksPath .githooks`) and the `no-audio` CI workflow enforce it.
+  (`git config core.hooksPath .githooks`), the `no-audio` CI workflow and the Claude Code
+  hook `.claude/hooks/block-voice-data.sh` enforce it.
 - **Never public.** No issues, pull requests, gists, the GitHub Pages portal, chat
   tools, public buckets, container images, Helm charts or ConfigMaps.
 - **Only through a private channel** chosen by the game owner, to a team that will

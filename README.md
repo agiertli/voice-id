@@ -27,7 +27,11 @@ purpose. Enable the guard once per clone:
 git config core.hooksPath .githooks
 ```
 
-Full rule: top of [AGENTS.md](AGENTS.md).
+Further guards: `.gitignore` audio/database patterns, the `no-audio` CI workflow and,
+for Claude Code, a PreToolUse hook (`.claude/hooks/block-voice-data.sh`, registered in
+`.claude/settings.json`, needs `jq`) that blocks git/gh commands and file writes
+involving voice data. Full rule: top of [AGENTS.md](AGENTS.md). Rule Two there: every
+significant change updates the skill, docs, portal and diagrams in the same commit.
 
 ## Install
 

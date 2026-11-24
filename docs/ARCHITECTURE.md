@@ -72,9 +72,9 @@ disabled with Helm flags and disappear from the API, the game and `/tv`. See
 | `gemma` | vLLM via LLMInferenceService, `RedHatAI/gemma-4-12B-it-FP8-dynamic`, served as `gemma-4-12b`, max len 8192, 1 image per prompt | 1 L4, 1 / 4 CPU, 8 / 24 Gi | PVC `gemma-model` 30 Gi | Internal `https://gemma-kserve-workload-svc:8000/v1` |
 | `deepfake-detector-base` | `quay.io/agiertli/deepfake-detector-base:v1.0.3`, Wav2Vec2-XLSR pre-trained | 2 / 4 CPU, 1 / 2 Gi | none | Service :8080 (+ route) |
 | `deepfake-detector-fine-tuned` | `quay.io/agiertli/deepfake-detector:v2.0.0`, V4-A fine-tune | 2 / 4 CPU, 1 / 2 Gi | none | Service :8080 (+ route) |
-| `xtts-v2` | `ghcr.io/coqui-ai/xtts-streaming-server:latest-cuda121` | 1 L4, 4 CPU, 8 Gi | none | Service :80, route |
-| `fish-native` | `fishaudio/fish-speech:server-cuda`, S2 Pro, `--compile` | 1 L4, 4 CPU, 16 Gi | PVC `fish-data` 20 Gi (weights); references in memory | Service :8080, route (300 s) |
-| `voice-clone-studio` | `quay.io/agiertli/voice-clone-studio:v2.1.0` | 0.1 / 0.5 CPU, 128 / 256 Mi | PVC `voice-clone-studio-data` 1 Gi | Route, 300 s timeout |
+| `xtts-v2` | `ghcr.io/coqui-ai/xtts-streaming-server` (pinned by digest) | 1 L4, 4 CPU, 8 Gi | none | Service :80, route |
+| `fish-native` | `docker.io/fishaudio/fish-speech` (pinned by digest), S2 Pro, `--compile` | 1 L4, 4 CPU, 16 Gi | PVC `fish-data` 20 Gi (weights); references in memory | Service :8080, route (300 s) |
+| `voice-clone-studio` | `quay.io/agiertli/voice-clone-studio:v2.2.1` | 0.1 / 0.5 CPU, 128 / 256 Mi | PVC `voice-clone-studio-data` 1 Gi | Route, 300 s timeout |
 
 GPU nodes (`full`; `standard` has the first two): four `g6.2xlarge` (1× NVIDIA L4 24 GB, 8 vCPU, 32 GiB), tainted
 `nvidia.com/gpu=true:NoSchedule`, one GPU workload each. Every GPU workload

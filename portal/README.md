@@ -17,7 +17,7 @@ that touches `portal/`. The site is public:
   explicitly approves a synthetic placeholder).
 
 `src/scoring.js` mirrors the scoring constants in
-`apps/voice-id/src/templates/index.html` and `docs/customization/scoring.md`; update
+`apps/voice-id/src/app.py` (scoring is server-side) and `docs/customization/scoring.md`; update
 all three together.
 
 Brand: Red Hat palette only (red #ee0000/#a60000, greys, white/black; teal #147878

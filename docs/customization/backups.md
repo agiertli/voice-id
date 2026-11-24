@@ -36,7 +36,7 @@ All three need the admin password ([booth operations](booth-operations.md#admin-
 The repository contains no audio. A team that wants to run the game receives a
 **seed pack** from the game owner through a private channel, then imports it:
 
-- **Admin UI:** `/admin` → **Seed pack & backup** → **Import seed pack**, choose
+- **Admin UI:** `/admin` → tab **Clips & seed packs** → **Import seed pack**, choose
   the zip and a mode.
 - **Headless:**
 
@@ -60,7 +60,7 @@ curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api
 
 ## Export a seed pack
 
-- **Admin UI:** `/admin` → **Seed pack & backup** → **Export seed pack**.
+- **Admin UI:** `/admin` → tab **Clips & seed packs** → **Export seed pack**.
 - **Headless:**
 
 ```bash
@@ -75,6 +75,8 @@ Git working tree unless `--force` is given (don't). Export a seed pack:
 - before any PVC change or cluster teardown.
 
 ## Full backup (disaster recovery)
+
+In the admin UI: `/admin` → tab **Danger zone** → **Download full backup**. Headless:
 
 ```bash
 umask 077

@@ -70,8 +70,13 @@ curl -sk -H "$AUTH" -H 'Content-Type: application/json' -X PUT \
 - **Clones of real people next to their real recordings.** A clone of someone
   who also has human clips is what makes the game interesting; the reveal tells
   the player "AI clone of <speaker>".
-- **Balance.** Each game draws at least one AI and one human clip; the rest is
-  random. Keep enough human clips per language that games do not repeat them.
+- **Balance.** The human/AI split per game is random (1–4 AI of 5), but every game
+  has at least `game.minCloneClips` (default 1) clones of real people and at most
+  `game.maxOtherAiClips` (default 1) other AI voices (XTTS stock, public-dataset
+  voices). See [scoring: which clips a game contains](scoring.md#which-clips-a-game-contains).
+  Keep enough human clips per language that games do not repeat them.
+- **Colleague voices dominate.** Public-dataset voices are allowed, marked
+  **AI-only voice**, but must stay a minority.
 - **Short clips** (about 3 seconds). The speed bonus counts listening time.
 - **Consent.** Only use voices of people who agreed to be in the game and, for
   photos, to be shown on the booth screen.
@@ -160,14 +165,33 @@ samples/
 The model prefix maps to the display name (`fish` → `Fish Audio S2 Pro`, `xtts` →
 `Coqui XTTS v2`, `moss` → `MOSS-TTS-Nano`).
 
+## Current collection
+
+As of voice-id v3.3.0 (owner's figures): **109 clips**:
+
+| Group | Clips | Speakers |
+|---|---:|---|
+| Human recordings of colleagues | 31 | anton, miska, jakub |
+| AI clones of colleagues (Fish S2 Pro, XTTS v2) | 47 | anton, miska, jakub |
+| XTTS v2 stock voices | 19 | built-in XTTS voices (auto-recognised as not real people) |
+| XTTS clones of public-dataset voices | 12 | delta, echo, golf, hotel, kilo, mike (marked AI-only) |
+
+Policy: public datasets are allowed, but colleague voices must dominate. The clip
+mix rules above enforce that per game.
+
 ## Record new human voices with Voice Clone Studio
 
-Voice Clone Studio (`apps/voice-clone-studio`, namespace `voice-clone-studio`)
-has a **sentence recording mode** (v2.1.0 and later). A speaker picks a language
+Voice Clone Studio (`apps/voice-clone-studio`, namespace `voice-clone-studio`,
+v2.2.1) has a **sentence recording mode** (v2.1.0 and later). Since v2.2 it has a
+light theme and a Slovak UI; the header's EN / CS / SK switch sets the page language,
+while the separate **Recording language** control chooses which sentences are read.
+Quiet microphones are normalised before saving, errors are shown inline next to the
+control, the voice page has **Play recording** to check the cloning reference, and the
+logo and the browser Back button navigate between pages. A speaker picks a language
 (`cs`, `sk`, `en`) and reads up to 15 fixed sentences, one recording each.
 
-- Recordings are converted to 44.1 kHz WAV with silence trimmed; anything under
-  0.5 s is rejected as empty.
+- Recordings are loudness-normalised (quiet mics), converted to 44.1 kHz WAV with
+  silence trimmed; anything under 0.5 s is rejected as empty.
 - Re-recording a sentence replaces the previous take in Clone Studio.
 - Speaker names are case-insensitive; use the same key as in the game
   (`anton`, not `Anton G.`). Display names are set separately (below).

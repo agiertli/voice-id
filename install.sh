@@ -351,6 +351,6 @@ Next steps:
        export VOICEID_ADMIN_TOKEN=...   # read -s, not in shell history
        python3 apps/voice-id/tools/seedpack.py import --game https://${ROUTE} \\
          --file ~/voice-id-audio/seedpacks/<pack>.seedpack.zip --mode skip
-     or /admin -> Seed pack & backup -> Import. See docs/SEEDING.md.
+     or /admin -> Clips & seed packs -> Import seed pack. See docs/SEEDING.md.
   2. Run the smoke test in docs/INSTALLATION.md (section 6) and play a game in the booth browser.
 EOF

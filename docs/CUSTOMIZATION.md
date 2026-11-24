@@ -7,7 +7,8 @@ Helm-only changes need no image rebuild. Always upgrade with `-f <values>` and y
 
 - [Scoring](customization/scoring.md): points formula, speed table, worked solo and
   battle examples, prize vs leaderboard rank, ties, replays, configuration knobs and
-  known limitations.
+  known limitations, and which clips a game contains (`game.minCloneClips`,
+  `game.maxOtherAiClips`).
 - [AI opponents](customization/ai-opponents.md): Teddy, Iris, Gary, Gary 2.0; how each
   decides, where it runs, enabling/disabling, retraining.
 - [Seeding](SEEDING.md): getting, importing, exporting, unpacking and sharing seed

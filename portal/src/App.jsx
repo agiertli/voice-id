@@ -117,7 +117,7 @@ export default function App() {
               <li><Icon name="magnifying-glass" /><div><h3>See the truth</h3><p>After each guess you learn whether it was a real person or which model cloned whom. In battle mode you also see the opponent’s reasoning.</p></div></li>
               <li><Icon name="bar-graph" /><div><h3>Prize and leaderboard</h3><p>Get <b>{PRIZE_THRESHOLD} of {GAME_SIZE}</b> right for a prize. Your points decide your place on the booth leaderboard.</p></div></li>
             </ol>
-            <p className="small muted">Every game has at least one real and one AI clip; the rest is random. Clips are in English, Czech and Slovak, whatever language the screen is in.</p>
+            <p className="small muted">How many of the five are AI is random (one to four), so counting won’t give the last answer away. Every game includes at least one AI clone of a real person you also hear for real, and at most one other AI voice. Clips are in English, Czech and Slovak, whatever language the screen is in.</p>
           </div>
         </section>
 

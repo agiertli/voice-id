@@ -201,6 +201,24 @@ with correct answers, points, opponent (if any) and answer time.
   sent and nothing reaches the leaderboard. An idle booth screen returns to
   registration after 90 seconds outside a game.
 
+## Which clips a game contains
+
+`select_game_clips` in `app.py` (since v3.3.0) picks the clips for every game:
+
+- **The human/AI split is random:** 1 to 4 AI clips out of 5 (always at least one of
+  each). A fixed split would let players deduce the last answers ("I already had three
+  AI, so this one is human").
+- **At least `game.minCloneClips` (default 1) AI clips are clones of real people**,
+  that is, AI clips whose speaker also has human recordings. This keeps the "real
+  person vs their own clone" moment in every game.
+- **At most `game.maxOtherAiClips` (default 1) other AI voices**: XTTS stock voices
+  and clones of public-dataset voices (speakers marked AI-only). They stay a minority
+  so colleague voices dominate.
+- If the clip pools are too small to satisfy the rules, selection falls back to the
+  plain random mix.
+
+The mix does not change scoring: every clip is worth the same.
+
 ## Configuration knobs
 
 Set in `apps/voice-id/helm/voice-id/values.yaml` (or your own values file) and
@@ -208,8 +226,10 @@ apply with Helm. No image rebuild.
 
 | Value | Env var | Default | Effect |
 |---|---|---|---|
-| `game.size` | `GAME_SIZE` | `5` | Clips per game. Each game always contains at least one AI clip and one human clip; the split is random. The database must hold at least `game.size` clips. |
+| `game.size` | `GAME_SIZE` | `5` | Clips per game. Each game contains at least one AI and one human clip; the split is random. The database must hold at least `game.size` clips. |
 | `game.prizeThreshold` | `PRIZE_THRESHOLD` | `4` | Correct answers needed for a prize. Not validated: a value above `game.size` makes prizes impossible. |
+| `game.minCloneClips` | `GAME_MIN_CLONE_CLIPS` | `1` | Minimum AI clones of real people per game (see [which clips a game contains](#which-clips-a-game-contains)). |
+| `game.maxOtherAiClips` | `GAME_MAX_OTHER_AI_CLIPS` | `1` | Maximum other AI voices (XTTS stock, public-dataset voices) per game. |
 
 ```bash
 helm upgrade voice-id apps/voice-id/helm/voice-id -n voice-id \

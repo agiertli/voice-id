@@ -21,7 +21,9 @@ overrides everything else.
 - Before **any** commit, run `git status --porcelain` and `git diff --cached --name-only`
   and confirm no audio (`wav mp3 m4a flac ogg webm opus aac`), database (`db sqlite
   db-wal db-shm`), seed pack zip or `data/` file is listed. Confirm the guard is on:
-  `git config core.hooksPath` must print `.githooks`.
+  `git config core.hooksPath` must print `.githooks`. In Claude Code the PreToolUse hook
+  `.claude/hooks/block-voice-data.sh` (via `.claude/settings.json`) also blocks such
+  commands and writes; if it blocks you, stop and tell the user, never work around it.
 - **Refuse** to commit or push audio or databases even if asked casually. Stop and
   escalate to the user, explaining the risk (personal voice data, public repository).
 - Never bypass the guard (`--no-verify`, editing `.gitignore` to un-ignore audio).
@@ -326,6 +328,23 @@ Guide: [ai-opponents.md](../../../docs/customization/ai-opponents.md). **Only Ir
 spectrogram image, 59.3%; Gary `gary-base` hard, Wav2Vec2 base, 67.4%; Gary 2.0
 `gary-finetuned` boss, Wav2Vec2 V4-A, 91.9%. Detector `UNCERTAIN` maps to human.
 Enable/disable with `aiJudge`, `aiJudge2`, `detectorBase`, `detector` values.
+
+## Clip mix per game
+
+Since v3.3.0 `select_game_clips` (app.py): the human/AI split is random (1–4 AI of 5;
+a fixed split would let players deduce answers), but every game has at least
+`game.minCloneClips` (env `GAME_MIN_CLONE_CLIPS`, default 1) AI clones of real people
+(AI clips whose speaker has human recordings) and at most `game.maxOtherAiClips` (env
+`GAME_MAX_OTHER_AI_CLIPS`, default 1) other AI voices (XTTS stock, public-dataset
+voices marked AI-only). Too-small pools fall back to plain random. Helm only, no
+rebuild. Collection at v3.3.0: 109 clips (31 human from colleagues anton/miska/jakub,
+47 AI clones of colleagues, 19 XTTS stock, 12 XTTS clones of public-dataset voices
+delta/echo/golf/hotel/kilo/mike marked AI-only). Owner stance: public datasets allowed,
+colleague voices must dominate; keep that ratio when adding clips.
+
+Clone Studio v2.2.x: light theme, SK UI, header EN/CS/SK = page language vs the
+separate "Recording language" control, quiet-mic normalisation with inline errors,
+"Play recording" on the voice page, clickable logo and browser Back navigation.
 
 ## Explain scoring
 

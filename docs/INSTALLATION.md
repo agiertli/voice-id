@@ -12,7 +12,8 @@ working install is not a Red Hat supported configuration; see
 
 ## Audio never goes to Git
 
-The repository contains **no audio and no databases**. Voice recordings of real
+The repository contains **no audio and no databases** (Rule Zero, top of
+`AGENTS.md`). Voice recordings of real
 people, generated clones, seed packs, backups and exports live only in the cluster
 databases and in local directories **outside** the repository (default
 `~/voice-id-audio/`). Never commit them, attach them to issues or pull requests, or
@@ -21,6 +22,10 @@ paste them into chats. Enable the repository's pre-commit guard once per clone:
 ```bash
 git config core.hooksPath .githooks
 ```
+
+Further guards: `.gitignore` audio/database patterns, the `no-audio` CI workflow, and
+for Claude Code a PreToolUse hook (`.claude/hooks/block-voice-data.sh`, registered in
+`.claude/settings.json`) that blocks git/gh commands and file writes involving voice data.
 
 The game's clips come from a private **seed pack** you receive from the game owner
 (step 5, [SEEDING.md](SEEDING.md)).
@@ -104,10 +109,9 @@ command. It never touches audio. Re-runs are idempotent.
 
 **Status:** checked with `bash -n`, ShellCheck and a dry run against mocked
 `oc`/`helm`; **not yet run against a live cluster.** If it stops, continue with the
-manual steps below from where it stopped. Third-party images in the manifests are
-not pinned by digest (`ubi9/python-312:latest` for the download Jobs,
-`xtts-streaming-server:latest-cuda121`, `fish-speech:server-cuda`); the project's own
-images are pinned in the values files.
+manual steps below from where it stopped. Third-party images in `infra/` (XTTS, Fish
+Speech, the UBI9 Python image of the download Jobs) are pinned by digest; the
+project's own images are pinned by tag in the values files and manifests.
 
 ## Validated environment
 
@@ -119,7 +123,8 @@ First full install on **2026-11-24**:
   class `gp3-csi`.
 - 4 added `g6.2xlarge` workers (8 vCPU, 32 GiB, 1× NVIDIA L4 24 GB each), one per
   GPU workload.
-- Image tags at install: voice-id `v2.8.2`, voice-clone-studio `v2.1.0`,
+- Current tags: voice-id `v3.3.0`, voice-clone-studio `v2.2.1` (first install used
+  `v2.8.2` / `v2.1.0`),
   deepfake-detector `v2.0.0`, deepfake-detector-base `v1.0.3`. The chart's
   `values.yaml` is the source of truth for current tags.
 - Wall-clock about **35 minutes**, dominated by node provisioning, image pulls,
@@ -270,8 +275,7 @@ oc get pods -n voice-id -l 'app in (xtts-v2,fish-native)' -w
 - **XTTS** needs `COQUI_TOS_AGREED=1`, `HOME=/tmp`, `TMPDIR=/tmp`,
   `NUMBA_CACHE_DIR`, `MPLCONFIGDIR` and `workingDir: /tmp` (all in the manifest) to
   run under the restricted SCC. Its `/tts` returns base64 WAV wrapped in JSON quotes.
-  The manifest uses the upstream tag `latest-cuda121`; pin a digest for repeatable
-  installs.
+  The image is pinned by digest in the manifest.
 - **Fish** has an init container that downloads about 9 GB of weights into the
   `fish-data` PVC on first start (skipped later). The server runs with `--compile`:
   the **first request triggers a torch.compile of about 4 minutes**; afterwards a
@@ -316,7 +320,7 @@ The game starts empty. Import the private seed pack you received. The complete
 seeding guide (modes, verification, local folders, sharing) is
 [SEEDING.md](SEEDING.md).
 
-- Open `https://<route>/admin`, log in, **Seed pack & backup** → **Import seed pack**,
+- Open `https://<route>/admin`, log in, tab **Clips & seed packs** → **Import seed pack**,
   mode `skip`; or headless:
 
 ```bash
@@ -333,6 +337,8 @@ clips (20 human, 66 AI) with the low-level upload loop in
 **Never `oc cp` a database into the pod.**
 
 A game needs at least `game.size` clips including at least one AI and one human clip.
+The per-game mix (`game.minCloneClips`, `game.maxOtherAiClips`) is explained in
+[scoring](customization/scoring.md#which-clips-a-game-contains).
 
 ## 6. Verify
 
