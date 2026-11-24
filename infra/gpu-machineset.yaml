@@ -1,10 +1,12 @@
+# TEMPLATE ONLY. Prefer: clone your own cluster's worker MachineSet (see docs/INSTALLATION.md / install.sh).
+# Replace every <placeholder> (infra id, guid, uuid, AMI, AZ, subnet) for your cluster before applying.
 apiVersion: machine.openshift.io/v1beta1
 kind: MachineSet
 metadata:
-  name: ocp-zlh26-gpu-us-east-1a
+  name: <infra-id>-gpu-us-east-1a
   namespace: openshift-machine-api
   labels:
-    machine.openshift.io/cluster-api-cluster: ocp-zlh26
+    machine.openshift.io/cluster-api-cluster: <infra-id>
   annotations:
     capacity.cluster-autoscaler.kubernetes.io/labels: kubernetes.io/arch=amd64
     machine.openshift.io/GPU: "1"
@@ -14,15 +16,15 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      machine.openshift.io/cluster-api-cluster: ocp-zlh26
-      machine.openshift.io/cluster-api-machineset: ocp-zlh26-gpu-us-east-1a
+      machine.openshift.io/cluster-api-cluster: <infra-id>
+      machine.openshift.io/cluster-api-machineset: <infra-id>-gpu-us-east-1a
   template:
     metadata:
       labels:
-        machine.openshift.io/cluster-api-cluster: ocp-zlh26
+        machine.openshift.io/cluster-api-cluster: <infra-id>
         machine.openshift.io/cluster-api-machine-role: gpu-worker
         machine.openshift.io/cluster-api-machine-type: gpu-worker
-        machine.openshift.io/cluster-api-machineset: ocp-zlh26-gpu-us-east-1a
+        machine.openshift.io/cluster-api-machineset: <infra-id>-gpu-us-east-1a
     spec:
       lifecycleHooks: {}
       metadata:
@@ -31,7 +33,7 @@ spec:
       providerSpec:
         value:
           ami:
-            id: ami-09390eb5fa05105cb
+            id: <ami-id>
           apiVersion: machine.openshift.io/v1beta1
           blockDevices:
           - ebs:
@@ -46,7 +48,7 @@ spec:
             name: aws-cloud-credentials
           deviceIndex: 0
           iamInstanceProfile:
-            id: ocp-zlh26-worker-profile
+            id: <infra-id>-worker-profile
           instanceType: g6.2xlarge
           kind: AWSMachineProviderConfig
           metadata:
@@ -59,28 +61,28 @@ spec:
           - filters:
             - name: tag:Name
               values:
-              - ocp-zlh26-node
+              - <infra-id>-node
           - filters:
             - name: tag:Name
               values:
-              - ocp-zlh26-lb
+              - <infra-id>-lb
           subnet:
             filters:
             - name: tag:Name
               values:
-              - ocp-zlh26-subnet-private-us-east-1a
+              - <infra-id>-subnet-private-us-east-1a
           tags:
-          - name: kubernetes.io/cluster/ocp-zlh26
+          - name: kubernetes.io/cluster/<infra-id>
             value: owned
           - name: Stack
-            value: project openshift-cluster-6rklz
+            value: project openshift-cluster-<guid>
           - name: config
             value: openshift-cluster
           - name: guid
-            value: 6rklz
+            value: <guid>
           - name: owner
             value: unknown
           - name: uuid
-            value: 0365d077-4bbb-5ecd-b8e3-c4bff231f4da
+            value: <uuid>
           userDataSecret:
             name: worker-user-data
