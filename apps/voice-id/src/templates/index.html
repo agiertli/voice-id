@@ -26,8 +26,9 @@
     --text-muted: #4d4d4d;
     --ai: #5e40be;
     --human: #147878;
-    --correct: #151515;
+    --correct: #3d7317;   /* green: owner-approved exception to the brand palette, for instant right/wrong reading */
     --wrong: #a60000;
+    --wrong-fill: #ee0000;
     --easy: #8c8c8c;
     --medium: #4d4d4d;
     --hard: #ee0000;
@@ -317,7 +318,7 @@ svg.glyph { width: 1em; height: 1em; flex: none; vertical-align: middle; fill: n
 .pdot svg.glyph { width: 22px; height: 22px; stroke-width: 3; }
 .pdot.active { border: 3px solid var(--rh-red); color: var(--text); }
 .pdot.correct { background: var(--correct); border-color: var(--correct); color: #fff; }
-.pdot.wrong { background: var(--wrong); border-color: var(--wrong); color: #fff; }
+.pdot.wrong { background: var(--wrong-fill); border-color: var(--wrong-fill); color: #fff; }
 @media (max-width: 600px) { .pdot { width: 38px; height: 38px; } }
 
 /* ---------- Solo game ---------- */
@@ -376,7 +377,7 @@ svg.glyph { width: 1em; height: 1em; flex: none; vertical-align: middle; fill: n
 }
 .stamp svg.glyph { width: 62%; height: 62%; stroke-width: 3.2; }
 .stamp.correct, .verdict.correct .stamp { background: var(--correct); }
-.stamp.wrong, .verdict.wrong .stamp { background: var(--wrong); }
+.stamp.wrong, .verdict.wrong .stamp { background: var(--wrong-fill); }
 .who { margin-top: 0.5rem; font-size: 1.3rem; font-weight: 700; line-height: 1.3; }
 .who.ai { color: var(--ai); }
 .who.human { color: var(--human); }
@@ -445,10 +446,11 @@ svg.glyph { width: 1em; height: 1em; flex: none; vertical-align: middle; fill: n
     border: 3px solid var(--text); border-radius: var(--radius); padding: 0.8rem 1.1rem;
     background: var(--bg); color: var(--text); animation: popText 0.25s ease both;
 }
-.round-banner.win { background: var(--text); color: #fff; }
-.round-banner.lose, .round-banner.both-wrong { border-color: var(--wrong); }
-.round-banner.win .stamp.correct { background: #fff; color: var(--text); }
-.round-banner.win .stamp { border: 3px solid #fff; }
+.round-banner.win { background: var(--correct); border-color: var(--correct); color: #fff; }
+.round-banner.lose { background: var(--wrong-fill); border-color: var(--wrong-fill); color: #fff; }
+.round-banner.both-right { border-color: var(--correct); }
+.round-banner.both-wrong { border-color: var(--wrong-fill); }
+.round-banner.win .stamp, .round-banner.lose .stamp { border: 3px solid #fff; }
 .rr-side { display: flex; align-items: center; gap: 0.7rem; min-width: 0; font-family: 'Red Hat Display', sans-serif; font-weight: 700; font-size: 1.35rem; line-height: 1.2; }
 .rr-side.right { flex-direction: row-reverse; text-align: right; }
 .rr-side .stamp { width: 60px; height: 60px; }
