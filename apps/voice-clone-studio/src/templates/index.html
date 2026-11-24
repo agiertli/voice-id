@@ -439,7 +439,7 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <header class="app-header">
-    <div class="brand">
+    <div class="brand" id="hdr-brand" role="button" tabindex="0" title="Home" style="cursor:pointer">
         <picture class="brand-logo">
             <source media="(max-width: 600px)" srcset="/static/logo-light-mark.png">
             <img src="/static/logo-light-compact.png" alt="Voice ID: AI or Alive?">
@@ -555,6 +555,7 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
                     </span>
                 </div>
                 <div class="voice-action-row">
+                    <button class="btn btn-ghost" id="btn-play-voice" type="button"><svg class="glyph" aria-hidden="true"><use href="#g-play"/></svg><span id="play-voice-label">Přehrát nahrávku</span></button>
                     <button class="btn btn-ghost" id="btn-download-voice" type="button"><svg class="glyph" aria-hidden="true"><use href="#g-download"/></svg><span id="download-voice-label">Stáhnout nahrávku</span></button>
                     <button class="btn btn-ghost" id="btn-rerecord-voice" type="button"><svg class="glyph" aria-hidden="true"><use href="#g-refresh"/></svg><span id="rerecord-label">Přenahrát hlas</span></button>
                     <button class="btn btn-ghost" id="btn-voice-sentences" type="button"><span class="ico ico-checklist" aria-hidden="true"></span><span id="voice-sentences-label">Nahrát věty</span></button>
@@ -618,6 +619,7 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
             existingVoices: 'Existující hlasy',
             yourVoice: 'Váš hlas',
             downloadVoice: 'Stáhnout nahrávku',
+            playVoice: 'Přehrát nahrávku',
             rerecordVoice: 'Přenahrát hlas',
             deleteVoice: 'Smazat hlas',
             genHeading: 'Co má AI říct vaším hlasem?',
@@ -682,6 +684,7 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
             existingVoices: 'Existujúce hlasy',
             yourVoice: 'Váš hlas',
             downloadVoice: 'Stiahnuť nahrávku',
+            playVoice: 'Prehrať nahrávku',
             rerecordVoice: 'Nahrať hlas znova',
             deleteVoice: 'Zmazať hlas',
             genHeading: 'Čo má AI povedať vaším hlasom?',
@@ -746,6 +749,7 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
             existingVoices: 'Existing voices',
             yourVoice: 'Your voice',
             downloadVoice: 'Download recording',
+            playVoice: 'Play recording',
             rerecordVoice: 'Re-record voice',
             deleteVoice: 'Delete voice',
             genHeading: 'What should AI say with your voice?',
@@ -838,10 +842,22 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
     }
 
     // --- Screen ---
+    var navFromHistory = false;
     function showScreen(id) {
+        var prev = document.querySelector('.screen.active');
         document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
         $(id).classList.add('active');
         window.scrollTo(0, 0);
+        // Browser Back follows the app's screens (like the Voice ID game) and never leaves the app.
+        if (!navFromHistory && (!prev || prev.id !== id)) {
+            try { history.pushState({ vcs: id, voice: currentVoiceId, name: currentVoiceName }, ''); } catch (e) {}
+        }
+    }
+    function goHome() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
+        if (typeof stopSentenceRecording === 'function' && sentRecorder && sentRecorder.state === 'recording') stopSentenceRecording();
+        if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+        $('btn-back-record').click();
     }
 
     // --- Language ---
@@ -862,6 +878,7 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
         $('existing-voices-heading').textContent = t('existingVoices');
         $('voice-badge-label').textContent = t('yourVoice');
         $('download-voice-label').textContent = t('downloadVoice');
+        $('play-voice-label').textContent = t('playVoice');
         $('rerecord-label').textContent = t('rerecordVoice');
         $('delete-voice-label').textContent = t('deleteVoice');
         $('gen-heading').textContent = t('genHeading');
@@ -1555,6 +1572,12 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
     $('btn-generate').addEventListener('click', generateSpeech);
 
     $('btn-download-voice').addEventListener('click', downloadVoiceAudio);
+    $('btn-play-voice').addEventListener('click', function() {
+        if (!currentVoiceId) return;
+        var b = $('btn-play-voice');
+        if (currentAudio && !currentAudio.paused && b.innerHTML.indexOf('#g-pause') >= 0) { currentAudio.pause(); return; }
+        playClipUrl('/api/voices/' + currentVoiceId + '/audio', b);
+    });
 
     document.querySelectorAll('.lang-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -1605,6 +1628,28 @@ svg.glyph.fill { fill: currentColor; stroke: none; }
         showScreen('screen-record');
         setMode('clone');
         loadExistingVoices();
+    });
+
+    $('hdr-brand').addEventListener('click', goHome);
+    $('hdr-brand').addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); } });
+    try { history.replaceState({ vcs: 'screen-record', guard: true }, ''); history.pushState({ vcs: 'screen-record' }, ''); } catch (e) {}
+    window.addEventListener('popstate', function(ev) {
+        var st = ev.state || {};
+        if (st.guard) {               // never leave the app: bounce back to the start screen
+            try { history.pushState({ vcs: 'screen-record' }, ''); } catch (e) {}
+            st = { vcs: 'screen-record' };
+        }
+        navFromHistory = true;
+        try {
+            if (st.vcs === 'screen-generate' && st.voice) {
+                currentVoiceId = st.voice; currentVoiceName = st.name;
+                $('voice-name').textContent = st.name || '';
+                showScreen('screen-generate');
+                if (typeof loadClipsForVoice === 'function') loadClipsForVoice(st.voice);
+            } else {
+                goHome();
+            }
+        } finally { navFromHistory = false; }
     });
 
     // --- Existing voices ---
