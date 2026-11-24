@@ -1,6 +1,6 @@
 image:
   repository: quay.io/agiertli/voice-id
-  tag: "v3.3.3"
+  tag: "v3.4.0"
   pullPolicy: IfNotPresent
 
 replicas: 1
@@ -38,6 +38,15 @@ detector:
 detectorBase:
   enabled: true
   url: "http://deepfake-detector-base:8080"
+
+# Opponent answer cache: each opponent's answer per clip is computed once (keyed by the
+# clip audio sha256) and pre-warmed in the background, one request at a time per opponent,
+# so "Preparing the game" is near-instant. Fallbacks (model failures) are never cached.
+# Admin: GET /api/admin/opponent-cache/status, POST .../warm, POST .../clear.
+opponentCache:
+  enabled: true
+  # seconds between background warm runs that pick up new/changed clips (min 30)
+  warmIntervalSec: 600
 
 # Admin page (/admin) password. Empty = image default. Override per event:
 #   --set adminToken=...

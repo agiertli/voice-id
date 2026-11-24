@@ -66,3 +66,8 @@ apps/deepfake-detector/models/
 *.ckpt
 *.onnx
 apps/voice-id/src/static/real-person.jpg
+
+# OpenVINO IR exports of the detectors (OVMS repo layout <model>/1/model.xml + model.bin): >1 GB, never in git.
+# Default work dir is ~/voice-id-audio/ovms/ (outside the repo); these guard accidental in-repo exports.
+**/ovms/repo/
+**/1/model.xml

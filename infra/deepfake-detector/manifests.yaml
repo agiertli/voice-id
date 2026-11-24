@@ -34,10 +34,10 @@ spec:
           resources:
             requests:
               cpu: "2"
-              memory: 1Gi
+              memory: 2Gi
             limits:
               cpu: "4"
-              memory: 2Gi
+              memory: 4Gi  # 2Gi OOM-killed under sequential load (2026-11-24)
           readinessProbe:
             httpGet:
               path: /ready

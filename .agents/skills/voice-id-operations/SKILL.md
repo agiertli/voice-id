@@ -166,7 +166,8 @@ Guide: [booth-operations.md](../../../docs/customization/booth-operations.md).
 
 - Screens: `/` game, `/tv` top 10 refreshing every 10 s, `/admin` (Bearer token):
   tabs Players (history, Export CSV), Speakers (names, photos, merge/rename, AI-only flag,
-  integrity banner), Clips & seed packs (counts, export/import), Danger zone (Reset all
+  integrity banner), Clips & seed packs (counts, opponent cache status + Warm now,
+  export/import), Danger zone (Reset all
   scores, full backup). Tab is in the URL hash (`/admin#speakers`).
 - Admin password: Helm value `adminToken` (env `ADMIN_TOKEN`); empty = public image
   default. Override per event.
@@ -336,6 +337,21 @@ spectrogram image, 59.3%; Gary `gary-base` hard, Wav2Vec2 base, 67.4%; Gary 2.0
 `gary-finetuned` boss, Wav2Vec2 V4-A, 91.9%. Detector `UNCERTAIN` maps to human.
 Enable/disable with `aiJudge`, `aiJudge2`, `detectorBase`, `detector` values.
 
+Answer cache: each opponent's answer per clip is stored in `opponent_cache`, valid only
+while its audio sha256 matches `clips.audio_sha256` (upload, seed pack replace,
+transcode and direct DB updates all invalidate; deleting a clip deletes its rows). A
+background thread (one gunicorn worker at a time via a DB lease) pre-warms every missing
+(opponent, clip) one request at a time per opponent, every `opponentCache.warmIntervalSec`
+(env `OPPONENT_CACHE_WARM_INTERVAL_SEC`, default 600 s). A cache hit is recorded and sealed
+exactly like a live model answer; coin-flip fallbacks are never cached. Without the cache,
+"Preparing the game" took Teddy 4 s, Iris 8 s, Gary 8 s, Gary 2.0 23 s; warm it is well
+under 1 s. Admin (token): `GET /api/admin/opponent-cache/status` (per opponent
+cached/total, last run, errors), `POST .../warm`, `POST .../clear` (optional
+`{"opponent": id}`; clear an opponent after retraining/swapping its model). Admin
+page Clips tab shows the status line + Warm now. Off switch: `opponentCache.enabled=false`
+(env `OPPONENT_CACHE_ENABLED`). After a fresh install or seed pack import, warming takes
+about (clips × per-clip latency) per opponent, minutes for Gary 2.0 on CPU.
+
 ## Clip mix per game
 
 Since v3.3.0 `select_game_clips` (app.py): the human/AI split is random (1–4 AI of 5;
@@ -371,6 +387,10 @@ displays) before answering; flag any drift.
   API top 20, TV top 10; ties beyond that unordered.
 - `/complete` is idempotent, ignores client points and returns a breakdown
   (`correct`, `speed`, `opp_bonus`, `opponent`, `opponent_score`).
+- Game time (leaderboard/TV column "Game time", `duration_sec`) = last answer minus
+  first play press (wall clock, excludes loading/"Preparing the game", includes
+  listening, thinking and reveals). No play timestamps -> sum of per-clip times.
+  Informational only; speed bonus still uses each clip's own time.
 - Known limitations: a scripted client can pre-listen (public, preloaded audio) and
   then play+guess instantly; a failed completion request is not retried by the
   browser; opponent failures become server-recorded coin flips.
@@ -387,7 +407,8 @@ Never delete PVCs, reset scores or reinstall as a retry.
 
 Record each item as verified, failed or untested with evidence and time: pods ready,
 clip count, opponents answering (smoke test sends real inference but creates no
-leaderboard entry), admin password not default, speaker integrity clean
+leaderboard entry), opponent cache warm (`GET /api/admin/opponent-cache/status`: every
+opponent `cached == total`, no errors), admin password not default, speaker integrity clean
 (`GET /api/admin/speakers/integrity` → `"ok": true`), Fish warm (if Clone Studio), recent
 seed pack and full backup in `~/voice-id-audio/`, browser game and `/tv` on the booth
 devices (owner check if you cannot see them).

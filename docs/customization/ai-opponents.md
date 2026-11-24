@@ -49,6 +49,60 @@ random guess for that clip (`fallback: true`, reasoning "Analysis failed"; also 
 the analysis request never arrived), and the player sees that same answer; see
 [scoring known limitations](scoring.md#known-limitations).
 
+## Answer cache and background pre-warm
+
+Model inference is what players wait for on "Preparing the game" (measured for the
+5 clips of a battle, analysed in parallel: Teddy 4 s, Iris 8 s, Gary 8 s, Gary 2.0
+23 s, because its CPU server handles one clip at a time). An opponent's answer
+depends only on the clip audio, so the server caches it:
+
+- **Table `opponent_cache`** (one row per opponent and clip): guess, reasoning,
+  detector details (`extra`: verdict, confidence, `p_fake`), the Iris spectrogram
+  PNG, and the **sha256 of the audio** it was computed from. A row is used only
+  while it matches the clip's current `clips.audio_sha256`. Replacing a clip's audio
+  (admin upload, seed pack import in replace mode, the on-the-fly WAV transcode, or
+  any direct database update, through an SQLite trigger) makes its rows stale.
+  Deleting a clip deletes its rows.
+- **On a battle request** the server checks the cache first. A hit is recorded on
+  the round exactly as if the model had just answered: still sealed, still first
+  answer wins, the same answer revealed at `/guess`. A miss calls the model as
+  before and stores the answer. **Coin-flip fallbacks (model failures) are never
+  cached.** They stay per game, and the next request or warm run asks the model again.
+- **Background pre-warm**: every app process starts one daemon thread. A database
+  lease row makes sure that only one process (of the 4 gunicorn workers) warms at a
+  time. The holder analyses every clip missing from the cache, **one request at a
+  time per opponent**, so live games are not slowed. It repeats every
+  `OPPONENT_CACHE_WARM_INTERVAL_SEC` (default 600 s) to pick up new or changed clips,
+  and on demand. Three consecutive errors pause that opponent until the next run.
+  A full warm of about 100 clips takes roughly as long as 100 sequential calls per
+  opponent: a few minutes for Gary 2.0 on CPU.
+- **Result**: once warm, the battle pre-analysis returns in well under a second. The
+  browser is unchanged; it calls the same endpoints.
+- Cached answers are a snapshot. After retraining or swapping a model (for example
+  a new Gary 2.0 image), clear that opponent's rows so its new answers are used.
+
+| Endpoint (admin token) | Effect |
+|---|---|
+| `GET /api/admin/opponent-cache/status` | Per opponent: `cached`/`total`, last run start/finish, clips analysed and errors in the last run, last error; whether a warm run holds the lease |
+| `POST /api/admin/opponent-cache/warm` | Queue a warm run now (`202`; picked up within about 5 s) |
+| `POST /api/admin/opponent-cache/clear` | Delete all cached answers, or one opponent's with JSON `{"opponent": "gary-finetuned"}` |
+
+The admin page **Clips & seed packs** tab shows the same status in one line
+(Teddy 109/109 · Iris 109/109 · …) with a **Warm now** button.
+
+| Helm value | Env var | Default | Effect |
+|---|---|---|---|
+| `opponentCache.enabled` | `OPPONENT_CACHE_ENABLED` | `true` | `false` turns off lookups, storing and pre-warm (every battle calls the models live, as before) |
+| `opponentCache.warmIntervalSec` | `OPPONENT_CACHE_WARM_INTERVAL_SEC` | `600` | Seconds between warm runs (minimum 30) |
+
+```bash
+ROUTE=$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
+read -r -s -p 'Admin password: ' VOICEID_ADMIN_TOKEN; printf '\n'
+curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/opponent-cache/status"
+curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" -X POST "https://${ROUTE}/api/admin/opponent-cache/clear" \
+  -H 'Content-Type: application/json' -d '{"opponent": "gary-finetuned"}'
+```
+
 ## Character notes for facilitators
 
 - **Teddy** almost always says "human". It loses to anyone who guesses AI often.

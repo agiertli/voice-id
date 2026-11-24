@@ -103,8 +103,11 @@ remove the route or scale the deployment to zero after the event.
    key (lowercase first name); merge aliases or mark synthetic voices **AI-only voice** on
    the Speakers tab ([why](clips-and-speakers.md#speaker-identity-one-person--one-key-hard-rule)).
 4. Play one solo game and one battle on the booth laptop with a test nickname,
-   then reset scores (admin page) so the board starts empty. Battle start time
-   is dominated by the slowest opponent analysing five clips.
+   then reset scores (admin page) so the board starts empty. Battle start is
+   near-instant once the opponent answer cache is warm: check the status line on
+   the admin **Clips & seed packs** tab (every opponent `cached/total` complete,
+   no errors; **Warm now** to start a run). Until then a battle waits for the
+   slowest opponent analysing five clips ([answer cache](ai-opponents.md#answer-cache-and-background-pre-warm)).
 5. Open `/tv` on the monitor in full-screen (F11) and confirm it updates.
 6. Tell staff the prize rule: **4 of 5 correct** (default) wins, regardless of
    points or opponent.

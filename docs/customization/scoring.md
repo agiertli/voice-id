@@ -158,7 +158,7 @@ prize = correct_answers >= PRIZE_THRESHOLD        (server, /api/game/<id>/comple
 
 - `correct_answers` is counted by the server from the guesses it recorded (one
   guess per clip of the game).
-- Points, answer time and opponent result have **no effect** on the prize.
+- Points, answer times, game time and opponent result have **no effect** on the prize.
 - The results screen (solo and battle) shows "You won a prize! Show this to the
   booth staff." when the server says so. If the completion request failed, the
   screen shows neither banner (and an error toast) and falls back to the running
@@ -180,7 +180,27 @@ prize = correct_answers >= PRIZE_THRESHOLD        (server, /api/game/<id>/comple
    one completed game).
 
 The TV view (`/tv`) refreshes every 10 seconds and shows the top 10 of those rows,
-with correct answers, points, opponent (if any) and answer time.
+with correct answers, points, opponent (if any) and game time.
+
+### Game time
+
+The leaderboard and TV column **Game time** (i18n key `lb_time`: en "Game time",
+cs/sk "Čas hry") is `duration_sec`, computed by the server on `/complete`:
+
+```
+game time = last answer (latest guessed_at) − first play press (earliest played_at)
+```
+
+It is the wall-clock time of actual play: it starts when the player first presses
+play and ends with the last answer. It **excludes** registration, loading and
+"Preparing the game" (opponent pre-analysis); it **includes** listening, thinking,
+reveal animations and the "Next clip" screens. A clip answered without pressing play
+counts from its answer time. If the game has no play timestamps at all (for example
+a client that never sends `/play`), the server falls back to the sum of the
+per-clip answer times (10 s for a clip never played). Game time is informational:
+it does not change points, rank or the prize. The per-clip speed bonus still uses
+each clip's own play-to-guess time. (Up to v3.3.2 the server stored the sum of
+per-clip answer times and the column was labelled "Answer time".)
 
 - **Replaying:** only the best game counts. A worse replay never lowers a player's
   position; a better one replaces it. Points are not summed across games.
@@ -188,7 +208,7 @@ with correct answers, points, opponent (if any) and answer time.
   and "anna" are two players; two people typing the same nickname share one entry.
 - **Ties:** equal points are broken by more correct answers. If both are equal, the
   order is whatever SQLite returns and is not guaranteed. Agree a tie-break for the
-  prize ceremony in advance (for example, shorter answer time shown on the TV).
+  prize ceremony in advance (for example, shorter game time shown on the TV).
 - **Completion is idempotent:** a second `/complete` for the same game returns the
   stored result (`already_completed: true`) and adds no leaderboard row. Points,
   `duration_sec` and the opponent sent by a client are ignored.
@@ -265,8 +285,9 @@ Factual observations from the code, without fixes:
 5. **A failed completion request leaves the game off the leaderboard** unless the
    browser retries: there is no automatic retry. Calling `/complete` again later is
    safe (idempotent).
-6. **Answer time on the TV** is `duration_sec`, the sum of the server-measured
-   per-clip answer times (10 s for a clip never played), not wall-clock time.
+6. **Game time on the TV** is wall-clock from the first play press to the last
+   answer, so a player who lingers on reveal screens gets a longer game time
+   without losing points. See [game time](#game-time).
 7. **The admin token is shared.** All `/api/admin/*` endpoints, including
    `POST /api/admin/reset` and `POST /api/admin/reset-scores` (both delete every
    game and leaderboard row), need the admin token. The image default is public;

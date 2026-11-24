@@ -90,24 +90,32 @@ sequenceDiagram
     B->>G: POST /api/game/start {player_name, email}
     G-->>B: game_id + 5 random clip ids (at least 1 AI, 1 human)
     B->>G: GET /api/clip/<id>/audio (all 5, preloaded)
-    opt Battle mode
+    opt Battle mode ("Preparing the game")
         B->>G: POST /api/game/<id>/<opponent endpoint> (5 in parallel)
-        G->>O: spectrogram / WAV / multipart
-        O-->>G: guess + reasoning
-        G-->>B: guesses held in the browser
+        alt answer cached for this clip audio (sha256)
+            G->>G: opponent_cache hit
+        else cache miss
+            G->>O: spectrogram / WAV / multipart
+            O-->>G: guess + reasoning (stored in opponent_cache)
+        end
+        G-->>B: ready (answer sealed, recorded on the round)
     end
     loop each clip
-        B->>B: press play, start answer timer
+        B->>G: POST /api/game/<id>/play {clip_id} (starts the clip clock)
         B->>G: POST /api/game/<id>/guess {clip_id, guess}
-        G-->>B: correct?, truth, model, speaker, photo
-        B->>B: add 100 + speed bonus if correct
+        G-->>B: correct?, points, truth, model, speaker, photo, opponent answer
     end
-    B->>G: POST /api/game/<id>/complete {points, duration_sec, opponent}
-    G-->>B: score (correct count), prize, rank
+    B->>G: POST /api/game/<id>/complete
+    G-->>B: score, points breakdown, game time, prize, rank
 ```
 
-The server is the authority for correct answers and the prize; the browser computes
-points. Full rules: [scoring](customization/scoring.md).
+The server is the authority for correct answers, points, game time (first play
+press to last answer) and the prize; the browser only displays them. Full rules:
+[scoring](customization/scoring.md).
+
+A background thread (one warming process at a time, chosen through a database lease)
+pre-computes every opponent's answer for every clip, so the battle pre-analysis is
+near-instant once warm. Details: [answer cache](customization/ai-opponents.md#answer-cache-and-background-pre-warm).
 
 ## Opponent analysis paths
 
@@ -142,12 +150,15 @@ repository; nothing in this pipeline touches Git.
 
 | Table | Content |
 |---|---|
-| `clips` | id, filename, is_ai, language, source (TTS name), speaker, audio BLOB, content type |
+| `clips` | id, filename, is_ai, language, source (TTS name), speaker, audio BLOB, content type, audio_sha256 |
 | `players` | nickname (unique), email |
 | `games` | id, player, clip ids, guesses JSON, score, total, points, duration, opponent, completed |
 | `leaderboard` | one row per completed game: player, score, total, points, duration, opponent |
 | `clip_stats` | times played, guessed AI, guessed human (per clip) |
 | `speakers` | display name and photo per speaker key |
+| `game_rounds` | per game and clip: first play, guess, points, the opponent's recorded answer |
+| `opponent_cache` | per opponent and clip: cached answer, detector details, Iris spectrogram, audio sha256 it is valid for |
+| `opponent_cache_meta`, `opponent_cache_runs` | pre-warm lease, last run, per-opponent run status |
 
 ## Design constraints
 

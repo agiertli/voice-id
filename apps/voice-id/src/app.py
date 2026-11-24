@@ -8,9 +8,11 @@ import logging
 import os
 import random
 import re
+import socket
 import sqlite3
 import subprocess
 import tempfile
+import threading
 import time
 import unicodedata
 import uuid
@@ -68,6 +70,10 @@ AI_JUDGE2_MODEL = os.environ.get("AI_JUDGE2_MODEL", "Qwen2-Audio-7B-Instruct")
 DETECTOR_URL = os.environ.get("DETECTOR_URL", "")
 DETECTOR_BASE_URL = os.environ.get("DETECTOR_BASE_URL", "")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "v01c3@r3dh4t!")
+# Opponent answer cache (see "Opponent answer cache" below): a battle opponent's answer for
+# a clip is computed once per (opponent, audio sha256) and reused, pre-warmed in background.
+OPPONENT_CACHE_ENABLED = os.environ.get("OPPONENT_CACHE_ENABLED", "true").strip().lower() not in ("0", "false", "no", "off")
+OPPONENT_CACHE_WARM_INTERVAL_SEC = max(30, int(os.environ.get("OPPONENT_CACHE_WARM_INTERVAL_SEC", "600")))
 
 # --- Scoring (server-authoritative; the browser only displays these numbers) ---
 # Per correct answer: POINTS_BASE + speed bonus max(0, round(POINTS_SPEED_MAX * (1 - t / SPEED_WINDOW_SEC)))
@@ -77,6 +83,10 @@ POINTS_BASE = 100
 POINTS_SPEED_MAX = 200
 SPEED_WINDOW_SEC = 10
 OPPONENT_BONUS = {"qwen": 50, "gemma": 100, "gary-base": 150, "gary-finetuned": 250}
+
+
+def _sha256_hex(data):
+    return hashlib.sha256(data).hexdigest()
 
 
 def _ensure_wav(audio_data, content_type):
@@ -250,6 +260,48 @@ def init_db():
                           ("completed_at", "REAL")]:
         if col not in game_cols:
             conn.execute(f"ALTER TABLE games ADD COLUMN {col} {col_type}")
+    # Opponent answer cache (additive). clips.audio_sha256 is filled lazily / by the app's
+    # write paths; the trigger clears it whenever audio_data changes without a new sha
+    # (e.g. load_samples.py or a manual UPDATE), so a stale cache row can never match.
+    clip_cols = {r[1] for r in conn.execute("PRAGMA table_info(clips)").fetchall()}
+    if "audio_sha256" not in clip_cols:
+        conn.execute("ALTER TABLE clips ADD COLUMN audio_sha256 TEXT")
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS opponent_cache (
+            opponent TEXT NOT NULL,
+            clip_id TEXT NOT NULL,
+            audio_sha256 TEXT NOT NULL,
+            guess TEXT NOT NULL,
+            reasoning TEXT,
+            extra TEXT,
+            spectrogram_png BLOB,
+            created_at REAL NOT NULL,
+            PRIMARY KEY (opponent, clip_id)
+        );
+        CREATE TABLE IF NOT EXISTS opponent_cache_meta (
+            key TEXT PRIMARY KEY,
+            holder TEXT,
+            value REAL
+        );
+        CREATE TABLE IF NOT EXISTS opponent_cache_runs (
+            opponent TEXT PRIMARY KEY,
+            last_started REAL,
+            last_finished REAL,
+            analysed INTEGER DEFAULT 0,
+            errors INTEGER DEFAULT 0,
+            last_error TEXT,
+            holder TEXT
+        );
+        CREATE TRIGGER IF NOT EXISTS clips_audio_sha_reset AFTER UPDATE OF audio_data ON clips
+        WHEN NEW.audio_sha256 IS OLD.audio_sha256
+        BEGIN
+            UPDATE clips SET audio_sha256 = NULL WHERE id = NEW.id;
+        END;
+        CREATE TRIGGER IF NOT EXISTS clips_delete_opponent_cache AFTER DELETE ON clips
+        BEGIN
+            DELETE FROM opponent_cache WHERE clip_id = OLD.id;
+        END;
+    """)
     conn.commit()
     conn.close()
 
@@ -318,8 +370,8 @@ def serve_clip_audio(clip_id):
     orig_ct = row["content_type"]
     audio_data, content_type = _ensure_wav(audio_data, orig_ct)
     if orig_ct != content_type:
-        db.execute("UPDATE clips SET audio_data = ?, content_type = ? WHERE id = ?",
-                   (audio_data, content_type, clip_id))
+        db.execute("UPDATE clips SET audio_data = ?, content_type = ?, audio_sha256 = ? WHERE id = ?",
+                   (audio_data, content_type, _sha256_hex(audio_data), clip_id))
         db.commit()
         logger.info("CLIP_TRANSCODED id=%s from=%s", clip_id, orig_ct)
     logger.info("CLIP_PLAY id=%s file=%s type=%s lang=%s source=%s speaker=%s size=%d",
@@ -590,7 +642,7 @@ def _compute_game_result(db, game):
         "FROM game_rounds WHERE game_id = ? AND guess IS NOT NULL", (game["id"],)).fetchall()}
     legacy = json.loads(game["guesses"] or "{}")  # guesses made before the scoring migration
     score = total = speed = opp_score = 0
-    duration = 0.0
+    duration = 0.0  # fallback: sum of per-clip answer times (10 s for a clip never played)
     for clip_id, r in rounds.items():
         total += 1
         if r["correct"]:
@@ -609,6 +661,15 @@ def _compute_game_result(db, game):
     opp_bonus = 0
     if opponent and (score > opp_score or (score == opp_score and score == n_clips)):
         opp_bonus = OPPONENT_BONUS.get(opponent, 0)
+    # Game time = wall clock of actual play: first play press -> last answer (excludes loading /
+    # "Preparing the game"; includes listening, thinking and reveals). A clip answered without
+    # pressing play counts from its answer. No play timestamps at all -> sum of per-clip times.
+    span = db.execute(
+        "SELECT MIN(COALESCE(played_at, guessed_at)) AS start, MAX(guessed_at) AS stop, "
+        "COUNT(played_at) AS n_played FROM game_rounds WHERE game_id = ? AND guess IS NOT NULL",
+        (game["id"],)).fetchone()
+    if rounds and span["n_played"] and span["stop"] is not None and span["stop"] >= span["start"]:
+        duration = span["stop"] - span["start"]
     return {
         "score": score, "total": total, "correct_points": correct_points, "speed_points": speed,
         "opp_bonus": opp_bonus, "opponent": opponent,
@@ -751,9 +812,10 @@ def admin_upload_clip():
     clip_id = str(uuid.uuid4())[:8]
     db = get_db()
     db.execute(
-        "INSERT INTO clips (id, filename, is_ai, language, source, speaker, audio_data, content_type, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (clip_id, filename, int(is_ai), language, source, speaker, audio_data, content_type, time.time()),
+        "INSERT INTO clips (id, filename, is_ai, language, source, speaker, audio_data, content_type, "
+        "audio_sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (clip_id, filename, int(is_ai), language, source, speaker, audio_data, content_type,
+         _sha256_hex(audio_data), time.time()),
     )
     db.commit()
 
@@ -1624,8 +1686,7 @@ def admin_seedpack_import():
 
             def clip_sha(cid):
                 if cid not in sha_cache:
-                    row = db.execute("SELECT audio_data FROM clips WHERE id = ?", (cid,)).fetchone()
-                    sha_cache[cid] = hashlib.sha256(row["audio_data"]).hexdigest()
+                    sha_cache[cid] = _clip_sha(db, cid)
                 return sha_cache[cid]
 
             try:
@@ -1645,10 +1706,12 @@ def admin_seedpack_import():
                     if hashlib.sha256(data).hexdigest() != c["sha256"]:
                         raise ValueError(f"{fn}: sha256 changed between validation and import")
                     ctype = _sniff_audio_type(data)
-                    vals = (int(bool(c["is_ai"])), c["language"], c.get("source", ""), c.get("speaker", ""), data, ctype)
+                    vals = (int(bool(c["is_ai"])), c["language"], c.get("source", ""), c.get("speaker", ""), data, ctype,
+                            c["sha256"])
                     if ids:
+                        # audio changed -> new sha -> this clip's opponent_cache rows stop matching
                         db.execute("UPDATE clips SET is_ai = ?, language = ?, source = ?, speaker = ?, "
-                                   "audio_data = ?, content_type = ? WHERE id = ?", vals + (ids[0],))
+                                   "audio_data = ?, content_type = ?, audio_sha256 = ? WHERE id = ?", vals + (ids[0],))
                         sha_cache[ids[0]] = c["sha256"]
                         summary["clips"]["replaced"] += 1
                     else:
@@ -1656,7 +1719,7 @@ def admin_seedpack_import():
                         while db.execute("SELECT 1 FROM clips WHERE id = ?", (cid,)).fetchone():
                             cid = str(uuid.uuid4())[:8]
                         db.execute("INSERT INTO clips (id, filename, is_ai, language, source, speaker, audio_data, "
-                                   "content_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                   "content_type, audio_sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                    (cid, fn) + vals + (now,))
                         existing.setdefault(fn, []).append(cid)
                         sha_cache[cid] = c["sha256"]
@@ -2001,6 +2064,9 @@ def battle_opponents():
 #   The answer itself is SEALED: the response is {status:"ready", opponent, clip_id,
 #   fallback[, spectrogram (Gemma only)]}; guess + reasoning are revealed by /guess
 #   (opponent_guess, opponent_reasoning, opponent_correct, opponent_fallback).
+#   The answer comes from the opponent answer cache when it holds a row for this
+#   (opponent, clip) with the clip's current audio sha256; otherwise the model is called
+#   and a successful answer is stored. Coin-flip fallbacks are never cached.
 
 def _battle_begin(game_id, clip_id, opponent_id):
     """Validate the request and fix the game's opponent. Returns (error_response, existing_round)."""
@@ -2030,8 +2096,11 @@ def _battle_begin(game_id, clip_id, opponent_id):
     return None, rnd
 
 
-def _battle_analyze(game_id, opponent_id, analyze_fn):
-    """analyze_fn(clip_row) -> (guess, reasoning, public_extra). Exceptions -> recorded coin flip."""
+def _spectrogram_url(png):
+    return "data:image/png;base64," + base64.b64encode(png).decode()
+
+
+def _battle_analyze(game_id, opponent_id):
     data = request.get_json(silent=True) or {}
     clip_id = data.get("clip_id")
     if not clip_id:
@@ -2040,53 +2109,67 @@ def _battle_analyze(game_id, opponent_id, analyze_fn):
     if err:
         return err
     db = get_db()
-    clip = db.execute("SELECT audio_data, content_type FROM clips WHERE id = ?", (clip_id,)).fetchone()
-    if not clip:
+    if not db.execute("SELECT 1 FROM clips WHERE id = ?", (clip_id,)).fetchone():
         return jsonify({"error": "unknown clip_id"}), 404
 
-    extra = {}
+    png, origin = None, "recorded"
     if existing is None:
-        try:
-            guess, reasoning, extra = analyze_fn(clip)
-            if guess not in ("ai", "human"):
-                raise ValueError(f"invalid guess {guess!r}")
-            fallback = False
-        except Exception:
-            logger.exception("Opponent %s analysis failed for clip %s, using coin-flip fallback", opponent_id, clip_id)
-            guess, reasoning, extra, fallback = random.choice(("ai", "human")), "Analysis failed", {}, True
+        hit = _cache_get(db, opponent_id, clip_id)
+        if hit:
+            guess, reasoning, png, fallback, origin = hit["guess"], hit["reasoning"] or "", hit["spectrogram_png"], False, "cache"
+        else:
+            audio = db.execute("SELECT audio_data FROM clips WHERE id = ?", (clip_id,)).fetchone()["audio_data"]
+            try:
+                res = _run_opponent(opponent_id, audio)
+                guess, reasoning, png, fallback, origin = res["guess"], res["reasoning"], res["png"], False, "model"
+                _cache_put(db, opponent_id, clip_id, _sha256_hex(audio), res)
+            except Exception:
+                logger.exception("Opponent %s analysis failed for clip %s, using coin-flip fallback", opponent_id, clip_id)
+                guess, reasoning, fallback, origin = random.choice(("ai", "human")), "Analysis failed", True, "fallback"
         rnd = _record_opp_answer(db, game_id, clip_id, guess, reasoning, fallback)
     else:
         rnd = existing
-    if opponent_id == "gemma" and "spectrogram" not in extra and not rnd["opp_fallback"]:
-        try:  # repeated call: re-render the (answer-free) spectrogram for display
-            png = generate_spectrogram(convert_to_wav_pcm(clip["audio_data"]))
-            extra = {"spectrogram": "data:image/png;base64," + base64.b64encode(png).decode()}
-        except Exception:
-            extra = {}
-    logger.info("OPPONENT_ANSWER game=%s clip=%s opponent=%s guess=%s fallback=%s",
-                game_id, clip_id, opponent_id, rnd["opp_guess"], bool(rnd["opp_fallback"]))
+    extra = {}
+    if opponent_id == "gemma" and not rnd["opp_fallback"]:
+        if png is None:  # repeated call: cached or re-rendered (answer-free) spectrogram for display
+            hit = _cache_get(db, opponent_id, clip_id)
+            png = hit["spectrogram_png"] if hit else None
+        if png is None:
+            try:
+                png = generate_spectrogram(convert_to_wav_pcm(
+                    db.execute("SELECT audio_data FROM clips WHERE id = ?", (clip_id,)).fetchone()["audio_data"]))
+            except Exception:
+                png = None
+        if png is not None:
+            extra = {"spectrogram": _spectrogram_url(png)}
+    logger.info("OPPONENT_ANSWER game=%s clip=%s opponent=%s guess=%s fallback=%s origin=%s",
+                game_id, clip_id, opponent_id, rnd["opp_guess"], bool(rnd["opp_fallback"]), origin)
     return jsonify({"status": "ready", "opponent": opponent_id, "clip_id": clip_id,
                     "fallback": bool(rnd["opp_fallback"]), **extra})
 
 
-def _gemma_analyze(clip):
-    wav_bytes = convert_to_wav_pcm(clip["audio_data"])
-    spectrogram_png = generate_spectrogram(wav_bytes)
+# Opponent analysers: audio bytes -> {guess, reasoning, png (bytes|None), meta (dict)}.
+# They raise on any failure; callers decide about fallbacks. Usable outside a request
+# (the background pre-warm calls them too).
+
+def _gemma_analyze(audio):
+    spectrogram_png = generate_spectrogram(convert_to_wav_pcm(audio))
     result = ai_judge_analyze(spectrogram_png)
     logger.info("AI_JUDGE guess=%s reasoning=%s", result.get("guess"), result.get("reasoning", "")[:80])
-    return (result.get("guess", "ai"), result.get("reasoning", ""),
-            {"spectrogram": "data:image/png;base64," + base64.b64encode(spectrogram_png).decode()})
+    return {"guess": result.get("guess", "ai"), "reasoning": result.get("reasoning", ""),
+            "png": spectrogram_png, "meta": {"model": AI_JUDGE_MODEL}}
 
 
-def _qwen_analyze(clip):
-    result = ai_judge2_analyze(convert_to_wav_pcm(clip["audio_data"]))
+def _qwen_analyze(audio):
+    result = ai_judge2_analyze(convert_to_wav_pcm(audio))
     logger.info("AI_JUDGE2 guess=%s reasoning=%s", result.get("guess"), result.get("reasoning", "")[:80])
-    return result.get("guess", "ai"), result.get("reasoning", ""), {}
+    return {"guess": result.get("guess", "ai"), "reasoning": result.get("reasoning", ""),
+            "png": None, "meta": {"model": AI_JUDGE2_MODEL}}
 
 
 def _detector_analyze(detector_url):
-    def run(clip):
-        wav_bytes = convert_to_wav_pcm(clip["audio_data"])
+    def run(audio):
+        wav_bytes = convert_to_wav_pcm(audio)
         resp = http_requests.post(
             f"{detector_url}/predict",
             files={"audio": ("clip.wav", wav_bytes, "audio/wav")},
@@ -2099,36 +2182,359 @@ def _detector_analyze(detector_url):
         reasoning = f'{result["verdict"]} (confidence: {result["confidence"]:.1%}, p_fake: {result["prob_fake"]:.4f})'
         logger.info("DETECTOR verdict=%s confidence=%.3f p_fake=%.4f",
                     result["verdict"], result["confidence"], result["prob_fake"])
-        return guess, reasoning, {}
+        return {"guess": guess, "reasoning": reasoning, "png": None,
+                "meta": {"verdict": result["verdict"], "confidence": result["confidence"],
+                         "prob_fake": result["prob_fake"]}}
     return run
+
+
+def _configured_opponents():
+    """{opponent_id: analyser} for every opponent configured in this deployment."""
+    ops = {}
+    if AI_JUDGE_URL and HAS_SPECTROGRAM and HAS_REQUESTS:
+        ops["gemma"] = _gemma_analyze
+    if AI_JUDGE2_URL and HAS_REQUESTS:
+        ops["qwen"] = _qwen_analyze
+    if DETECTOR_BASE_URL and HAS_REQUESTS:
+        ops["gary-base"] = _detector_analyze(DETECTOR_BASE_URL)
+    if DETECTOR_URL and HAS_REQUESTS:
+        ops["gary-finetuned"] = _detector_analyze(DETECTOR_URL)
+    return ops
+
+
+def _run_opponent(opponent_id, audio):
+    fn = _configured_opponents().get(opponent_id)
+    if fn is None:
+        raise RuntimeError(f"opponent {opponent_id} not configured")
+    res = fn(audio)
+    if res.get("guess") not in ("ai", "human"):
+        raise ValueError(f"invalid guess {res.get('guess')!r}")
+    return res
 
 
 @app.route("/api/game/<game_id>/ai-analyze", methods=["POST"])
 def ai_analyze_clip(game_id):
     if not AI_JUDGE_URL or not HAS_SPECTROGRAM or not HAS_REQUESTS:
         return jsonify({"error": "AI judge not configured"}), 503
-    return _battle_analyze(game_id, "gemma", _gemma_analyze)
+    return _battle_analyze(game_id, "gemma")
 
 
 @app.route("/api/game/<game_id>/ai-analyze2", methods=["POST"])
 def ai_analyze2_clip(game_id):
     if not AI_JUDGE2_URL or not HAS_REQUESTS:
         return jsonify({"error": "AI judge 2 not configured"}), 503
-    return _battle_analyze(game_id, "qwen", _qwen_analyze)
+    return _battle_analyze(game_id, "qwen")
 
 
 @app.route("/api/game/<game_id>/ai-analyze-detector", methods=["POST"])
 def ai_analyze_detector(game_id):
     if not DETECTOR_URL or not HAS_REQUESTS:
         return jsonify({"error": "Detector not configured"}), 503
-    return _battle_analyze(game_id, "gary-finetuned", _detector_analyze(DETECTOR_URL))
+    return _battle_analyze(game_id, "gary-finetuned")
 
 
 @app.route("/api/game/<game_id>/ai-analyze-detector-base", methods=["POST"])
 def ai_analyze_detector_base(game_id):
     if not DETECTOR_BASE_URL or not HAS_REQUESTS:
         return jsonify({"error": "Detector base not configured"}), 503
-    return _battle_analyze(game_id, "gary-base", _detector_analyze(DETECTOR_BASE_URL))
+    return _battle_analyze(game_id, "gary-base")
+
+
+# --- Opponent answer cache + background pre-warm ---
+#
+# Model inference dominates "Preparing the game" (measured: Teddy 4 s, Iris 8 s, Gary 8 s,
+# Gary 2.0 23 s for 5 clips). An opponent's answer depends only on the clip audio, so it
+# is cached per (opponent, clip_id) together with the sha256 of the audio it was computed
+# from. A row is valid only while clips.audio_sha256 still equals it: replacing a clip's
+# audio (upload, seed pack import replace, transcode, external UPDATE via trigger) makes
+# its rows stale; deleting a clip deletes its rows. Coin-flip fallbacks are never cached.
+#
+# Pre-warm: one daemon thread per process; a DB lease row (opponent_cache_meta 'lease')
+# makes sure only ONE process (gunicorn worker) warms at a time. The holder analyses every
+# clip missing from the cache, one request at a time per opponent, every
+# OPPONENT_CACHE_WARM_INTERVAL_SEC (and on POST /api/admin/opponent-cache/warm).
+#
+#   GET  /api/admin/opponent-cache/status  [admin Bearer]
+#        -> {enabled, interval_sec, warming, lease_holder, last_run_started, warm_requested_at,
+#            clips_total, opponents: [{id, cached, total, last_started, last_finished,
+#                                      analysed, errors, last_error}]}
+#   POST /api/admin/opponent-cache/warm    [admin Bearer] -> 202 {status: "queued"} (409 if disabled)
+#   POST /api/admin/opponent-cache/clear   [admin Bearer] optional JSON {opponent} -> {deleted}
+
+WARM_LEASE_TTL_SEC = 90
+WARM_POLL_SEC = 5
+WARM_MAX_CONSECUTIVE_ERRORS = 3   # model looks down -> stop this opponent until the next run
+_warm_start_lock = threading.Lock()
+_warm_pid = None
+
+
+def _clip_sha(db, clip_id, commit=False):
+    """Current sha256 of a clip's audio (stored column, computed lazily). None if no clip."""
+    row = db.execute("SELECT audio_sha256 FROM clips WHERE id = ?", (clip_id,)).fetchone()
+    if not row:
+        return None
+    if row["audio_sha256"]:
+        return row["audio_sha256"]
+    audio = db.execute("SELECT audio_data FROM clips WHERE id = ?", (clip_id,)).fetchone()["audio_data"]
+    sha = _sha256_hex(audio)
+    # audio_data = ? guards against a concurrent replace between our read and this write
+    db.execute("UPDATE clips SET audio_sha256 = ? WHERE id = ? AND audio_sha256 IS NULL AND audio_data = ?",
+               (sha, clip_id, audio))
+    if commit:
+        db.commit()
+    return sha
+
+
+def _cache_get(db, opponent_id, clip_id):
+    if not OPPONENT_CACHE_ENABLED:
+        return None
+    sha = _clip_sha(db, clip_id, commit=True)
+    if not sha:
+        return None
+    return db.execute(
+        "SELECT guess, reasoning, extra, spectrogram_png FROM opponent_cache "
+        "WHERE opponent = ? AND clip_id = ? AND audio_sha256 = ?", (opponent_id, clip_id, sha)).fetchone()
+
+
+def _cache_put(db, opponent_id, clip_id, sha, res):
+    """Store a SUCCESSFUL model answer (never call this for a fallback)."""
+    if not OPPONENT_CACHE_ENABLED:
+        return
+    db.execute(
+        "INSERT OR REPLACE INTO opponent_cache (opponent, clip_id, audio_sha256, guess, reasoning, extra, "
+        "spectrogram_png, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (opponent_id, clip_id, sha, res["guess"], res.get("reasoning") or "",
+         json.dumps(res.get("meta") or {}), res.get("png") if opponent_id == "gemma" else None, time.time()))
+    db.commit()
+
+
+def _bg_conn():
+    conn = sqlite3.connect(str(DATA_DIR / "voiceid.db"), timeout=10)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout=5000")
+    return conn
+
+
+def _meta(conn, key):
+    return conn.execute("SELECT holder, value FROM opponent_cache_meta WHERE key = ?", (key,)).fetchone()
+
+
+def _set_meta(conn, key, holder, value):
+    conn.execute("INSERT INTO opponent_cache_meta (key, holder, value) VALUES (?, ?, ?) "
+                 "ON CONFLICT(key) DO UPDATE SET holder = excluded.holder, value = excluded.value",
+                 (key, holder, value))
+    conn.commit()
+
+
+def _lease_acquire(conn, holder):
+    """Atomic (SQLite serialises writers): take the lease if free, expired or already ours."""
+    now = time.time()
+    conn.execute("INSERT OR IGNORE INTO opponent_cache_meta (key, holder, value) VALUES ('lease', NULL, 0)")
+    cur = conn.execute("UPDATE opponent_cache_meta SET holder = ?, value = ? WHERE key = 'lease' "
+                       "AND (holder IS NULL OR holder = ? OR value < ?)",
+                       (holder, now + WARM_LEASE_TTL_SEC, holder, now))
+    conn.commit()
+    return cur.rowcount == 1
+
+
+def _lease_renew(conn, holder):
+    cur = conn.execute("UPDATE opponent_cache_meta SET value = ? WHERE key = 'lease' AND holder = ?",
+                       (time.time() + WARM_LEASE_TTL_SEC, holder))
+    conn.commit()
+    return cur.rowcount == 1
+
+
+def _lease_release(conn, holder):
+    conn.execute("UPDATE opponent_cache_meta SET holder = NULL, value = 0 WHERE key = 'lease' AND holder = ?",
+                 (holder,))
+    conn.commit()
+
+
+def _warm_due(conn):
+    last = _meta(conn, "last_run")
+    req = _meta(conn, "warm_requested")
+    last_start = last["value"] if last and last["value"] else 0
+    if req and req["value"] and req["value"] > last_start:
+        return True
+    return time.time() - last_start >= OPPONENT_CACHE_WARM_INTERVAL_SEC
+
+
+def _uncached_clips(conn, opponent_id):
+    return [r["id"] for r in conn.execute(
+        "SELECT c.id FROM clips c LEFT JOIN opponent_cache oc ON oc.opponent = ? AND oc.clip_id = c.id "
+        "AND oc.audio_sha256 = c.audio_sha256 WHERE oc.clip_id IS NULL ORDER BY c.created_at, c.id",
+        (opponent_id,)).fetchall()]
+
+
+def _warm_opponent(opponent_id, fn, holder, stop):
+    conn = _bg_conn()
+    analysed = errors = consecutive = 0
+    last_error = None
+    try:
+        conn.execute("INSERT INTO opponent_cache_runs (opponent, last_started, analysed, errors, last_error, holder) "
+                     "VALUES (?, ?, 0, 0, NULL, ?) ON CONFLICT(opponent) DO UPDATE SET last_started = excluded.last_started, "
+                     "analysed = 0, errors = 0, last_error = NULL, holder = excluded.holder",
+                     (opponent_id, time.time(), holder))
+        conn.commit()
+        for clip_id in _uncached_clips(conn, opponent_id):
+            if stop.is_set():
+                break
+            try:
+                row = conn.execute("SELECT audio_data FROM clips WHERE id = ?", (clip_id,)).fetchone()
+                if not row:
+                    continue
+                audio = row["audio_data"]
+                res = fn(audio)
+                if res.get("guess") not in ("ai", "human"):
+                    raise ValueError(f"invalid guess {res.get('guess')!r}")
+            except Exception as e:  # never cache a failure; retry on the next run
+                errors += 1
+                consecutive += 1
+                last_error = f"{clip_id}: {type(e).__name__}: {e}"[:300]
+                logger.warning("OPPONENT_CACHE_WARM opponent=%s clip=%s failed: %s", opponent_id, clip_id, e)
+                if consecutive >= WARM_MAX_CONSECUTIVE_ERRORS:
+                    logger.warning("OPPONENT_CACHE_WARM opponent=%s: %d consecutive errors, pausing until next run",
+                                   opponent_id, consecutive)
+                    break
+                continue
+            consecutive = 0
+            # store only if the audio is still the one we analysed
+            cur = conn.execute("SELECT 1 FROM clips WHERE id = ? AND audio_data = ?", (clip_id, audio)).fetchone()
+            if cur:
+                conn.execute(
+                    "INSERT OR REPLACE INTO opponent_cache (opponent, clip_id, audio_sha256, guess, reasoning, extra, "
+                    "spectrogram_png, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (opponent_id, clip_id, _sha256_hex(audio), res["guess"], res.get("reasoning") or "",
+                     json.dumps(res.get("meta") or {}), res.get("png") if opponent_id == "gemma" else None,
+                     time.time()))
+                conn.execute("UPDATE opponent_cache_runs SET analysed = analysed + 1 WHERE opponent = ?",
+                             (opponent_id,))
+                conn.commit()
+                analysed += 1
+    except Exception as e:
+        errors += 1
+        last_error = f"{type(e).__name__}: {e}"[:300]
+        logger.exception("OPPONENT_CACHE_WARM opponent=%s crashed", opponent_id)
+    finally:
+        try:
+            conn.execute("UPDATE opponent_cache_runs SET last_finished = ?, errors = ?, last_error = ? "
+                         "WHERE opponent = ?", (time.time(), errors, last_error, opponent_id))
+            conn.commit()
+        finally:
+            conn.close()
+    logger.info("OPPONENT_CACHE_WARM opponent=%s analysed=%d errors=%d", opponent_id, analysed, errors)
+
+
+def _warm_once(conn, holder):
+    _set_meta(conn, "last_run", holder, time.time())
+    for r in conn.execute("SELECT id FROM clips WHERE audio_sha256 IS NULL").fetchall():
+        try:
+            _clip_sha(conn, r["id"])
+        except Exception as e:  # one unreadable clip must not stop the run
+            logger.warning("OPPONENT_CACHE_WARM cannot hash clip %s: %s", r["id"], e)
+    conn.commit()
+    stop = threading.Event()
+    threads = [threading.Thread(target=_warm_opponent, args=(op, fn, holder, stop),
+                                name=f"opponent-cache-{op}", daemon=True)
+               for op, fn in _configured_opponents().items()]
+    for t in threads:
+        t.start()
+    while any(t.is_alive() for t in threads):
+        for t in threads:
+            t.join(timeout=WARM_LEASE_TTL_SEC / 6)
+        if not _lease_renew(conn, holder):
+            logger.warning("OPPONENT_CACHE_WARM lost the lease, stopping (%s)", holder)
+            stop.set()
+    for t in threads:
+        t.join()
+
+
+def _warm_loop():
+    holder = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:6]}"
+    time.sleep(random.uniform(1, 3))  # let the app start; spread the workers out
+    while True:
+        conn = None
+        try:
+            conn = _bg_conn()
+            if _configured_opponents() and _warm_due(conn) and _lease_acquire(conn, holder):
+                logger.info("OPPONENT_CACHE_WARM run start holder=%s", holder)
+                try:
+                    _warm_once(conn, holder)
+                finally:
+                    _lease_release(conn, holder)
+                logger.info("OPPONENT_CACHE_WARM run done holder=%s", holder)
+        except Exception:
+            logger.exception("OPPONENT_CACHE_WARM loop error")
+        finally:
+            if conn is not None:
+                conn.close()
+        time.sleep(WARM_POLL_SEC)
+
+
+@app.before_request
+def _ensure_warmer():
+    """Start the pre-warm thread once per process (lazily: works with gunicorn forks)."""
+    global _warm_pid
+    if not OPPONENT_CACHE_ENABLED or _warm_pid == os.getpid():
+        return
+    with _warm_start_lock:
+        if _warm_pid == os.getpid():
+            return
+        _warm_pid = os.getpid()
+        threading.Thread(target=_warm_loop, name="opponent-cache-warmer", daemon=True).start()
+
+
+@app.route("/api/admin/opponent-cache/status")
+@require_admin
+def admin_opponent_cache_status():
+    db = get_db()
+    total = db.execute("SELECT COUNT(*) FROM clips").fetchone()[0]
+    runs = {r["opponent"]: r for r in db.execute("SELECT * FROM opponent_cache_runs").fetchall()}
+    lease, last, req = _meta(db, "lease"), _meta(db, "last_run"), _meta(db, "warm_requested")
+    out = []
+    for op in _configured_opponents():
+        cached = db.execute(
+            "SELECT COUNT(*) FROM opponent_cache oc JOIN clips c ON c.id = oc.clip_id "
+            "AND c.audio_sha256 = oc.audio_sha256 WHERE oc.opponent = ?", (op,)).fetchone()[0]
+        r = runs.get(op)
+        out.append({"id": op, "cached": cached, "total": total,
+                    "last_started": r["last_started"] if r else None,
+                    "last_finished": r["last_finished"] if r else None,
+                    "analysed": r["analysed"] if r else 0,
+                    "errors": r["errors"] if r else 0,
+                    "last_error": r["last_error"] if r else None})
+    warming = bool(lease and lease["holder"] and (lease["value"] or 0) > time.time())
+    return jsonify({
+        "enabled": OPPONENT_CACHE_ENABLED, "interval_sec": OPPONENT_CACHE_WARM_INTERVAL_SEC,
+        "warming": warming, "lease_holder": lease["holder"] if warming else None,
+        "last_run_started": last["value"] if last else None,
+        "warm_requested_at": req["value"] if req else None,
+        "clips_total": total, "opponents": out,
+    })
+
+
+@app.route("/api/admin/opponent-cache/warm", methods=["POST"])
+@require_admin
+def admin_opponent_cache_warm():
+    if not OPPONENT_CACHE_ENABLED:
+        return jsonify({"error": "opponent cache disabled (OPPONENT_CACHE_ENABLED=false)"}), 409
+    _set_meta(get_db(), "warm_requested", None, time.time())
+    logger.info("OPPONENT_CACHE_WARM requested by admin")
+    return jsonify({"status": "queued", "poll_sec": WARM_POLL_SEC}), 202
+
+
+@app.route("/api/admin/opponent-cache/clear", methods=["POST"])
+@require_admin
+def admin_opponent_cache_clear():
+    data = request.get_json(silent=True) or {}
+    db = get_db()
+    if data.get("opponent"):
+        n = db.execute("DELETE FROM opponent_cache WHERE opponent = ?", (str(data["opponent"]),)).rowcount
+    else:
+        n = db.execute("DELETE FROM opponent_cache").rowcount
+    db.commit()
+    logger.info("OPPONENT_CACHE_CLEAR opponent=%s deleted=%d", data.get("opponent") or "*", n)
+    return jsonify({"status": "cleared", "deleted": n})
 
 
 with app.app_context():

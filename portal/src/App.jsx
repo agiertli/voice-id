@@ -228,7 +228,7 @@ battle bonus     + Teddy 50 | Iris 100 | Gary 150 | Gary 2.0 250
             <Architecture />
             <ul className="facts-list">
               <li><b>The game never calls the TTS engines.</b> Clips are made beforehand with Voice Clone Studio and stored in the game’s database.</li>
-              <li><b>Opponents think during the loading screen.</b> All five clips are analysed in parallel before round one, then revealed one by one.</li>
+              <li><b>Opponents answer before round one.</b> Every opponent's answer for every clip is pre-computed in the background and cached, so a battle starts almost instantly. Answers stay sealed until the player has guessed.</li>
               <li><b>Audio stays on the cluster.</b> No recordings in Git, in this page or in any public place. Teams receive clips as a private seed pack.</li>
             </ul>
             <a className="btn small" href={doc('docs/ARCHITECTURE.md')}>Architecture details</a>

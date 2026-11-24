@@ -391,6 +391,10 @@
             <div class="block" id="clipSummary">
                 <div class="stat-tiles" id="clipTiles"></div>
                 <div class="table-wrap"><table id="clipTable"></table></div>
+                <div class="row" style="margin-top:8px;">
+                    <span class="sp-status" id="oppCacheStatus" title="Battle opponents' answers are pre-computed in the background so 'Preparing the game' is instant"></span>
+                    <button class="btn-sm" onclick="warmOpponentCache()">Warm now</button>
+                </div>
             </div>
 
             <p class="sensitive">Seed packs contain real people's voices. Share privately &mdash; never in git or public places.</p>
@@ -775,6 +779,7 @@
         async function loadClipSummary() {
             if (!token) return;
             try {
+                loadOpponentCache();
                 var clips = await adminJSON('/api/admin/clips');
                 var langs = {}, tot = {h: 0, a: 0}, sources = {}, speakers = {};
                 clips.forEach(function(c) {
@@ -805,6 +810,26 @@
             } catch (e) {
                 console.error('Clip summary error:', e);
             }
+        }
+
+        var OPP_NAMES = {'qwen': 'Teddy', 'gemma': 'Iris', 'gary-base': 'Gary', 'gary-finetuned': 'Gary 2.0'};
+        async function loadOpponentCache() {
+            var el = document.getElementById('oppCacheStatus');
+            try {
+                var d = await adminJSON('/api/admin/opponent-cache/status');
+                if (!d.enabled) { el.textContent = 'Opponent answer cache: off'; return; }
+                var parts = d.opponents.map(function(o) {
+                    return (OPP_NAMES[o.id] || o.id) + ' ' + o.cached + '/' + o.total + (o.errors ? ' (' + o.errors + ' errors)' : '');
+                });
+                el.textContent = 'Opponent answer cache: ' + (parts.join(' \u00b7 ') || 'no opponents configured') +
+                    (d.warming ? ' \u2014 warming\u2026' : '');
+                el.className = 'sp-status';
+            } catch (e) { el.textContent = 'Opponent answer cache: ' + e.message; el.className = 'sp-status err'; }
+        }
+        async function warmOpponentCache() {
+            try { await adminJSON('/api/admin/opponent-cache/warm', {method: 'POST'}); } catch (e) {}
+            setTimeout(loadOpponentCache, 6000);
+            loadOpponentCache();
         }
 
         // --- Speakers ---
