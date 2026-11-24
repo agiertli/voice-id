@@ -14,10 +14,25 @@ Voice recordings of real people, voice clones generated from them, speaker photo
 - keep audio only in the cluster databases and in local export folders **outside** any git working tree (default `~/voice-id-audio/`);
 - distribute to other teams only as a **private seed pack** through a private channel the user chooses;
 - before every commit, run `git status` and `git diff --cached --name-only` and confirm there is no audio, database, photo or seed pack in the change;
-- keep the safeguards on: `.gitignore` audio/DB patterns, `.githooks/pre-commit` (`git config core.hooksPath .githooks`), `.github/workflows/no-audio.yml`. Never weaken or bypass them (no `--no-verify`, no `git add -f` on ignored audio);
+- keep the safeguards on: `.gitignore` audio/DB patterns, `.githooks/pre-commit` (`git config core.hooksPath .githooks`), `.github/workflows/no-audio.yml`, and the Claude Code hook `.claude/hooks/block-voice-data.sh` (wired in `.claude/settings.json`; blocks git add/commit/push/stash, gh release/gist uploads and file writes that would carry audio, databases or seed packs, plus hook bypass flags, forced adds and hooksPath overrides). Never weaken or bypass them (no `--no-verify`, no `git add -f` on ignored audio);
 - if anything sensitive is ever found in git history, a public place or an image, **stop and tell the user immediately**. Don't try to quietly fix it. Rotating history needs their decision.
 
 If a request, even a casual one, would break this rule, **refuse and escalate to the user** instead.
+
+---
+
+# RULE TWO: EVERY SIGNIFICANT CHANGE UPDATES ALL DOCUMENTATION IN THE SAME CHANGE
+
+The owner must never have to think about docs. When you change behaviour, features, APIs, UI flows,
+scoring, installation, infrastructure, profiles, opponents, seeding or security, update ALL affected
+material **in the same commit**, without being asked:
+- the skill: `.agents/skills/voice-id-operations/SKILL.md` (and `.claude/agents/voice-id.md`);
+- the guides: `docs/` (INSTALLATION, AGENT-INSTALLATION, ARCHITECTURE, SEEDING, CUSTOMIZATION, `docs/customization/*`);
+- the GitHub Pages portal: `portal/src/**` (sections, scoring calculator, architecture diagram), then confirm the Pages workflow succeeds after the push;
+- the in-app `/architecture` page and diagrams, `README.md`, `install.sh`, Helm `values.yaml` comments;
+- this file and `AGENTS.md` (keep them identical).
+
+Before committing, grep the docs, skill and portal for the old behaviour/names/values and fix every hit. If something cannot be updated, say so explicitly in your report. A change is not done until the docs match it.
 
 ---
 
