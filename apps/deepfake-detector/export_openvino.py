@@ -14,7 +14,7 @@ Produces (OVMS model repository layout):
 Model weights stay OUT of git (size). Write the output outside the working tree.
 
 Contract (see docs/OPENVINO-DETECTOR.md):
-    input  "input_values"  FP32 [batch, seq]   (seq = 160000 in the game)
+    input  "input_values"  FP32 [batch, seq]   (Gary 2.0: seq = 160000; Gary base image: native clip length)
     output "logits"        FP32 [batch, 2]     index 1 = "fake"
 The attention mask is not an input: serve.py always pads to 160000 *before* the feature
 extractor, so the mask is all ones and has no effect.

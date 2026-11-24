@@ -1,0 +1,189 @@
+# OpenVINO Model Server (OpenShift AI built-in "kserve-ovms" runtime) for the Voice ID
+# deepfake detectors. Fully isolated in namespace voice-id-ovms, CPU only, internal only.
+#
+#   gary-base       = Wav2Vec2 base       (game opponent "gary-base",      same weights as deepfake-detector-base)
+#   gary-finetuned  = Wav2Vec2 V4-A FT    (game opponent "gary-finetuned", same weights as deepfake-detector-fine-tuned)
+#
+# Model repository on each PVC (OVMS layout):  <model>/1/model.xml + model.bin  (FP32 IR)
+# Weights are produced by apps/deepfake-detector/export_openvino.py and copied onto the PVCs
+# with the temporary loader pod in model-loader.yaml (oc cp of MODEL files only).
+# Payload contract + parity results: docs/OPENVINO-DETECTOR.md
+#
+# Apply order (KUBECONFIG must point at the target cluster):
+#   1. oc apply -f infra/openvino-detector/manifests.yaml   (ISVC pods wait until the PVCs hold the IR)
+#      - or apply everything except the two InferenceServices first, then load, then the ISVCs
+#   2. oc apply -f infra/openvino-detector/model-loader.yaml; oc cp the IR dirs; oc delete pod ovms-model-loader
+#   3. oc rollout restart deploy/gary-base-predictor deploy/gary-finetuned-predictor -n voice-id-ovms (if they started empty)
+#
+# One PVC per model: gp3 is RWO, so separate PVCs let the two predictor pods land on any node.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: voice-id-ovms
+  labels:
+    opendatahub.io/dashboard: "true"
+  annotations:
+    openshift.io/display-name: voice-id-ovms
+    openshift.io/description: "OVMS (OpenVINO) serving of the Voice ID deepfake detectors - parallel PoC, not wired into the game"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gary-base-models
+  namespace: voice-id-ovms
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: gp3-csi
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gary-finetuned-models
+  namespace: voice-id-ovms
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: gp3-csi
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Equivalent to: oc process -n redhat-ods-applications kserve-ovms | oc apply -n voice-id-ovms -f -
+# (template objects copied verbatim; RHOAI 3.5.4, runtime-version v2026.1.0).
+# Template annotations added the way the dashboard does when it instantiates a runtime.
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: kserve-ovms
+  namespace: voice-id-ovms
+  annotations:
+    opendatahub.io/apiProtocol: REST
+    opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
+    opendatahub.io/runtime-version: v2026.1.0
+    opendatahub.io/template-name: kserve-ovms
+    opendatahub.io/template-display-name: OpenVINO Model Server
+    openshift.io/display-name: OpenVINO Model Server
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  annotations:
+    opendatahub.io/kserve-runtime: ovms
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8888"
+  containers:
+  - args:
+    - --model_name={{.Name}}
+    - --port=8001
+    - --rest_port=8888
+    - --model_path=/mnt/models
+    - --file_system_poll_wait_seconds=0
+    - --metrics_enable
+    image: registry.redhat.io/rhoai/odh-openvino-model-server-rhel9@sha256:d2e40c07901f48324fae651d757345b44ce6602cec041c64aee2b699a95e4185
+    name: kserve-container
+    ports:
+    - containerPort: 8888
+      protocol: TCP
+  multiModel: false
+  protocolVersions:
+  - v2
+  - grpc-v2
+  supportedModelFormats:
+  - autoSelect: true
+    name: openvino_ir
+    version: opset13
+  - name: onnx
+    version: "1"
+  - autoSelect: true
+    name: tensorflow
+    version: "1"
+  - autoSelect: true
+    name: tensorflow
+    version: "2"
+  - autoSelect: true
+    name: paddle
+    version: "2"
+  - autoSelect: true
+    name: pytorch
+    version: "2"
+---
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: gary-base
+  namespace: voice-id-ovms
+  annotations:
+    openshift.io/display-name: gary-base
+    openshift.io/description: "Wav2Vec2 deepfake detector (base) - FP32 OpenVINO IR"
+    serving.kserve.io/deploymentMode: Standard
+    security.opendatahub.io/enable-auth: "false"
+    opendatahub.io/model-type: predictive
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  predictor:
+    automountServiceAccountToken: false
+    minReplicas: 1
+    maxReplicas: 1
+    model:
+      modelFormat:
+        name: openvino_ir
+        version: opset13
+      runtime: kserve-ovms
+      protocolVersion: v2
+      storageUri: pvc://gary-base-models/gary-base
+      args:
+      # Pin FP32 compute: OpenVINO CPU silently switches to bf16 on AVX512_BF16/AMX CPUs.
+      - '--plugin_config={"INFERENCE_PRECISION_HINT":"f32","PERFORMANCE_HINT":"LATENCY"}'
+      # Default REST workers = CPU count (4): under concurrent inference all of them block and /ready + metadata
+      # time out. Extra workers only wait on the inference queue; they keep health endpoints responsive.
+      - --rest_workers=16
+      # gary-base gets the WHOLE clip (native length, see docs): a 60 s clip means ~3000x3000 attention per
+      # head and the CPU plugin keeps the peak buffers -> measured 3.8Gi after the parity run; 4Gi was too tight.
+      resources:
+        requests:
+          cpu: "2"
+          memory: 4Gi
+        limits:
+          cpu: "4"
+          memory: 6Gi
+---
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: gary-finetuned
+  namespace: voice-id-ovms
+  annotations:
+    openshift.io/display-name: gary-finetuned
+    openshift.io/description: "Wav2Vec2 deepfake detector (V4-A fine-tuned) - FP32 OpenVINO IR"
+    serving.kserve.io/deploymentMode: Standard
+    security.opendatahub.io/enable-auth: "false"
+    opendatahub.io/model-type: predictive
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  predictor:
+    automountServiceAccountToken: false
+    minReplicas: 1
+    maxReplicas: 1
+    model:
+      modelFormat:
+        name: openvino_ir
+        version: opset13
+      runtime: kserve-ovms
+      protocolVersion: v2
+      storageUri: pvc://gary-finetuned-models/gary-finetuned
+      args:
+      - '--plugin_config={"INFERENCE_PRECISION_HINT":"f32","PERFORMANCE_HINT":"LATENCY"}'
+      # Default REST workers = CPU count (4): under concurrent inference all of them block and /ready + metadata
+      # time out. Extra workers only wait on the inference queue; they keep health endpoints responsive.
+      - --rest_workers=16
+      resources:
+        requests:
+          cpu: "2"
+          memory: 4Gi
+        limits:
+          cpu: "4"
+          memory: 4Gi

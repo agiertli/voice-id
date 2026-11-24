@@ -6,8 +6,8 @@ Saves raw WAV files + metadata manifest for training pipeline.
 
 Usage:
     python generate_synthetic_data.py \
-        --xtts-url https://xtts-v2-voice-id.apps.ocp.6rklz.sandbox744.opentlc.com \
-        --fish-url https://fish-native-voice-id.apps.ocp.6rklz.sandbox744.opentlc.com \
+        --xtts-url https://<xtts-route> \
+        --fish-url https://<fish-route> \
         --output-dir generated_data \
         --clips-per-combo 3
 """

@@ -1,0 +1,159 @@
+# serve.py-compatible adapters in front of the OVMS detectors (same /predict, /health, /ready API and JSON).
+# Game switch: detector.url     = http://adapter-gary-finetuned.voice-id-ovms.svc.cluster.local:8080
+#              detectorBase.url = http://adapter-gary-base.voice-id-ovms.svc.cluster.local:8080
+#   (or, with the chart switch: --set detectorBackend=openvino)
+# Code: apps/deepfake-detector/ovms_adapter/ (no model weights in the image).
+# Image: built in-cluster from that directory (BuildConfig below, binary Docker build):
+#   oc start-build voice-id-ovms-adapter -n voice-id-ovms --from-dir=apps/deepfake-detector/ovms_adapter --follow
+# Intended public image: quay.io/agiertli/voice-id-ovms-adapter:v0.1.1 (podman build --platform linux/amd64 ...);
+# to use it, replace the image below and drop the image.openshift.io/triggers annotation.
+#
+# Length policy (must match the legacy images, see docs/OPENVINO-DETECTOR.md):
+#   gary-finetuned = 160000 (current serve.py)    gary-base = native (older serve.py in deepfake-detector-base:v1.0.3)
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: voice-id-ovms-adapter
+  namespace: voice-id-ovms
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: voice-id-ovms-adapter
+  namespace: voice-id-ovms
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: voice-id-ovms-adapter:v0.1.1
+  resources:
+    limits: {cpu: "2", memory: 2Gi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adapter-gary-finetuned
+  namespace: voice-id-ovms
+  labels: {app: adapter-gary-finetuned, app.kubernetes.io/part-of: voice-id-ovms}
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"voice-id-ovms-adapter:v0.1.1"},"fieldPath":"spec.template.spec.containers[?(@.name==\"adapter\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: adapter-gary-finetuned}
+  template:
+    metadata:
+      labels: {app: adapter-gary-finetuned}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: adapter
+        image: image-registry.openshift-image-registry.svc:5000/voice-id-ovms/voice-id-ovms-adapter:v0.1.1
+        env:
+        # Headless predictor Service: DNS resolves to the pod IP, so call the pod port 8888 directly.
+        # The ISVC status URL (port 80) does NOT work for in-cluster calls.
+        - {name: OVMS_URL, value: "http://gary-finetuned-predictor.voice-id-ovms.svc.cluster.local:8888"}
+        - {name: OVMS_MODEL, value: "gary-finetuned"}
+        - {name: INPUT_LENGTH, value: "160000"}
+        - {name: LOW_THRESHOLD, value: "0.3"}
+        - {name: HIGH_THRESHOLD, value: "0.7"}
+        ports:
+        - {containerPort: 8080, name: http}
+        readinessProbe:
+          httpGet: {path: /ready, port: 8080}
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet: {path: /health, port: 8080}
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests: {cpu: 100m, memory: 128Mi}
+          limits: {cpu: "1", memory: 512Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+          runAsNonRoot: true
+          seccompProfile: {type: RuntimeDefault}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adapter-gary-finetuned
+  namespace: voice-id-ovms
+  labels: {app: adapter-gary-finetuned}
+spec:
+  selector: {app: adapter-gary-finetuned}
+  ports:
+  - {name: http, port: 8080, targetPort: 8080}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adapter-gary-base
+  namespace: voice-id-ovms
+  labels: {app: adapter-gary-base, app.kubernetes.io/part-of: voice-id-ovms}
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"voice-id-ovms-adapter:v0.1.1"},"fieldPath":"spec.template.spec.containers[?(@.name==\"adapter\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: adapter-gary-base}
+  template:
+    metadata:
+      labels: {app: adapter-gary-base}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: adapter
+        image: image-registry.openshift-image-registry.svc:5000/voice-id-ovms/voice-id-ovms-adapter:v0.1.1
+        env:
+        # Headless predictor Service: DNS resolves to the pod IP, so call the pod port 8888 directly.
+        # The ISVC status URL (port 80) does NOT work for in-cluster calls.
+        - {name: OVMS_URL, value: "http://gary-base-predictor.voice-id-ovms.svc.cluster.local:8888"}
+        - {name: OVMS_MODEL, value: "gary-base"}
+        - {name: INPUT_LENGTH, value: "native"}
+        - {name: LOW_THRESHOLD, value: "0.3"}
+        - {name: HIGH_THRESHOLD, value: "0.7"}
+        ports:
+        - {containerPort: 8080, name: http}
+        readinessProbe:
+          httpGet: {path: /ready, port: 8080}
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet: {path: /health, port: 8080}
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests: {cpu: 100m, memory: 128Mi}
+          limits: {cpu: "1", memory: 512Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+          runAsNonRoot: true
+          seccompProfile: {type: RuntimeDefault}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adapter-gary-base
+  namespace: voice-id-ovms
+  labels: {app: adapter-gary-base}
+spec:
+  selector: {app: adapter-gary-base}
+  ports:
+  - {name: http, port: 8080, targetPort: 8080}

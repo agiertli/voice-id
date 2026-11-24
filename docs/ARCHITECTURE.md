@@ -128,6 +128,10 @@ near-instant once warm. Details: [answer cache](customization/ai-opponents.md#an
 
 Details: [AI opponents](customization/ai-opponents.md).
 
+Optional detector backend: Helm `detectorBackend: openvino` points Gary / Gary 2.0 at serve.py-compatible adapters in front of
+OpenShift AI's built-in OpenVINO Model Server (namespace `voice-id-ovms`, `infra/openvino-detector/`). It is parity-tested against the legacy
+Deployments, and `legacy` stays the default. Payload contract: [OPENVINO-DETECTOR.md](OPENVINO-DETECTOR.md). Switch decision: [OPENVINO-SWITCH-BRIEF.md](OPENVINO-SWITCH-BRIEF.md).
+
 ## Clip pipeline
 
 ```mermaid

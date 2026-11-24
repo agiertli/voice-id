@@ -55,14 +55,21 @@ spec:
         - name: ADMIN_TOKEN
           value: {{ .Values.adminToken | quote }}
         {{- end }}
+        {{- $backend := .Values.detectorBackend | default "legacy" }}
+        {{- if not (has $backend (list "legacy" "openvino")) }}
+        {{- fail (printf "detectorBackend must be 'legacy' or 'openvino', got %q" $backend) }}
+        {{- end }}
+        {{- $ov := .Values.openvino | default dict }}
         {{- if .Values.detector.enabled }}
         - name: DETECTOR_URL
-          value: "{{ .Values.detector.url }}"
+          value: {{ (eq $backend "openvino" | ternary ($ov.detectorUrl | default "http://adapter-gary-finetuned.voice-id-ovms.svc.cluster.local:8080") .Values.detector.url) | quote }}
         {{- end }}
         {{- if .Values.detectorBase.enabled }}
         - name: DETECTOR_BASE_URL
-          value: "{{ .Values.detectorBase.url }}"
+          value: {{ (eq $backend "openvino" | ternary ($ov.detectorBaseUrl | default "http://adapter-gary-base.voice-id-ovms.svc.cluster.local:8080") .Values.detectorBase.url) | quote }}
         {{- end }}
+        - name: DETECTOR_BACKEND
+          value: {{ $backend | quote }}
         - name: OPPONENT_CACHE_ENABLED
           {{- $oc := .Values.opponentCache | default dict }}
           value: {{ (hasKey $oc "enabled" | ternary $oc.enabled true) | toString | quote }}

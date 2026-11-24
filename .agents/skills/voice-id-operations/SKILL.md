@@ -336,6 +336,10 @@ Guide: [ai-opponents.md](../../../docs/customization/ai-opponents.md). **Only Ir
 spectrogram image, 59.3%; Gary `gary-base` hard, Wav2Vec2 base, 67.4%; Gary 2.0
 `gary-finetuned` boss, Wav2Vec2 V4-A, 91.9%. Detector `UNCERTAIN` maps to human.
 Enable/disable with `aiJudge`, `aiJudge2`, `detectorBase`, `detector` values.
+Detector backend: `detectorBackend: legacy` (default; Flask/PyTorch Deployments) or `openvino`
+(adapters `adapter-gary-*` in `voice-id-ovms` in front of the RHOAI OVMS runtime). Switch with
+`helm upgrade ... --set detectorBackend=openvino`, roll back with `=legacy`. Gary base keeps native-length input,
+Gary 2.0 uses fixed 160000 samples. See `docs/OPENVINO-DETECTOR.md` and `docs/OPENVINO-SWITCH-BRIEF.md`.
 
 Answer cache: each opponent's answer per clip is stored in `opponent_cache`, valid only
 while its audio sha256 matches `clips.audio_sha256` (upload, seed pack replace,

@@ -22,7 +22,7 @@ import time
 import urllib.request
 import uuid
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "ovms_adapter"))
 import ovms_client  # noqa: E402
 
 AUDIO_EXT = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".opus", ".webm", ".aac"}
