@@ -45,7 +45,7 @@ detectorBase:
 #              OpenVINO Model Server (namespace voice-id-ovms, infra/openvino-detector/). Same API, parity-tested.
 # Switch: helm upgrade ... --reuse-values --set detectorBackend=openvino   Rollback: --set detectorBackend=legacy
 # See docs/OPENVINO-SWITCH-BRIEF.md.
-detectorBackend: legacy
+detectorBackend: openvino
 openvino:
   detectorUrl: "http://adapter-gary-finetuned.voice-id-ovms.svc.cluster.local:8080"
   detectorBaseUrl: "http://adapter-gary-base.voice-id-ovms.svc.cluster.local:8080"
