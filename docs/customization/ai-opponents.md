@@ -12,8 +12,8 @@ itself. Never show or describe spectrograms for them.
 |---|---|---|---|---|---:|---:|
 | `qwen` | Teddy | Easy (1 star) | Qwen2-Audio-7B-Instruct (vLLM) | Listens to the **raw WAV audio** with a forensic prompt | 24.4% | +50 |
 | `gemma` | Iris | Medium (2 stars) | Gemma-4-12B, `RedHatAI/gemma-4-12B-it-FP8-dynamic` (vLLM) | Looks at a **spectrogram image** rendered by the game server | 59.3% | +100 |
-| `gary-base` | Gary | Hard (3 stars) | `garystafford/wav2vec2-deepfake-voice-detector` (Wav2Vec2-XLSR, not fine-tuned) | Audio classifier on **waveform features** | 67.4% | +150 |
-| `gary-finetuned` | Gary 2.0 | Boss (5 stars) | Same Wav2Vec2 fine-tuned on the game's voices (model V4-A) | Audio classifier on **waveform features** | 91.9% | +250 |
+| `gary-base` | Gary | Hard (3 stars) | `garystafford/wav2vec2-deepfake-voice-detector` (Wav2Vec2-XLSR, not fine-tuned), served by OpenVINO Model Server | Audio classifier on **waveform features** | 67.4% | +150 |
+| `gary-finetuned` | Gary 2.0 | Boss (5 stars) | Same Wav2Vec2 fine-tuned on the game's voices (model V4-A), served by OpenVINO Model Server | Audio classifier on **waveform features** | 91.9% | +250 |
 
 Accuracy figures come from the project's measurements on the game clip set
 (`CLAUDE.md`, `apps/deepfake-detector/FINDINGS.md`). They describe that clip set,
@@ -40,8 +40,8 @@ HTTP 409.
 |---|---|---|---|
 | Teddy | `POST /api/game/<id>/ai-analyze2` | `{AI_JUDGE2_URL}/chat/completions`, `audio_url` with base64 WAV, timeout 120 s | JSON `{"guess": "ai"|"human", "reasoning"}`; unparsable text → "human" if the word appears, else "ai" |
 | Iris | `POST /api/game/<id>/ai-analyze` | Server renders a 0–8 kHz magma spectrogram PNG, sends it as `image_url` to `{AI_JUDGE_URL}/chat/completions`, timeout 60 s | Same JSON contract; the spectrogram is also returned and shown to the player |
-| Gary | `POST /api/game/<id>/ai-analyze-detector-base` | `{DETECTOR_BASE_URL}/predict` multipart `audio`, timeout 60 s | `SYNTHETIC` → AI; `REAL` **and `UNCERTAIN`** → human |
-| Gary 2.0 | `POST /api/game/<id>/ai-analyze-detector` | `{DETECTOR_URL}/predict` | Same as Gary. Thresholds `LOW_THRESHOLD=0.3`, `HIGH_THRESHOLD=0.7` on `p_fake` |
+| Gary | `POST /api/game/<id>/ai-analyze-detector-base` | `{DETECTOR_BASE_URL}/predict` multipart `audio`, timeout 60 s. The adapter resamples to 16 kHz, RMS-normalizes, keeps the **native clip length**, z-normalizes and calls OVMS (KServe v2 binary) | `SYNTHETIC` → AI; `REAL` **and `UNCERTAIN`** → human |
+| Gary 2.0 | `POST /api/game/<id>/ai-analyze-detector` | `{DETECTOR_URL}/predict`; same adapter steps, but a **fixed 10 s** window (160000 samples, padded or truncated) | Same as Gary. Thresholds `LOW_THRESHOLD=0.3`, `HIGH_THRESHOLD=0.7` on `p_fake` |
 
 LLM calls use `temperature 0.1` and `verify=False` (the internal KServe service
 uses a cluster-internal certificate). If any call fails, the **server** records a
@@ -52,9 +52,10 @@ the analysis request never arrived), and the player sees that same answer; see
 ## Answer cache and background pre-warm
 
 Model inference is what players wait for on "Preparing the game" (measured for the
-5 clips of a battle, analysed in parallel: Teddy 4 s, Iris 8 s, Gary 8 s, Gary 2.0
-23 s, because its CPU server handles one clip at a time). An opponent's answer
-depends only on the clip audio, so the server caches it:
+5 clips of a battle, analysed in parallel, cold cache: Teddy 4 s, Iris 8 s; on the
+legacy Flask/PyTorch detectors Gary 8 s and Gary 2.0 18–23 s, on OpenVINO Model Server
+Gary 2.5 s and Gary 2.0 6 s). An opponent's answer depends only on the clip audio, so
+the server caches it:
 
 - **Table `opponent_cache`** (one row per opponent and clip): guess, reasoning,
   detector details (`extra`: verdict, confidence, `p_fake`), the Iris spectrogram
@@ -74,12 +75,19 @@ depends only on the clip audio, so the server caches it:
   time per opponent**, so live games are not slowed. It repeats every
   `OPPONENT_CACHE_WARM_INTERVAL_SEC` (default 600 s) to pick up new or changed clips,
   and on demand. Three consecutive errors pause that opponent until the next run.
-  A full warm of about 100 clips takes roughly as long as 100 sequential calls per
-  opponent: a few minutes for Gary 2.0 on CPU.
+  A full warm takes roughly clips × per-call time per opponent, and the opponents
+  warm in parallel: Gary 2.0 on OVMS about 1.2 s per clip (129 clips ≈ 3 min), Iris
+  4–5 s per clip (≈ 10 min), so Iris usually finishes last.
+- **Readiness step**: after every install, seed pack import or bulk upload, trigger a
+  warm run and wait until every opponent shows `cached == total` (`install.sh
+  --wait-cache` does this). Then the pre-game prep takes about 1 s.
 - **Result**: once warm, the battle pre-analysis returns in well under a second. The
   browser is unchanged; it calls the same endpoints.
-- Cached answers are a snapshot. After retraining or swapping a model (for example
-  a new Gary 2.0 image), clear that opponent's rows so its new answers are used.
+- Cached answers are a snapshot. After a detector backend switch (`detectorBackend`),
+  retraining or swapping a model (for example a new Gary 2.0 IR), clear that
+  opponent's rows (`POST /api/admin/opponent-cache/clear` with `{"opponent": ...}`) and
+  warm again, so its answers come from the new backend. (The OpenVINO switch was
+  parity-tested with identical verdicts, so clearing was optional there.)
 
 | Endpoint (admin token) | Effect |
 |---|---|
@@ -127,12 +135,17 @@ better, but only for the voices and generators it was trained on.
 |---|---|---|---|
 | Teddy | LLMInferenceService `qwen2-audio` | 1× NVIDIA L4 | `https://qwen2-audio-kserve-workload-svc.voice-id.svc.cluster.local:8000/v1` |
 | Iris | LLMInferenceService `gemma` | 1× NVIDIA L4 (12.75 GiB weights, FP8) | `https://gemma-kserve-workload-svc.voice-id.svc.cluster.local:8000/v1` |
-| Gary | Deployment `deepfake-detector-base` (`quay.io/agiertli/deepfake-detector-base`) | CPU, 2 request / 4 limit | `http://deepfake-detector-base:8080` |
-| Gary 2.0 | Deployment `deepfake-detector-fine-tuned` (`quay.io/agiertli/deepfake-detector:v2.0.0`, V4-A) | CPU, 2 request / 4 limit | `http://deepfake-detector-fine-tuned:8080` |
+| Gary | InferenceService `gary-base` on OpenShift AI's built-in OpenVINO Model Server (`kserve-ovms`, FP32 IR on PVC) behind Deployment `adapter-gary-base` | CPU, predictor 2 request / 4 limit, 4 / 6 Gi | `http://adapter-gary-base.voice-id.svc.cluster.local:8080` |
+| Gary 2.0 | InferenceService `gary-finetuned` (V4-A, FP32 IR) behind Deployment `adapter-gary-finetuned` | CPU, predictor 2 request / 4 limit, 4 / 4 Gi | `http://adapter-gary-finetuned.voice-id.svc.cluster.local:8080` |
 
-The detectors need the 4 CPU limit: with 2 CPU one clip took about 20 s, with 4
-about 5 s. Because all clips are analysed before the first round, slow opponents
-lengthen the loading screen, not the rounds.
+Red Hat OpenShift AI serves all four: the generative models with vLLM on GPUs, the
+predictive classifiers with OpenVINO Model Server on CPU. The adapters keep the
+detector HTTP API (`/predict`, `/health`, `/ready`) and do the audio preprocessing;
+OVMS only runs the network. On OVMS one clip takes about 1.2 s (Gary 2.0) and
+0.4–0.8 s (Gary) at the 4-CPU limit, 2.2–3.3x faster than the decommissioned
+Flask/PyTorch Deployments, with identical verdicts on all 129 live clips. Because all
+clips are analysed before the first round, slow opponents lengthen the loading
+screen, not the rounds. Details: [OPENVINO-DETECTOR.md](../OPENVINO-DETECTOR.md).
 
 ## Enable or disable an opponent
 
@@ -148,12 +161,16 @@ aiJudge2:       # Teddy (qwen)
   enabled: true
   url: "https://qwen2-audio-kserve-workload-svc.voice-id.svc.cluster.local:8000/v1"
   model: "Qwen2-Audio-7B-Instruct"  # must equal the served model name
-detector:       # Gary 2.0
+detector:       # Gary 2.0 (enabled flag; url is used only with detectorBackend=legacy)
   enabled: true
   url: "http://deepfake-detector-fine-tuned:8080"
 detectorBase:   # Gary
   enabled: true
   url: "http://deepfake-detector-base:8080"
+detectorBackend: openvino   # default; legacy = emergency rollback to the Flask/PyTorch detectors
+openvino:
+  detectorUrl: "http://adapter-gary-finetuned.voice-id.svc.cluster.local:8080"
+  detectorBaseUrl: "http://adapter-gary-base.voice-id.svc.cluster.local:8080"
 ```
 
 ```bash
@@ -175,8 +192,12 @@ before the booth opens, and disable any that are not healthy.
 
 When you add new speakers or a new TTS engine, Gary 2.0's accuracy on them is
 unknown. Retrain with `apps/deepfake-detector/experiment_v4.py` (about 11 minutes
-on an Apple M3), rebuild `quay.io/agiertli/deepfake-detector` with a new tag,
-update `infra/deepfake-detector/manifests.yaml` and re-measure. Details and
-caveats: `apps/deepfake-detector/FINDINGS.md`.
+on an Apple M3), export the checkpoint to an FP32 OpenVINO IR with
+`apps/deepfake-detector/export_openvino.py`, load it onto the `gary-finetuned-models`
+PVC ([OPENVINO-DETECTOR.md](../OPENVINO-DETECTOR.md#3-deployment)), restart the
+predictor, clear Gary 2.0's answer cache and warm it, then re-measure. If the new
+model needs different preprocessing, change the adapter (`INPUT_LENGTH` in
+`infra/openvino-detector/adapter.yaml`, or `apps/deepfake-detector/ovms_adapter/`).
+Details and caveats: `apps/deepfake-detector/FINDINGS.md`.
 
 Iris's spectrogram is analysed by Gemma as a full-quality PNG, but sent to the browser as a compressed WebP display copy (~10x smaller, e.g. 387 KB -> ~50 KB), so battle preparation stays fast on booth Wi-Fi. Measured on the live cluster with a warm cache (v3.4.1): pre-game analysis of 5 clips takes ~0.4-1.4 s for every opponent (was 4-23 s).

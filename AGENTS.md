@@ -78,6 +78,8 @@ Live voice cloning demo for community AI meetups. Record your voice, then genera
 - **GPU MachineSet**: `infra/gpu-machineset.yaml` (g6.2xlarge with NVIDIA L4)
 - **XTTS v2**: `infra/xtts/manifests.yaml` (Coqui XTTS streaming server)
 - **Fish Speech**: `infra/fish-speech/manifests.yaml` (Fish S2 Pro with torch.compile)
+- **Detectors (Gary, Gary 2.0)**: `infra/openvino-detector/` (OpenShift AI built-in OpenVINO Model Server: PVCs, ServingRuntime `kserve-ovms`, InferenceServices `gary-base` / `gary-finetuned`, adapters `adapter-gary-*`, image `quay.io/agiertli/voice-id-ovms-adapter:v0.1.1`; optional in-cluster build: `adapter-build.yaml`). Live since 2026-11-25 (Helm `detectorBackend: openvino`). `infra/deepfake-detector*/` = decommissioned legacy, emergency rollback only. See `docs/OPENVINO-DETECTOR.md`.
+- **One namespace**: everything (game, opponents, detectors, TTS, Clone Studio) runs in `voice-id`.
 
 ## Audio Samples (Voice ID game)
 
@@ -150,7 +152,7 @@ helm upgrade --install voice-id helm/voice-id \
 ### Voice Clone Studio
 ```bash
 helm upgrade --install voice-clone-studio apps/voice-clone-studio/helm/voice-clone-studio \
-  --namespace voice-clone-studio --create-namespace \
+  --namespace voice-id \
   --set providers.xtts.url=https://xtts-v2-tts.apps.ocp.example.com \
   --set providers.fish.url=https://fish-native-tts.apps.ocp.example.com
 ```
@@ -186,6 +188,14 @@ oc apply -f infra/fish-speech/manifests.yaml
 # After pod is ready, first request triggers 257s torch.compile warmup
 ```
 
+### Step 2b — Detectors on OpenVINO Model Server (all profiles, CPU)
+```bash
+# Needs the OpenVINO IR in ~/voice-id-audio/ovms/repo/<model>/1/ (not in Git). install.sh does all of this.
+# manifests.yaml without the InferenceServices -> model-loader.yaml + oc cp IR -> full manifests.yaml
+oc apply -f infra/openvino-detector/adapter.yaml        # adapters, image quay.io/agiertli/voice-id-ovms-adapter:v0.1.1
+```
+Full steps: `docs/INSTALLATION.md` step 2.
+
 ### Step 3 — Voice ID Game
 ```bash
 cd apps/voice-id
@@ -203,7 +213,7 @@ podman push quay.io/agiertli/voice-clone-studio:<tag>
 XTTS_ROUTE=$(oc get route xtts-v2 -n tts -o jsonpath='{.spec.host}')
 FISH_ROUTE=$(oc get route fish-native -n tts -o jsonpath='{.spec.host}')
 helm upgrade --install voice-clone-studio helm/voice-clone-studio \
-  -n voice-clone-studio --create-namespace \
+  -n voice-id \
   --set providers.xtts.url=https://${XTTS_ROUTE} \
   --set providers.fish.url=https://${FISH_ROUTE}
 ```
@@ -218,6 +228,8 @@ Four AI opponents with different analysis methods. **Only Gemma uses spectrogram
 | `qwen` | Qwen2-Audio-7B | Audio: listens to **raw WAV audio** | `ai-analyze2` | 1 star (24.4%) |
 | `gary-base` | Wav2Vec2 (base) | Classifier: **audio waveform** features | `ai-analyze-detector-base` | 3 stars (67.4%) |
 | `gary-finetuned` | Wav2Vec2 (fine-tuned) | Classifier: **audio waveform** features | `ai-analyze-detector` | 5 stars (91.9%) |
+
+Serving: Red Hat OpenShift AI serves the generative opponents with vLLM on GPU (Teddy, Iris) and the two Garys with OpenVINO Model Server on CPU (via the `adapter-gary-*` preprocessing adapters).
 
 ## Operational Gotchas
 

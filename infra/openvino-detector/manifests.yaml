@@ -1,37 +1,33 @@
-# OpenVINO Model Server (OpenShift AI built-in "kserve-ovms" runtime) for the Voice ID
-# deepfake detectors. Fully isolated in namespace voice-id-ovms, CPU only, internal only.
+# OpenVINO Model Server (OpenShift AI built-in "kserve-ovms" runtime) serving the Voice ID deepfake
+# detectors Gary and Gary 2.0. Live game backend since 2026-11-25 (Helm detectorBackend=openvino).
+# Runs in the game's namespace (voice-id), CPU only, internal only (no Route).
 #
-#   gary-base       = Wav2Vec2 base       (game opponent "gary-base",      same weights as deepfake-detector-base)
-#   gary-finetuned  = Wav2Vec2 V4-A FT    (game opponent "gary-finetuned", same weights as deepfake-detector-fine-tuned)
+#   gary-base       = Wav2Vec2 base       (game opponent "gary-base",      "Gary")
+#   gary-finetuned  = Wav2Vec2 V4-A FT    (game opponent "gary-finetuned", "Gary 2.0")
 #
 # Model repository on each PVC (OVMS layout):  <model>/1/model.xml + model.bin  (FP32 IR)
 # Weights are produced by apps/deepfake-detector/export_openvino.py and copied onto the PVCs
 # with the temporary loader pod in model-loader.yaml (oc cp of MODEL files only).
-# Payload contract + parity results: docs/OPENVINO-DETECTOR.md
+# The game calls the adapters in adapter.yaml, never OVMS directly.
+# Payload contract + parity results: docs/OPENVINO-DETECTOR.md. install.sh runs all of this.
+#
+# Prerequisite: namespace voice-id exists (install.sh / helm). Optional dashboard visibility:
+#   oc label namespace voice-id opendatahub.io/dashboard=true --overwrite
+# No Namespace object here on purpose: `oc delete -f` on this file must never delete the game namespace.
 #
 # Apply order (KUBECONFIG must point at the target cluster):
-#   1. oc apply -f infra/openvino-detector/manifests.yaml   (ISVC pods wait until the PVCs hold the IR)
-#      - or apply everything except the two InferenceServices first, then load, then the ISVCs
+#   1. apply everything except the two InferenceServices (PVCs + ServingRuntime)
 #   2. oc apply -f infra/openvino-detector/model-loader.yaml; oc cp the IR dirs; oc delete pod ovms-model-loader
-#   3. oc rollout restart deploy/gary-base-predictor deploy/gary-finetuned-predictor -n voice-id-ovms (if they started empty)
+#   3. apply the full file (creates the two InferenceServices)
+#   (If the predictors started on empty PVCs: oc rollout restart deploy/gary-base-predictor deploy/gary-finetuned-predictor -n voice-id)
 #
 # One PVC per model: gp3 is RWO, so separate PVCs let the two predictor pods land on any node.
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: voice-id-ovms
-  labels:
-    opendatahub.io/dashboard: "true"
-  annotations:
-    openshift.io/display-name: voice-id-ovms
-    openshift.io/description: "OVMS (OpenVINO) serving of the Voice ID deepfake detectors - parallel PoC, not wired into the game"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: gary-base-models
-  namespace: voice-id-ovms
+  namespace: voice-id
 spec:
   accessModes: [ReadWriteOnce]
   storageClassName: gp3-csi
@@ -43,7 +39,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: gary-finetuned-models
-  namespace: voice-id-ovms
+  namespace: voice-id
 spec:
   accessModes: [ReadWriteOnce]
   storageClassName: gp3-csi
@@ -51,14 +47,14 @@ spec:
     requests:
       storage: 5Gi
 ---
-# Equivalent to: oc process -n redhat-ods-applications kserve-ovms | oc apply -n voice-id-ovms -f -
+# Equivalent to: oc process -n redhat-ods-applications kserve-ovms | oc apply -n voice-id -f -
 # (template objects copied verbatim; RHOAI 3.5.4, runtime-version v2026.1.0).
 # Template annotations added the way the dashboard does when it instantiates a runtime.
 apiVersion: serving.kserve.io/v1alpha1
 kind: ServingRuntime
 metadata:
   name: kserve-ovms
-  namespace: voice-id-ovms
+  namespace: voice-id
   annotations:
     opendatahub.io/apiProtocol: REST
     opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
@@ -113,7 +109,7 @@ apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
   name: gary-base
-  namespace: voice-id-ovms
+  namespace: voice-id
   annotations:
     openshift.io/display-name: gary-base
     openshift.io/description: "Wav2Vec2 deepfake detector (base) - FP32 OpenVINO IR"
@@ -154,7 +150,7 @@ apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
   name: gary-finetuned
-  namespace: voice-id-ovms
+  namespace: voice-id
   annotations:
     openshift.io/display-name: gary-finetuned
     openshift.io/description: "Wav2Vec2 deepfake detector (V4-A fine-tuned) - FP32 OpenVINO IR"

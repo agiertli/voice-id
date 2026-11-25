@@ -5,6 +5,9 @@ metadata:
   annotations:
     haproxy.router.openshift.io/timeout: 300s
 spec:
+  {{- with .Values.route.host }}
+  host: {{ . }}
+  {{- end }}
   to:
     kind: Service
     name: voice-clone-studio

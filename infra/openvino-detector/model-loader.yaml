@@ -1,15 +1,15 @@
 # Temporary pod used ONLY to copy the OpenVINO IR files (model.xml/model.bin) onto the PVCs.
 # Delete it before (re)starting the predictors: gp3 PVCs are RWO.
 #   oc apply -f infra/openvino-detector/model-loader.yaml
-#   oc wait --for=condition=Ready pod/ovms-model-loader -n voice-id-ovms
-#   oc cp ~/voice-id-audio/ovms/repo/gary-base      voice-id-ovms/ovms-model-loader:/models/gary-base-models/gary-base
-#   oc cp ~/voice-id-audio/ovms/repo/gary-finetuned voice-id-ovms/ovms-model-loader:/models/gary-finetuned-models/gary-finetuned
-#   oc delete pod ovms-model-loader -n voice-id-ovms
+#   oc wait --for=condition=Ready pod/ovms-model-loader -n voice-id
+#   oc cp ~/voice-id-audio/ovms/repo/gary-base      voice-id/ovms-model-loader:/models/gary-base-models/gary-base
+#   oc cp ~/voice-id-audio/ovms/repo/gary-finetuned voice-id/ovms-model-loader:/models/gary-finetuned-models/gary-finetuned
+#   oc delete pod ovms-model-loader -n voice-id
 apiVersion: v1
 kind: Pod
 metadata:
   name: ovms-model-loader
-  namespace: voice-id-ovms
+  namespace: voice-id
 spec:
   restartPolicy: Never
   containers:

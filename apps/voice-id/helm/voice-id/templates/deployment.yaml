@@ -62,11 +62,11 @@ spec:
         {{- $ov := .Values.openvino | default dict }}
         {{- if .Values.detector.enabled }}
         - name: DETECTOR_URL
-          value: {{ (eq $backend "openvino" | ternary ($ov.detectorUrl | default "http://adapter-gary-finetuned.voice-id-ovms.svc.cluster.local:8080") .Values.detector.url) | quote }}
+          value: {{ (eq $backend "openvino" | ternary ($ov.detectorUrl | default (printf "http://adapter-gary-finetuned.%s.svc.cluster.local:8080" .Release.Namespace)) .Values.detector.url) | quote }}
         {{- end }}
         {{- if .Values.detectorBase.enabled }}
         - name: DETECTOR_BASE_URL
-          value: {{ (eq $backend "openvino" | ternary ($ov.detectorBaseUrl | default "http://adapter-gary-base.voice-id-ovms.svc.cluster.local:8080") .Values.detectorBase.url) | quote }}
+          value: {{ (eq $backend "openvino" | ternary ($ov.detectorBaseUrl | default (printf "http://adapter-gary-base.%s.svc.cluster.local:8080" .Release.Namespace)) .Values.detectorBase.url) | quote }}
         {{- end }}
         - name: DETECTOR_BACKEND
           value: {{ $backend | quote }}

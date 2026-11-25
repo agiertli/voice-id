@@ -27,3 +27,8 @@ resources:
   limits:
     cpu: "500m"
     memory: "256Mi"
+
+# Public hostname. Empty = OpenShift-generated (<release>-<namespace>.apps...).
+# Pin it to keep a URL stable, e.g. when moving the app to another namespace.
+route:
+  host: "voice-clone-studio-voice-clone-studio.apps.ocp.bjv8c.sandbox2855.opentlc.com"

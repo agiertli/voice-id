@@ -1,6 +1,6 @@
 image:
   repository: quay.io/agiertli/voice-id
-  tag: "v3.4.1"
+  tag: "v3.5.0"
   pullPolicy: IfNotPresent
 
 replicas: 1
@@ -40,15 +40,17 @@ detectorBase:
   url: "http://deepfake-detector-base:8080"
 
 # Which detector backend Gary / Gary 2.0 use:
-#   legacy   = detector.url / detectorBase.url above (Flask + PyTorch Deployments in this namespace)
-#   openvino = openvino.* below: serve.py-compatible adapters in front of OpenShift AI's built-in
-#              OpenVINO Model Server (namespace voice-id-ovms, infra/openvino-detector/). Same API, parity-tested.
-# Switch: helm upgrade ... --reuse-values --set detectorBackend=openvino   Rollback: --set detectorBackend=legacy
-# See docs/OPENVINO-SWITCH-BRIEF.md.
+#   openvino = DEFAULT, live since 2026-11-25. openvino.* below: serve.py-compatible adapters
+#              (adapter-gary-*) in front of OpenShift AI's built-in OpenVINO Model Server, all in the
+#              game's namespace (infra/openvino-detector/). Same API and verdicts, parity-tested.
+#   legacy   = emergency rollback only: detector.url / detectorBase.url above, which needs the old
+#              Flask + PyTorch Deployments re-applied first (infra/deepfake-detector*/, decommissioned).
+# Rollback: helm upgrade ... --reuse-values --set detectorBackend=legacy. See docs/OPENVINO-SWITCH-BRIEF.md.
+# Empty openvino URLs default to http://adapter-gary-*.<release namespace>.svc.cluster.local:8080.
 detectorBackend: openvino
 openvino:
-  detectorUrl: "http://adapter-gary-finetuned.voice-id-ovms.svc.cluster.local:8080"
-  detectorBaseUrl: "http://adapter-gary-base.voice-id-ovms.svc.cluster.local:8080"
+  detectorUrl: "http://adapter-gary-finetuned.voice-id.svc.cluster.local:8080"
+  detectorBaseUrl: "http://adapter-gary-base.voice-id.svc.cluster.local:8080"
 
 # Opponent answer cache: each opponent's answer per clip is computed once (keyed by the
 # clip audio sha256) and pre-warmed in the background, one request at a time per opponent,

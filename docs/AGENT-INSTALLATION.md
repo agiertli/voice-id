@@ -47,6 +47,9 @@ oc whoami --show-server
    path anyway; the skill refuses to `oc login` into the shared kubeconfig.
 4. Have the private **seed pack** zip in `~/voice-id-audio/seedpacks/` (outside the
    repository). The repository contains no audio. See [SEEDING.md](SEEDING.md).
+5. Have the **OpenVINO IR** of the two detectors (Gary, Gary 2.0; 2 × 1.26 GB, no voice
+   data) in `~/voice-id-audio/ovms/repo/` (`gary-base/1/`, `gary-finetuned/1/`), from the
+   owner or exported with `apps/deepfake-detector/export_openvino.py`. Every profile needs it.
 
 ## Copyable prompt
 
@@ -62,6 +65,7 @@ Prize threshold: <4 of 5 correct, or another number>
 Install profile: <minimal | standard | full>   (standard = 2 GPUs, recommended; full = 4 GPUs incl. Clone Studio)
 Admin password: <chosen password, or path to a private mode-600 file>
 Seed pack: <~/voice-id-audio/seedpacks/<file>.seedpack.zip>
+OpenVINO IR directory: <~/voice-id-audio/ovms/repo>
 
 INSTRUCTIONS — KEEP THESE
 Install the Voice ID stack with the profile above on this fresh cluster following
@@ -70,6 +74,9 @@ docs/INSTALLATION.md (install.sh --profile <profile> or the manual steps).
 - Provision only what the profile needs (no GPU MachineSet for minimal; replicas 2 for
   standard, 4 for full).
 - Use only the kubeconfig above (export KUBECONFIG); never oc login into ~/.kube/config.
+- Everything goes into one namespace, voice-id (Clone Studio too).
+- Detectors: OpenShift AI OpenVINO Model Server (install.sh --ovms-model-dir <dir>; adapter
+  image from quay, model IR copied onto PVCs). Use --legacy-detectors only if I say so.
 - Parallelise: GPU MachineSet first (cloned from this cluster's worker MachineSet,
   4x g6.2xlarge, taint nvidia.com/gpu), model downloads and CPU components while nodes
   come up, GPU workloads once GPUs are allocatable.
@@ -81,6 +88,8 @@ docs/INSTALLATION.md (install.sh --profile <profile> or the manual steps).
 - Do not stop pre-existing models on the cluster without asking me.
 - Warm up Fish Speech if the profile is full.
 - Never scale down or remove any component without my explicit confirmation.
+- After the import, warm the opponent answer cache (install.sh --wait-cache, or
+  POST /api/admin/opponent-cache/warm) and wait until every opponent shows cached == total.
 - Verify with the runbook's smoke test: clip count, every opponent answers, one game.
 - Report: URLs (game, /tv, /admin, Clone Studio), versions, what was verified, what I
   still must check in a browser, and anything that deviated from the runbook.
@@ -106,11 +115,15 @@ the recording cluster.
    you if anything looks unexpected (existing `voice-id` namespace, GPU nodes in use).
 2. Confirms the profile, then clones the worker MachineSet into a GPU MachineSet with
    the profile's replicas (skipped for `minimal`).
-3. Creates `voice-id`, applies the two detectors, Qwen and Gemma (`standard`/`full`;
-   downloads start), then XTTS and Fish (`full`) when GPUs are allocatable.
-4. Installs the game with your values, admin password and the profile's opponent flags;
-   installs Clone Studio (`full`).
-5. Imports the seed pack and checks the clip count.
+3. Creates `voice-id` (the one namespace for everything) and applies Qwen and Gemma
+   (`standard`/`full`; downloads start). Deploys the two detectors on OpenShift AI's
+   OpenVINO Model Server: PVCs, ServingRuntime, model copy with sha256 check,
+   InferenceServices and the two adapters (public quay image). Then XTTS and
+   Fish (`full`) when GPUs are allocatable.
+4. Installs the game with your values, admin password, the profile's opponent flags and
+   `detectorBackend=openvino`; installs Clone Studio in the same namespace (`full`).
+5. Imports the seed pack, checks the clip count, and warms the opponent answer cache
+   until every opponent shows `cached == total`.
 6. Waits for vLLM workloads (accepting `GatewayPreconditionNotMet` on the gateway),
    warms Fish (`full`), runs the smoke test.
 7. Hands over URLs and the remaining manual checks.

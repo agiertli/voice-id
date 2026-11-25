@@ -181,7 +181,7 @@ button { font-family: inherit; color: inherit; }
         <a href="/" aria-label="Back to the game"><img src="/static/logo-light-compact.png" alt="Voice ID: AI or Alive?"></a>
         <div class="titles">
             <h1>How Voice ID works</h1>
-            <p>Red Hat OpenShift and Red Hat OpenShift AI on NVIDIA L4 GPUs</p>
+            <p>Red Hat OpenShift and Red Hat OpenShift AI, on NVIDIA L4 GPUs and CPUs</p>
         </div>
     </div>
     <div class="header-actions">
@@ -230,8 +230,8 @@ button { font-family: inherit; color: inherit; }
     <text class="t-zone" x="670" y="92">AI opponents</text>
     <text class="t-small" x="808" y="92">battle mode only</text>
     <image href="/static/icons/ai-inference.svg" x="670" y="108" width="20" height="20" opacity="0.8"/>
-    <text class="t-group" x="696" y="124">Red Hat OpenShift AI · vLLM</text>
-    <text class="t-group" x="1130" y="124">Classifiers</text>
+    <text class="t-group" x="696" y="124">Red Hat OpenShift AI · vLLM (GPU)</text>
+    <text class="t-group" x="1130" y="124">Red Hat OpenShift AI · OpenVINO Model Server (CPU)</text>
 
     <rect x="650" y="372" width="474" height="278" rx="14" fill="#147878" fill-opacity="0.07"/>
     <text class="t-zone" x="670" y="404">Voice cloning engines</text>
@@ -454,7 +454,7 @@ button { font-family: inherit; color: inherit; }
         {
             title: 'Battle: Gary and Gary 2.0',
             desc: 'The Garys are deepfake classifiers: they score the waveform and return a fake probability. Gary 2.0 was fine-tuned on the voices in this game: about 90% balanced accuracy, and he rarely accuses a real human.',
-            facts: ['Wav2Vec2 base and V4-A fine-tune', 'plain Deployments', 'CPU, no GPU'],
+            facts: ['Wav2Vec2 base and V4-A fine-tune', 'OpenVINO Model Server on Red Hat OpenShift AI', 'a thin adapter prepares the audio', 'CPU, no GPU'],
             nodes: ['n-game', 'n-gary', 'n-gary2'], flows: ['f-gary', 'f-gary2']
         },
         {
@@ -483,9 +483,9 @@ button { font-family: inherit; color: inherit; }
         },
         {
             title: 'The platform underneath',
-            desc: 'Red Hat OpenShift runs everything; Red Hat OpenShift AI serves the two LLM opponents through KServe and vLLM. The apps and the Garys run on regular CPU workers.',
-            facts: ['4 × AWS g6.2xlarge', 'one NVIDIA L4 (24 GB) each', 'one whole GPU per workload'],
-            nodes: ['n-gpu', 'n-teddy', 'n-iris', 'n-xtts', 'n-fish'], flows: []
+            desc: 'Red Hat OpenShift runs everything. Red Hat OpenShift AI serves all four opponents through KServe: the two generative models with vLLM on GPUs, the two Garys with OpenVINO Model Server on regular CPU workers. One platform for both.',
+            facts: ['4 × AWS g6.2xlarge', 'one NVIDIA L4 (24 GB) each', 'one whole GPU per workload', 'Garys and apps on CPU workers'],
+            nodes: ['n-gpu', 'n-teddy', 'n-iris', 'n-gary', 'n-gary2', 'n-xtts', 'n-fish'], flows: []
         }
     ];
 

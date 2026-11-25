@@ -69,31 +69,56 @@ only what the chosen profile needs.
 
 | Profile | Components | GPUs (`g6.2xlarge`, 1× L4) | Opponents | Approx. GPU cost |
 |---|---|---:|---|---|
-| minimal | game + Gary + Gary 2.0 (CPU) | 0 | Gary, Gary 2.0 | none |
+| minimal | game + Gary + Gary 2.0 (CPU, OpenVINO Model Server) | 0 | Gary, Gary 2.0 | none |
 | standard (recommended for booths) | minimal + Teddy (qwen2-audio) + Iris (gemma) | 2 | all four | ≈ $2/h |
 | full (voice collection, cloning) | standard + xtts-v2 + fish-native + voice-clone-studio | 4 | all four | ≈ $4/h |
 
 About $1/h per `g6.2xlarge` on demand; approximate, tell the owner to check current
 AWS pricing. Helm flags: minimal = `aiJudge.enabled=false`, `aiJudge2.enabled=false`;
-standard/full = both true. `detector`/`detectorBase` true in all profiles. Opponent
-lists in the API, game picker and `/tv` (refresh 10 s) follow these flags automatically.
+standard/full = both true. `detector`/`detectorBase` true and `detectorBackend=openvino`
+in all profiles. Opponent lists in the API, game picker and `/tv` (refresh 10 s) follow
+these flags automatically.
+
+**One namespace for everything:** `voice-id` holds the game, the LLM opponents, the
+OpenVINO detector stack, XTTS/Fish and Voice Clone Studio. There is no
+`voice-id-ovms` or `voice-clone-studio` namespace any more.
+
+**Detectors = Red Hat OpenShift AI OpenVINO Model Server (CPU), every profile.**
+ServingRuntime `kserve-ovms` (built-in template, OVMS 2026.2, `--rest_workers=16`, FP32
+pinned), InferenceServices `gary-base` / `gary-finetuned` (FP32 IR on PVCs
+`gary-*-models`), adapters `adapter-gary-base` / `adapter-gary-finetuned` (keep
+`/predict` `/health` `/ready`; resample 16 kHz, RMS normalize, Gary 2.0 fixed 10 s /
+Gary native length, z-normalize, KServe v2 binary to OVMS). The game calls
+`http://adapter-gary-{finetuned,base}.voice-id.svc.cluster.local:8080`. Needs the IR
+(2 × 1.26 GB, no voice data) in `~/voice-id-audio/ovms/repo/<model>/1/` (owner, or
+`apps/deepfake-detector/export_openvino.py`); the adapter image is public
+`quay.io/agiertli/voice-id-ovms-adapter:v0.1.1` (pinned; optional in-cluster build: `infra/openvino-detector/adapter-build.yaml`). Model weights are not
+in a registry yet: they go onto the PVCs with the loader pod.
+Story for visitors: one platform serves generative models on GPU (vLLM: Teddy, Iris) and
+predictive models on CPU (OVMS: Gary, Gary 2.0).
 
 Preferred path: `./install.sh --profile <p> --kubeconfig <file> --admin-token-file
-<file> --dry-run`, show the plan, then run it without `--dry-run` (add `--yes` only
-after the owner confirmed). It never runs `oc login`, clones the worker MachineSet
-with replicas = profile GPU count (none for minimal), labels it
-`voice-id/gpu-machineset=true`, never scales it down, and prints URLs plus the seed
-pack command. It is **untested on a live cluster**: watch each step and fall back to
-the manual runbook steps if it stops.
+<file> [--ovms-model-dir DIR] --dry-run`, show the plan, then run it without `--dry-run`
+(add `--yes` only after the owner confirmed). It never runs `oc login`, clones the
+worker MachineSet with replicas = profile GPU count (none for minimal), labels it
+`voice-id/gpu-machineset=true`, never scales it down, deploys the OpenVINO detector
+stack (PVCs + ServingRuntime, loader pod + `oc cp` + sha256 check, InferenceServices,
+adapters from the quay image), sets `detectorBackend=openvino`, and prints
+URLs plus the seed pack command. If the game already has clips it triggers the opponent
+cache warm; `--wait-cache` waits until it is full. `--legacy-detectors` = emergency
+fallback only, with owner consent. It stops before any change if the IR is missing and
+the InferenceServices are not Ready. It is **untested end-to-end on a fresh cluster**:
+watch each step and fall back to the manual runbook steps if it stops.
 
 Manual order (target ~35 min for full, minutes for minimal):
 
 | t | Action |
 |---|---|
 | 0 | standard/full: clone the cluster's **own** worker MachineSet into a GPU MachineSet: `g6.2xlarge`, replicas 2 (standard) or 4 (full), taint `nvidia.com/gpu=true:NoSchedule`, labels `node-role.kubernetes.io/gpu-worker` and `voice-id/gpu-machineset=true`, 200 GiB root. `infra/gpu-machineset.yaml` is only an example from another cluster. minimal: skip. |
-| 0 | `oc new-project voice-id`; apply `infra/deepfake-detector-base`, `infra/deepfake-detector`; standard/full also `infra/qwen2-audio`, `infra/gemma` (download Jobs start on CPU). |
-| 0 | `helm upgrade --install voice-id apps/voice-id/helm/voice-id -n voice-id -f <values> --set-file adminToken=<file>` plus the profile's `aiJudge*` flags; then import the seed pack. |
-| ~5 min | GPU nodes Ready, driver up about 4 min after join. full: apply `infra/xtts`, `infra/fish-speech`, install Clone Studio. |
+| 0 | `oc new-project voice-id`; standard/full: apply `infra/qwen2-audio`, `infra/gemma` (download Jobs start on CPU). |
+| 0 | OpenVINO detectors (INSTALLATION.md step 2): `manifests.yaml` without the ISVCs → `model-loader.yaml`, `oc cp` both IR dirs, compare sha256, delete the loader → full `manifests.yaml` → `adapter.yaml` (image from quay). |
+| 0 | `helm upgrade --install voice-id apps/voice-id/helm/voice-id -n voice-id -f <values> --set-file adminToken=<file>` plus the profile's `aiJudge*` flags (`detectorBackend=openvino` is the default); then import the seed pack and warm the opponent cache. |
+| ~5 min | GPU nodes Ready, driver up about 4 min after join. full: apply `infra/xtts`, `infra/fish-speech`, install Clone Studio with `-n voice-id`. |
 | ~15–30 min | vLLM loads; full: Fish downloads ~9 GB then needs a ~4 min compile on first request: warm it up. |
 | end | Smoke test, report. |
 
@@ -114,7 +139,15 @@ Hard-won facts (do not rediscover):
 - Gemma must be `RedHatAI/gemma-4-12B-it-FP8-dynamic` (12.75 GiB, fits one L4).
 - Changing a single-GPU LLMInferenceService deadlocks the rolling update (new pod
   Pending): scale the old ReplicaSet to 0.
-- Detectors need the 4 CPU limit (~5 s/clip; 2 CPU was ~20 s).
+- OVMS detectors at the 4-CPU limit: Gary 2.0 ~1.2 s/clip, Gary 0.4–0.8 s (2.2–3.3x
+  faster than the decommissioned Flask/PyTorch detectors, 0 verdict flips on 129 clips).
+  Memory requests 4 Gi per predictor (~2x legacy); Gary base limit 6 Gi because OpenVINO
+  keeps buffers per input shape (native-length clips).
+- The predictor Service is **headless**: in-cluster URL
+  `http://<isvc>-predictor.voice-id.svc.cluster.local:8888`; the ISVC status URL (port 80)
+  fails and `oc port-forward svc/...` fails. Port-forward `deploy/<isvc>-predictor 18888:8888`.
+- Load the IR only while no predictor holds the RWO PVCs (fresh install, or delete the
+  ISVCs first); predictors restarted on an empty PVC show "model not found".
 - XTTS needs `COQUI_TOS_AGREED=1`, `HOME=/tmp`, `TMPDIR=/tmp`, `NUMBA_CACHE_DIR`,
   `MPLCONFIGDIR`, `workingDir: /tmp`. `/tts` returns base64 WAV in JSON quotes.
 - Fish: first request ~4 min torch.compile, then ~5–7 s per short sentence (30–120 s
@@ -134,6 +167,17 @@ Hard-won facts (do not rediscover):
   become server-recorded coin flips (`fallback: true`). Verify each before opening;
   disable unhealthy ones via Helm.
 
+Verify detectors: `oc get isvc gary-base gary-finetuned -n voice-id` (READY True),
+`oc get deploy adapter-gary-base adapter-gary-finetuned -n voice-id` (1/1),
+`oc set env deploy/voice-id -n voice-id --list | grep DETECTOR` (`DETECTOR_BACKEND=openvino`,
+adapter URLs).
+
+Warm the opponent answer cache (readiness step, after install and every import):
+`POST /api/admin/opponent-cache/warm`, then poll `GET /api/admin/opponent-cache/status`
+until every opponent shows `cached == total` (≈ clips × per-call time; Gary 2.0 on OVMS
+≈ 1.2 s/clip, Iris ≈ 4–5 s/clip; opponents warm in parallel). Then pre-game prep is
+~1 s. `./install.sh ... --wait-cache` does the same.
+
 Smoke test: runbook section "6. Verify" (clip count, `/api/battle/opponents`, every
 opponent analyses with `fallback: false` in its own game, one game). Analysis
 responses are sealed (no `guess`); the answer comes with `/guess`. Report URLs (game, `/tv`, `/admin`, Clone
@@ -149,7 +193,7 @@ stop, what persists and the GPU saving, then wait for "yes".
 - Scale up: re-run `./install.sh --profile <bigger>` (scales the labelled MachineSet
   up, applies missing manifests, upgrades Helm flags). Re-adding Clone Studio:
   MachineSet to 4, `oc scale deploy/xtts-v2 deploy/fish-native -n voice-id --replicas=1`,
-  warm Fish, then `oc scale deploy/voice-clone-studio -n voice-clone-studio --replicas=1`
+  warm Fish, then `oc scale deploy/voice-clone-studio -n voice-id --replicas=1`
   (it re-registers stored voices with XTTS/Fish on startup; recordings and voices
   persist on its PVC; Fish weights persist on `fish-data`).
 - Remove Clone Studio (only after the recording phase, owner-confirmed): scale
@@ -198,7 +242,7 @@ Never mark a real person AI-only to silence the warning; merges need owner conse
   `POST /api/admin/upload` (multipart `audio`, `is_ai`, `language`, `source` =
   `Fish Audio S2 Pro` | `Coqui XTTS v2`, `speaker` lower case, `filename`),
   `DELETE /api/admin/delete-clip/<id>`. Use `--form-string` for text fields.
-- Voice Clone Studio (`apps/voice-clone-studio`, namespace `voice-clone-studio`):
+- Voice Clone Studio (`apps/voice-clone-studio`, namespace `voice-id`, Helm release `voice-clone-studio`):
   - Cloning: a **~30 s reference** is enough for XTTS and Fish; longer adds nothing.
     `POST /api/voices` (multipart `audio`, `name`) registers with both engines;
     `GET /api/voices`; `POST /api/generate {voice_id, text, provider_id: xtts|fish, language}`;
@@ -222,8 +266,9 @@ Never mark a real person AI-only to silence the warning; merges need owner conse
   `GET /api/admin/speakers/integrity` (token). Only photos of people who agreed.
 - Retraining Gary 2.0 after new speakers/engines: export with `--out-dir
   ~/voice-id-audio/training/<date>`, follow `apps/deepfake-detector/FINDINGS.md` and
-  `experiment_v4.py`, new image tag, update `infra/deepfake-detector/manifests.yaml`,
-  re-measure accuracy and false positives on real voices.
+  `experiment_v4.py`, export the FP32 IR (`export_openvino.py`), load it onto the
+  `gary-finetuned-models` PVC (loader pod), restart the predictor, clear Gary 2.0's
+  answer cache and warm it, re-measure accuracy and false positives on real voices.
 
 ## Create a seed pack (task)
 
@@ -336,10 +381,31 @@ Guide: [ai-opponents.md](../../../docs/customization/ai-opponents.md). **Only Ir
 spectrogram image, 59.3%; Gary `gary-base` hard, Wav2Vec2 base, 67.4%; Gary 2.0
 `gary-finetuned` boss, Wav2Vec2 V4-A, 91.9%. Detector `UNCERTAIN` maps to human.
 Enable/disable with `aiJudge`, `aiJudge2`, `detectorBase`, `detector` values.
-Detector backend: `detectorBackend: legacy` (default; Flask/PyTorch Deployments) or `openvino`
-(adapters `adapter-gary-*` in `voice-id-ovms` in front of the RHOAI OVMS runtime). Switch with
-`helm upgrade ... --set detectorBackend=openvino`, roll back with `=legacy`. Gary base keeps native-length input,
-Gary 2.0 uses fixed 160000 samples. See `docs/OPENVINO-DETECTOR.md` and `docs/OPENVINO-SWITCH-BRIEF.md`.
+Detector backend: `detectorBackend: openvino` (default, live since 2026-11-25; adapters
+`adapter-gary-*` in `voice-id` in front of the RHOAI OVMS runtime). `legacy` = emergency
+rollback to the decommissioned Flask/PyTorch Deployments: re-apply
+`infra/deepfake-detector*/manifests.yaml` first (they also create public Routes), then
+`helm upgrade ... --reuse-values --set detectorBackend=legacy` (or `install.sh --legacy-detectors`),
+owner-confirmed. Gary base keeps native-length input, Gary 2.0 uses fixed 160000 samples.
+See `docs/OPENVINO-DETECTOR.md` and `docs/OPENVINO-SWITCH-BRIEF.md`.
+
+Troubleshoot OVMS (read-only first):
+- Gary / Gary 2.0 return `fallback: true`: `oc get isvc -n voice-id`, adapter logs
+  (`oc logs deploy/adapter-gary-finetuned -n voice-id`, lines `predict verdict=`), predictor
+  logs (`oc logs deploy/gary-finetuned-predictor -n voice-id -c kserve-container`).
+- Adapter not Ready: its `/ready` answers from recent successful calls or in-flight
+  work (v0.1.1); OVMS runs `--rest_workers=16` so health stays responsive under load. If the
+  adapter is `ImagePullBackOff`: check quay.io reachability and the tag in `adapter.yaml`
+  (`quay.io/agiertli/voice-id-ovms-adapter:v0.1.1`); on a disconnected cluster mirror it or use `infra/openvino-detector/adapter-build.yaml`.
+- Wrong URL: in-cluster calls must use the headless predictor Service on port 8888.
+- Memory: Gary base grows a few MB per new clip length (per-shape buffers); 6 Gi limit.
+  Watch `oc adm top pods -n voice-id` after big imports; an OOMKill restarts it (~10 s load).
+- After every RHOAI upgrade re-run parity (`apps/deepfake-detector/ovms_bench.py --phases
+  parity`, ~15 min, must be 0 flips). Its reference is the legacy `/predict`: apply
+  `infra/deepfake-detector*/manifests.yaml` temporarily (no Helm switch), run in an
+  ephemeral pod (clips are Rule Zero data), delete the legacy objects afterwards.
+- Metrics: OVMS Prometheus on :8888 (`ovms_requests_success`, `ovms_requests_fail`,
+  `ovms_inference_time_us`).
 
 Answer cache: each opponent's answer per clip is stored in `opponent_cache`, valid only
 while its audio sha256 matches `clips.audio_sha256` (upload, seed pack replace,
@@ -348,13 +414,15 @@ background thread (one gunicorn worker at a time via a DB lease) pre-warms every
 (opponent, clip) one request at a time per opponent, every `opponentCache.warmIntervalSec`
 (env `OPPONENT_CACHE_WARM_INTERVAL_SEC`, default 600 s). A cache hit is recorded and sealed
 exactly like a live model answer; coin-flip fallbacks are never cached. Without the cache,
-"Preparing the game" took Teddy 4 s, Iris 8 s, Gary 8 s, Gary 2.0 23 s; warm it is well
+"Preparing the game" takes Teddy 4 s, Iris 8 s, Gary 2.5 s, Gary 2.0 6 s on OVMS (legacy: 8 s / 18–23 s); warm it is well
 under 1 s. Admin (token): `GET /api/admin/opponent-cache/status` (per opponent
 cached/total, last run, errors), `POST .../warm`, `POST .../clear` (optional
-`{"opponent": id}`; clear an opponent after retraining/swapping its model). Admin
+`{"opponent": id}`). After a detector backend switch or a model retrain, clear that
+opponent's cache so its answers come from the new backend, then warm. Admin
 page Clips tab shows the status line + Warm now. Off switch: `opponentCache.enabled=false`
 (env `OPPONENT_CACHE_ENABLED`). After a fresh install or seed pack import, warming takes
-about (clips × per-clip latency) per opponent, minutes for Gary 2.0 on CPU.
+about clips × per-call time per opponent (Gary 2.0 on OVMS ≈ 1.2 s/clip, Iris ≈ 4–5 s/clip),
+opponents in parallel.
 
 ## Clip mix per game
 
@@ -401,7 +469,7 @@ displays) before answering; flag any drift.
 
 ## Diagnose an incident
 
-Collect read-only evidence first: `oc get pods,llminferenceservice -n voice-id`,
+Collect read-only evidence first: `oc get pods,llminferenceservice,isvc -n voice-id`,
 events, `oc logs deploy/voice-id` (GAME_START, GUESS, AI_JUDGE, DETECTOR lines), GPU
 allocatable on nodes, `oc adm top pods`. Use the runbook's troubleshooting table.
 State evidence and hypothesis before a scoped fix; verify the original symptom.
@@ -409,10 +477,12 @@ Never delete PVCs, reset scores or reinstall as a retry.
 
 ## Check booth readiness
 
-Record each item as verified, failed or untested with evidence and time: pods ready,
-clip count, opponents answering (smoke test sends real inference but creates no
-leaderboard entry), opponent cache warm (`GET /api/admin/opponent-cache/status`: every
-opponent `cached == total`, no errors), admin password not default, speaker integrity clean
+Record each item as verified, failed or untested with evidence and time: pods ready
+(incl. `isvc gary-*` READY and both adapters 1/1), clip count, opponents answering (smoke
+test sends real inference but creates no leaderboard entry), opponent cache warm (trigger
+`POST /api/admin/opponent-cache/warm`, wait until `GET /api/admin/opponent-cache/status`
+shows every opponent `cached == total` with no errors; ≈ clips × per-call time, Gary 2.0
+≈ 1.2 s/clip, Iris ≈ 4–5 s/clip; then pre-game prep is ~1 s), admin password not default, speaker integrity clean
 (`GET /api/admin/speakers/integrity` → `"ok": true`), Fish warm (if Clone Studio), recent
 seed pack and full backup in `~/voice-id-audio/`, browser game and `/tv` on the booth
 devices (owner check if you cannot see them).

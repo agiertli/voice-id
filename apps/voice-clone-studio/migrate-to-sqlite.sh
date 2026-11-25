@@ -3,11 +3,11 @@
 # Migration script: filesystem voices/clips -> SQLite via API
 #
 # Run ON the pod:
-#   oc exec deploy/voice-clone-studio -n voice-clone-studio -- bash /opt/app-root/src/migrate-to-sqlite.sh
+#   oc exec deploy/voice-clone-studio -n voice-id -- bash /opt/app-root/src/migrate-to-sqlite.sh
 #
 # Or from your machine (copies the script first):
-#   oc cp apps/voice-clone-studio/migrate-to-sqlite.sh voice-clone-studio/<pod>:/tmp/migrate.sh -n voice-clone-studio
-#   oc exec <pod> -n voice-clone-studio -- bash /tmp/migrate.sh
+#   oc cp apps/voice-clone-studio/migrate-to-sqlite.sh voice-id/<pod>:/tmp/migrate.sh -n voice-id
+#   oc exec <pod> -n voice-id -- bash /tmp/migrate.sh
 #
 # The script reads old flat-file data from DATA_DIR and POSTs it to the local API.
 # It does NOT delete old files — do that manually after verifying.

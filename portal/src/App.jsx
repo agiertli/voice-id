@@ -101,7 +101,7 @@ export default function App() {
               <div className="card">
                 <Icon name="server-stack" />
                 <h3>All of it on your own platform</h3>
-                <p>Cloning, the LLM opponents and the detectors run on OpenShift and OpenShift AI with vLLM, on NVIDIA L4 GPUs. No voice leaves the cluster. That is the sovereignty story, told through a game.</p>
+                <p>Cloning, the LLM opponents and the detectors run on OpenShift and OpenShift AI: generative models on vLLM with NVIDIA L4 GPUs, the detectors on OpenVINO Model Server on plain CPUs. No voice leaves the cluster. That is the sovereignty story, told through a game.</p>
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <p className="small muted">Accuracy measured on the game’s own clip set, not deepfake detection in general. Teddy and Iris run on vLLM with one NVIDIA L4 GPU each; both Garys run on CPU.</p>
+            <p className="small muted">Accuracy measured on the game’s own clip set, not deepfake detection in general. All four are served by Red Hat OpenShift AI: Teddy and Iris on vLLM with one NVIDIA L4 GPU each, both Garys on OpenVINO Model Server on CPU (about 1 s per clip).</p>
           </div>
         </section>
 
@@ -224,7 +224,7 @@ battle bonus     + Teddy 50 | Iris 100 | Gary 150 | Gary 2.0 250
         <section id="architecture" className="section">
           <div className="wrap">
             <h2>Architecture</h2>
-            <p className="lede">One small web app, four opponents, two voice-cloning engines. Up to four NVIDIA L4 GPUs (two for a standard booth, none for minimal), everything else on CPU.</p>
+            <p className="lede">One small web app, four opponents, two voice-cloning engines, one namespace. Up to four NVIDIA L4 GPUs (two for a standard booth, none for minimal), everything else on CPU.</p>
             <Architecture />
             <ul className="facts-list">
               <li><b>The game never calls the TTS engines.</b> Clips are made beforehand with Voice Clone Studio and stored in the game’s database.</li>
@@ -249,14 +249,15 @@ battle bonus     + Teddy 50 | Iris 100 | Gary 150 | Gary 2.0 250
             </table></div>
             <p className="small muted">* About $1 per hour per g6.2xlarge (one NVIDIA L4) on demand; approximate, check current AWS pricing. Use full while collecting voices; dropping to standard afterwards is the owner’s call.</p>
             <ol className="steps compact">
-              <li><Icon name="gpu" /><div><h3>Get a cluster</h3><p>OpenShift on AWS with OpenShift AI 3 and the NVIDIA GPU Operator, plus quota for the profile’s g6.2xlarge GPU nodes (0, 2 or 4).</p></div></li>
+              <li><Icon name="gpu" /><div><h3>Get a cluster</h3><p>OpenShift on AWS with OpenShift AI 3 (KServe, built-in OpenVINO Model Server) and the NVIDIA GPU Operator, plus quota for the profile’s g6.2xlarge GPU nodes (0, 2 or 4). Ask the owner for the detector model files (OpenVINO IR, no voice data).</p></div></li>
               <li><Icon name="support" /><div><h3>Run the installer, or let the agent drive</h3><p>Already logged in with a dedicated kubeconfig: <code>./install.sh --profile standard</code> (try <code>--dry-run</code> first). Or open Claude Code or Codex in the repository and start with the skill:</p>
                 <pre className="cmd">{`export KUBECONFIG=~/.kube/voice-id-<event>.kubeconfig
 /voice-id-operations Install profile standard on this cluster.
 Event: <name>. Default language: cs.
 Admin password: <your choice>.
-Seed pack: ~/voice-id-audio/seedpacks/<file>.seedpack.zip`}</pre></div></li>
-              <li><Icon name="storage" /><div><h3>Load the clips</h3><p>Ask the game owner for the private seed pack and import it on the admin page. The repository contains no audio, on purpose: voices are personal data. <a href={doc('docs/SEEDING.md')}>Seeding guide</a>.</p></div></li>
+Seed pack: ~/voice-id-audio/seedpacks/<file>.seedpack.zip
+OpenVINO IR directory: ~/voice-id-audio/ovms/repo`}</pre></div></li>
+              <li><Icon name="storage" /><div><h3>Load the clips</h3><p>Ask the game owner for the private seed pack and import it on the admin page, then press <b>Warm now</b> and wait until every opponent shows all clips cached: battles then start in about a second. The repository contains no audio, on purpose: voices are personal data. <a href={doc('docs/SEEDING.md')}>Seeding guide</a>.</p></div></li>
               <li><Icon name="check" /><div><h3>Check the booth</h3><p>Play a solo game and a battle on the booth laptop, put <code>/tv</code> on the monitor, change the admin password, reset scores.</p></div></li>
             </ol>
             <div className="actions">

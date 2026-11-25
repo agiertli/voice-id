@@ -1,8 +1,15 @@
 # Deepfake detectors on OpenVINO Model Server (OpenShift AI)
 
 The two Wav2Vec2 detectors ("Gary" = `wav2vec2-base`, "Gary 2.0" = `wav2vec2-v4a-no-weights`) served by
-the **built-in `kserve-ovms` runtime** of OpenShift AI 3.5.4 (template annotation says runtime-version v2026.1.0; the image actually reports **OVMS 2026.2.0**). It runs on CPU with an FP32 IR. This runs in parallel
-with the game in namespace `voice-id-ovms`. **The game is not wired to it.**
+the **built-in `kserve-ovms` runtime** of OpenShift AI 3.5.4 (template annotation says runtime-version v2026.1.0; the image actually reports **OVMS 2026.2.0**). It runs on CPU with an FP32 IR.
+
+**Status: this is the live serving path since 2026-11-25** (Helm `detectorBackend: openvino`, the default). Everything runs in the
+game's namespace `voice-id`: ServingRuntime `kserve-ovms`, InferenceServices `gary-base` / `gary-finetuned`, model PVCs, and the
+adapters `adapter-gary-base` / `adapter-gary-finetuned` that the game calls. The legacy Flask/PyTorch Deployments were decommissioned
+the same day; their manifests (`infra/deepfake-detector*/`) remain for an emergency rollback only. Install: `install.sh` (all profiles)
+or [INSTALLATION.md](INSTALLATION.md) step 2. Evidence: [OPENVINO-SWITCH-BRIEF.md](OPENVINO-SWITCH-BRIEF.md).
+
+> Sections 4 and 5 below are the historical record of the evaluation (run in a separate namespace `voice-id-ovms`, since deleted).
 
 | File | Purpose |
 |------|---------|
@@ -11,9 +18,10 @@ with the game in namespace `voice-id-ovms`. **The game is not wired to it.**
 | `apps/deepfake-detector/ovms_adapter/` (`app.py`, `Dockerfile`) | serve.py-compatible adapter (`/predict`, `/health`, `/ready`) used by the game when `detectorBackend=openvino` |
 | `apps/deepfake-detector/ovms_bench.py` | In-cluster parity + benchmark, legacy `/predict` vs adapter `/predict` |
 | `apps/deepfake-detector/ovms_parity.py` | Runs every clip through the current Flask detector and through OVMS, then reports flips, p_fake diffs and latency |
-| `infra/openvino-detector/manifests.yaml` | Namespace, PVCs, ServingRuntime (from template `kserve-ovms`), 2 InferenceServices |
+| `infra/openvino-detector/manifests.yaml` | PVCs, ServingRuntime (from template `kserve-ovms`), 2 InferenceServices (namespace `voice-id`; no Namespace object) |
 | `infra/openvino-detector/model-loader.yaml` | Temporary pod used to `oc cp` the IR onto the PVCs |
-| `infra/openvino-detector/adapter.yaml` | ImageStream + BuildConfig for the adapter image, `adapter-gary-base` / `adapter-gary-finetuned` Deployments + Services |
+| `infra/openvino-detector/adapter.yaml` | `adapter-gary-base` / `adapter-gary-finetuned` Deployments + Services, image `quay.io/agiertli/voice-id-ovms-adapter:v0.1.1` |
+| `infra/openvino-detector/adapter-build.yaml` | Optional: ImageStream + BuildConfig to build the adapter image in-cluster instead |
 
 Model weights stay out of git because of their size (2 x 1.26 GB). They live in `~/voice-id-audio/ovms/repo/` and on the PVCs.
 Weights contain no recordings. The **clips** used for the parity test are Rule Zero data: they stayed local and were deleted afterwards.
@@ -73,7 +81,7 @@ Game mapping (`_detector_analyze`): `SYNTHETIC` -> guess "ai", everything else -
 
 ### KServe v2 REST example
 
-Endpoint inside the cluster: `http://<isvc>-predictor.voice-id-ovms.svc.cluster.local:8888/v2/models/<isvc>/infer`
+Endpoint inside the cluster: `http://<isvc>-predictor.voice-id.svc.cluster.local:8888/v2/models/<isvc>/infer`
 (`<isvc>` = `gary-base` | `gary-finetuned`; OVMS's model name equals the ISVC name; the predictor Service also maps port 80 to 8888).
 
 JSON request (Gary 2.0: 160000 numbers, about 3.5 MB of JSON text):
@@ -141,21 +149,31 @@ Client preprocessing (`ovms_client.preprocess`) vs serve.py + `AutoFeatureExtrac
 
 ---
 
-## 3. Deployment (namespace `voice-id-ovms`)
+## 3. Deployment
+
+`install.sh` does all of this for every profile (`--ovms-model-dir`, default `~/voice-id-audio/ovms/repo`). By hand:
 
 ```bash
 export KUBECONFIG=<cluster kubeconfig>
-# namespace, 2 PVCs (gp3-csi, 5Gi each), ServingRuntime kserve-ovms; ISVCs last
+oc label namespace voice-id opendatahub.io/dashboard=true --overwrite
+# 2 PVCs (gp3-csi, 5Gi each), ServingRuntime kserve-ovms; ISVCs last
 python3 -c "d=open('infra/openvino-detector/manifests.yaml').read().split('\n---\n');print('\n---\n'.join(x for x in d if 'kind: InferenceService' not in x))" | oc apply -f -
 oc apply -f infra/openvino-detector/model-loader.yaml
-oc wait --for=condition=Ready pod/ovms-model-loader -n voice-id-ovms
-oc cp ~/voice-id-audio/ovms/repo/gary-base      voice-id-ovms/ovms-model-loader:/models/gary-base-models/gary-base
-oc cp ~/voice-id-audio/ovms/repo/gary-finetuned voice-id-ovms/ovms-model-loader:/models/gary-finetuned-models/gary-finetuned
-oc exec -n voice-id-ovms ovms-model-loader -- sha256sum /models/*/*/1/model.bin   # compare with local shasum
-oc delete pod ovms-model-loader -n voice-id-ovms            # RWO: free the volumes
-oc apply -f infra/openvino-detector/manifests.yaml           # creates the 2 InferenceServices
-oc wait --for=condition=Ready isvc --all -n voice-id-ovms --timeout=400s
+oc wait --for=condition=Ready pod/ovms-model-loader -n voice-id
+oc cp ~/voice-id-audio/ovms/repo/gary-base      voice-id/ovms-model-loader:/models/gary-base-models/gary-base
+oc cp ~/voice-id-audio/ovms/repo/gary-finetuned voice-id/ovms-model-loader:/models/gary-finetuned-models/gary-finetuned
+oc exec -n voice-id ovms-model-loader -- sha256sum /models/*/*/1/model.bin   # compare with local shasum
+oc delete pod ovms-model-loader -n voice-id            # RWO: free the volumes
+oc apply -f infra/openvino-detector/manifests.yaml      # creates the 2 InferenceServices
+oc wait --for=condition=Ready isvc gary-base gary-finetuned -n voice-id --timeout=400s
+# adapters: public image quay.io/agiertli/voice-id-ovms-adapter:v0.1.1 (optional in-cluster build: adapter-build.yaml)
+oc apply -f infra/openvino-detector/adapter.yaml
+oc rollout status deploy/adapter-gary-base deploy/adapter-gary-finetuned -n voice-id
 ```
+
+Loading a new IR into a running system: stop the predictors first (RWO volumes), e.g. `oc delete isvc gary-base gary-finetuned -n voice-id`,
+load as above, re-apply `manifests.yaml`, then clear that opponent's answer cache (`POST /api/admin/opponent-cache/clear` with
+`{"opponent": "gary-finetuned"}`) and warm it again.
 
 What gets created:
 - `ServingRuntime/kserve-ovms`: verbatim objects from template `redhat-ods-applications/kserve-ovms`, plus the template annotations the dashboard adds.
@@ -167,7 +185,7 @@ What gets created:
 Tests from a workstation: port-forward **the Deployment, not the Service**. `svc/<isvc>-predictor` is headless (port 80 -> 8888),
 and `oc port-forward svc/...` then tries pod port 80 and fails:
 ```bash
-oc port-forward -n voice-id-ovms deploy/gary-finetuned-predictor 18888:8888 &
+oc port-forward -n voice-id deploy/gary-finetuned-predictor 18888:8888 &
 curl -s localhost:18888/v2/models/gary-finetuned      # metadata
 python3 apps/deepfake-detector/ovms_adapter/ovms_client.py --url http://localhost:18888 --model gary-finetuned clip.wav
 ```
@@ -179,7 +197,7 @@ python3 apps/deepfake-detector/ovms_adapter/ovms_client.py --url http://localhos
 Method: all **110 clips** of seed pack `voice-id-seedpack-20261124-2139` (79 wav, 20 m4a, 10 flac, 1 mp3, durations 2-60 s;
 the 12 XTTS clips imported later are not in that pack). The pack was unpacked locally and deleted afterwards. Each clip was converted
 with the game's ffmpeg call, then the same WAV bytes went to (a) the running `svc/deepfake-detector-*` `/predict` in `voice-id`
-(read-only, via port-forward) and (b) `ovms_client.predict` -> OVMS in `voice-id-ovms` (via port-forward).
+(read-only, via port-forward) and (b) `ovms_client.predict` -> OVMS in the evaluation namespace `voice-id-ovms` (via port-forward).
 Command: `apps/deepfake-detector/ovms_parity.py`.
 
 | Model | n | Failures | Verdict flips | max \|Δp_fake\| | mean \|Δp_fake\| |
@@ -213,10 +231,11 @@ It never reached HIGH-MEM during the later passes (peak about 730 Mi). It is a p
 
 ---
 
-## 5. Integration (adapter implemented, game not switched)
+## 5. Integration (option B implemented and live)
 
-Option B below is now implemented: see `apps/deepfake-detector/ovms_adapter/`, `infra/openvino-detector/adapter.yaml`, the Helm
-switch `detectorBackend`, and [OPENVINO-SWITCH-BRIEF.md](OPENVINO-SWITCH-BRIEF.md) for the evidence and procedure.
+Option B below is implemented and has been the live path since 2026-11-25: see `apps/deepfake-detector/ovms_adapter/`,
+`infra/openvino-detector/adapter.yaml`, the Helm switch `detectorBackend`, and [OPENVINO-SWITCH-BRIEF.md](OPENVINO-SWITCH-BRIEF.md).
+The text below is the original decision record; namespace names in it refer to the evaluation setup.
 
 ### Where should preprocessing live?
 
@@ -248,7 +267,7 @@ Do A only if the model contract is considered frozen. V4-A is the declared final
 4. Watch `DETECTOR verdict=` log lines and OVMS metrics (`ovms_requests_success`, `ovms_request_time_us`) during one game session.
 5. Keep the old `deepfake-detector-*` Deployments running (or scaled to 0, not deleted) for at least one event.
 
-### Footprint of the parallel deployment (as left running)
+### Footprint (per model, unchanged in production)
 
 | Item | Requests / limits | Measured |
 |------|-------------------|----------|
@@ -257,10 +276,11 @@ Do A only if the model contract is considered frozen. V4-A is the declared final
 | PVCs | 2 x 5Gi gp3 | 1.26 GB used each |
 
 The cluster reserves 4 CPU and 8 GiB in requests while idle. Both pods landed on the 64-vCPU control-plane/worker node.
-Scale to zero without deleting anything: `oc patch isvc gary-base gary-finetuned -n voice-id-ovms --type merge -p '{"metadata":{"annotations":{"serving.kserve.io/stop":"true"}}}'`.
+Scale to zero without deleting anything (this disables Gary and Gary 2.0 in the game): `oc patch isvc gary-base gary-finetuned -n voice-id --type merge -p '{"metadata":{"annotations":{"serving.kserve.io/stop":"true"}}}'`.
 
-### Rollback
+### Rollback (emergency)
 
-`helm upgrade` with the previous `detector.url` / `detectorBase.url` values (`http://deepfake-detector-fine-tuned:8080`, `http://deepfake-detector-base:8080`) (or `helm rollback voice-id <rev>`). This takes
-seconds, has no data migration, and leaves the game DB untouched. If the old Deployments were scaled to 0, scale them back to 1 first
-(about 60 s model load). The OVMS namespace can stay up or be deleted independently: `oc delete project voice-id-ovms`.
+The legacy Deployments are decommissioned. Re-apply `infra/deepfake-detector-base/manifests.yaml` and `infra/deepfake-detector/manifests.yaml`
+in `voice-id`, wait for both rollouts (about 60 s model load), then `helm upgrade voice-id apps/voice-id/helm/voice-id -n voice-id --reuse-values --set detectorBackend=legacy`
+(or `./install.sh --profile <p> --legacy-detectors`). No data migration; the game DB is untouched. See
+[INSTALLATION.md](INSTALLATION.md#detector-rollback-legacy).

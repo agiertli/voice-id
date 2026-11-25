@@ -15,18 +15,23 @@ flowchart LR
         Rec["Speaker browser<br/>Clone Studio"]
     end
 
-    subgraph NSGame["namespace voice-id"]
+    subgraph NS["namespace voice-id (everything)"]
         Game["voice-id<br/>Flask + gunicorn<br/>CPU"]
         DB[("SQLite on PVC<br/>clips, players,<br/>games, leaderboard")]
-        Qwen["qwen2-audio<br/>LLMInferenceService<br/>L4 GPU #1"]
-        Gemma["gemma<br/>LLMInferenceService<br/>L4 GPU #2"]
-        GaryB["deepfake-detector-base<br/>CPU"]
-        GaryF["deepfake-detector-fine-tuned<br/>CPU"]
+        subgraph RHOAI["Red Hat OpenShift AI (KServe)"]
+            subgraph VLLM["vLLM, generative, GPU"]
+                Qwen["qwen2-audio<br/>LLMInferenceService<br/>L4 GPU #1"]
+                Gemma["gemma<br/>LLMInferenceService<br/>L4 GPU #2"]
+            end
+            subgraph OVMS["OpenVINO Model Server, predictive, CPU"]
+                GaryB["gary-base<br/>InferenceService<br/>FP32 IR on PVC"]
+                GaryF["gary-finetuned<br/>InferenceService<br/>FP32 IR on PVC"]
+            end
+        end
+        AdB["adapter-gary-base<br/>preprocessing, CPU"]
+        AdF["adapter-gary-finetuned<br/>preprocessing, CPU"]
         XTTS["xtts-v2<br/>L4 GPU #3"]
         Fish["fish-native<br/>L4 GPU #4"]
-    end
-
-    subgraph NSStudio["namespace voice-clone-studio"]
         Studio["voice-clone-studio<br/>Flask, CPU"]
         SDB[("SQLite on PVC<br/>voices, clips,<br/>recordings")]
     end
@@ -37,14 +42,20 @@ flowchart LR
     Game --- DB
     Game -->|"raw WAV, chat/completions"| Qwen
     Game -->|"spectrogram PNG, chat/completions"| Gemma
-    Game -->|"WAV, /predict"| GaryB
-    Game -->|"WAV, /predict"| GaryF
+    Game -->|"WAV, /predict"| AdB
+    Game -->|"WAV, /predict"| AdF
+    AdB -->|"KServe v2 binary tensor"| GaryB
+    AdF -->|"KServe v2 binary tensor"| GaryF
     Rec -->|HTTPS route| Studio
     Studio --- SDB
     Studio -->|"clone_speaker, tts"| XTTS
     Studio -->|"references/add, v1/tts"| Fish
     Studio -.->|"import tool / seed pack<br/>(operator, via APIs)"| Game
 ```
+
+One namespace holds everything. Red Hat OpenShift AI serves all four opponents through
+KServe: the two generative models (Teddy, Iris) with vLLM on GPUs, the two predictive
+Wav2Vec2 classifiers (Gary, Gary 2.0) with the built-in OpenVINO Model Server on CPU.
 
 The game never calls the TTS engines. Clips are made beforehand (Clone Studio or
 offline scripts) and stored in the game database. XTTS and Fish serve Clone Studio
@@ -54,7 +65,7 @@ only.
 
 | Profile | Workloads | GPU nodes |
 |---|---|---:|
-| minimal | `voice-id`, `deepfake-detector-base`, `deepfake-detector-fine-tuned` (all CPU) | 0 |
+| minimal | `voice-id`, OpenVINO detectors `gary-base` + `gary-finetuned` with their adapters (all CPU) | 0 |
 | standard | minimal + `qwen2-audio`, `gemma` | 2 |
 | full | standard + `xtts-v2`, `fish-native`, `voice-clone-studio` | 4 |
 
@@ -70,8 +81,9 @@ disabled with Helm flags and disappear from the API, the game and `/tv`. See
 | `voice-id` | `quay.io/agiertli/voice-id` (UBI9 Python 3.12, gunicorn 4 workers × 4 threads) | 0.5 / 2 CPU, 512 Mi / 1 Gi | PVC `voice-id-data` 1 Gi RWO (SQLite, WAL) | Route, edge TLS, 120 s timeout |
 | `qwen2-audio` | vLLM via KServe LLMInferenceService, `Qwen/Qwen2-Audio-7B-Instruct`, max len 4096 | 1 L4, 1 / 4 CPU, 8 / 24 Gi | PVC `qwen2-audio-model` 20 Gi | Internal `https://qwen2-audio-kserve-workload-svc:8000/v1` |
 | `gemma` | vLLM via LLMInferenceService, `RedHatAI/gemma-4-12B-it-FP8-dynamic`, served as `gemma-4-12b`, max len 8192, 1 image per prompt | 1 L4, 1 / 4 CPU, 8 / 24 Gi | PVC `gemma-model` 30 Gi | Internal `https://gemma-kserve-workload-svc:8000/v1` |
-| `deepfake-detector-base` | `quay.io/agiertli/deepfake-detector-base:v1.0.3`, Wav2Vec2-XLSR pre-trained | 2 / 4 CPU, 1 / 2 Gi | none | Service :8080 (+ route) |
-| `deepfake-detector-fine-tuned` | `quay.io/agiertli/deepfake-detector:v2.0.0`, V4-A fine-tune | 2 / 4 CPU, 1 / 2 Gi | none | Service :8080 (+ route) |
+| `gary-base` | KServe InferenceService, built-in `kserve-ovms` ServingRuntime (Red Hat OVMS 2026.2, `--rest_workers=16`, FP32 pinned), Wav2Vec2-XLSR pre-trained as FP32 OpenVINO IR | 2 / 4 CPU, 4 / 6 Gi (+ kube-rbac-proxy) | PVC `gary-base-models` 5 Gi | Internal, headless `gary-base-predictor:8888` (KServe v2) |
+| `gary-finetuned` | Same runtime, V4-A fine-tune as FP32 IR | 2 / 4 CPU, 4 / 4 Gi (+ kube-rbac-proxy) | PVC `gary-finetuned-models` 5 Gi | Internal, headless `gary-finetuned-predictor:8888` |
+| `adapter-gary-base`, `adapter-gary-finetuned` | `quay.io/agiertli/voice-id-ovms-adapter:v0.1.1` (UBI9, numpy/scipy, no weights) | 0.1 / 1 CPU, 128 / 512 Mi each | none | Internal Service :8080 (`/predict`, `/health`, `/ready`) |
 | `xtts-v2` | `ghcr.io/coqui-ai/xtts-streaming-server` (pinned by digest) | 1 L4, 4 CPU, 8 Gi | none | Service :80, route |
 | `fish-native` | `docker.io/fishaudio/fish-speech` (pinned by digest), S2 Pro, `--compile` | 1 L4, 4 CPU, 16 Gi | PVC `fish-data` 20 Gi (weights); references in memory | Service :8080, route (300 s) |
 | `voice-clone-studio` | `quay.io/agiertli/voice-clone-studio:v2.2.1` | 0.1 / 0.5 CPU, 128 / 256 Mi | PVC `voice-clone-studio-data` 1 Gi | Route, 300 s timeout |
@@ -123,14 +135,32 @@ near-instant once warm. Details: [answer cache](customization/ai-opponents.md#an
 |---|---|---|
 | Teddy (`qwen`) | Clip converted to 22.05 kHz mono WAV, base64 `audio_url` + forensic prompt | Audio |
 | Iris (`gemma`) | Server renders a spectrogram (matplotlib, 0–8 kHz, magma), base64 `image_url` + prompt | **Image** (only opponent using spectrograms) |
-| Gary (`gary-base`) | WAV as multipart to `/predict` | Waveform; verdict from `p_fake` thresholds 0.3 / 0.7 |
-| Gary 2.0 (`gary-finetuned`) | Same | Same |
+| Gary (`gary-base`) | WAV as multipart to the adapter's `/predict`; the adapter preprocesses and calls OVMS | Waveform (whole clip); verdict from `p_fake` thresholds 0.3 / 0.7 |
+| Gary 2.0 (`gary-finetuned`) | Same | Waveform (first 10 s); same thresholds |
 
 Details: [AI opponents](customization/ai-opponents.md).
 
-Optional detector backend: Helm `detectorBackend: openvino` points Gary / Gary 2.0 at serve.py-compatible adapters in front of
-OpenShift AI's built-in OpenVINO Model Server (namespace `voice-id-ovms`, `infra/openvino-detector/`). It is parity-tested against the legacy
-Deployments, and `legacy` stays the default. Payload contract: [OPENVINO-DETECTOR.md](OPENVINO-DETECTOR.md). Switch decision: [OPENVINO-SWITCH-BRIEF.md](OPENVINO-SWITCH-BRIEF.md).
+### How the Garys are served (OpenVINO Model Server)
+
+Since 2026-11-25 (Helm `detectorBackend: openvino`, the default) Gary and Gary 2.0 run on OpenShift AI's built-in
+OpenVINO Model Server (`infra/openvino-detector/`):
+
+```mermaid
+flowchart LR
+    Game["voice-id<br/>(ffmpeg: 22.05 kHz mono WAV)"] -->|"POST /predict"| Ad["adapter-gary-*<br/>resample 16 kHz, RMS normalize,<br/>length policy, z-normalize"]
+    Ad -->|"KServe v2 binary FP32<br/>:8888 headless"| ISVC["InferenceService gary-*<br/>OVMS, FP32 IR on PVC"]
+    ISVC -->|"logits"| Ad
+    Ad -->|"verdict, confidence, prob_fake"| Game
+```
+
+- The adapters keep the old detector HTTP API (`/predict`, `/health`, `/ready`, same JSON), so the game code did not change.
+- Length policy: Gary 2.0 scores a fixed 10 s (160000 samples, padded or truncated); Gary base scores the clip at native length.
+- Proof: 0 verdict flips on all 129 live clips per model (max |Δp_fake| 0.0001); 2.2–3.3x faster at the same 4-CPU limit
+  (Gary 2.0 single clip 2.7 s → 1.2 s, 5 parallel 17.9 s → 6.1 s); about 2.8x throughput per CPU; about 2x the memory requests.
+- The legacy Flask/PyTorch Deployments (`infra/deepfake-detector*/`) are decommissioned and kept only as emergency rollback manifests
+  (`./install.sh --legacy-detectors`, Helm `detectorBackend=legacy`).
+
+Payload contract: [OPENVINO-DETECTOR.md](OPENVINO-DETECTOR.md). Evidence and rollback: [OPENVINO-SWITCH-BRIEF.md](OPENVINO-SWITCH-BRIEF.md).
 
 ## Clip pipeline
 
@@ -171,5 +201,7 @@ repository; nothing in this pipeline touches Git.
 - No authentication for players; all game admin endpoints (including clip
   management and score reset) use one shared Bearer token; the Clone Studio API is
   unauthenticated. Game scoring is server-side.
+- The OVMS predictors and adapters have no auth and no Route (cluster-internal only);
+  a NetworkPolicy limiting ingress to the game pod is an optional hardening step.
 - LLM endpoints are cluster-internal and called with TLS verification off; external
   exposure needs Red Hat Connectivity Link.

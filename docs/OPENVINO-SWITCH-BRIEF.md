@@ -1,6 +1,15 @@
 # Decision brief: switch Gary / Gary 2.0 to OpenVINO Model Server
 
-**Recommendation: technically ready, switch after one battle on the OpenVINO path.** Parity is exact on all 129 live clips. OVMS is about 2.8x more
+> **Status (2026-11-25): SWITCHED LIVE.** The live game runs Gary and Gary 2.0 on OpenShift AI's built-in OpenVINO Model Server
+> (Helm `detectorBackend: openvino`, now the chart default). The same day the stack was consolidated into **one namespace, `voice-id`**
+> (OVMS ServingRuntime, InferenceServices, model PVCs, adapters, and Voice Clone Studio); the adapters run the public image
+> `quay.io/agiertli/voice-id-ovms-adapter:v0.1.1`. The legacy
+> `deepfake-detector-*` Deployments, Services and Routes were **deleted** (they were planned as hot standby, then decommissioned early).
+> Rollback is now: re-apply `infra/deepfake-detector*/manifests.yaml`, then `--set detectorBackend=legacy` (section 6).
+> `install.sh` deploys the OpenVINO stack for every profile. Open items: section 8 (model weights still loaded via PVC, NetworkPolicy, parity after RHOAI upgrades).
+> Sections 1–5 and 9 are the pre-switch record; the namespace `voice-id-ovms` named there no longer exists.
+
+**Recommendation (pre-switch): technically ready, switch after one battle on the OpenVINO path.** Parity is exact on all 129 live clips. OVMS is about 2.8x more
 efficient per CPU, and the cold-cache "Preparing the game" for Gary 2.0 drops from about 18 s to about 6 s. It runs on a supported RHOAI runtime, and rollback is one
 Helm value. The costs are about 2x memory requests and one small custom adapter. The only gate not executed is the browser battle on staging (blocked by permissions).
 Either run the staging commands in section 9, or switch live and immediately play one Gary and one Gary 2.0 battle, keeping the legacy Deployments
@@ -104,19 +113,24 @@ Verify:
 3. Play one battle against Gary and one against Gary 2.0.
 4. Watch `ovms_requests_fail` (expected 0) and adapter 5xx in the logs during the first session.
 
-## 6. Rollback (seconds)
+## 6. Rollback (about 2 min since the legacy Deployments were deleted)
 
 ```bash
+oc apply -f infra/deepfake-detector-base/manifests.yaml -f infra/deepfake-detector/manifests.yaml   # namespace voice-id
+oc rollout status deploy/deepfake-detector-base deploy/deepfake-detector-fine-tuned -n voice-id --timeout=600s
 helm upgrade voice-id apps/voice-id/helm/voice-id -n voice-id --reuse-values --set detectorBackend=legacy
 ```
-Keep the legacy `deepfake-detector-*` Deployments running during the soak, so rollback is just this one command.
+Or `./install.sh --profile <profile> --legacy-detectors`. Parity means cached opponent answers stay valid. Back: `--set detectorBackend=openvino`.
 
-## 7. Decommission (after a soak period: at least one event / a few days with 0 adapter errors)
+## 7. Decommission (DONE 2026-11-25)
 
-1. Scale the legacy detectors to 0, keeping them for a fast restore: `oc scale deploy/deepfake-detector-base deploy/deepfake-detector-fine-tuned -n voice-id --replicas=0`.
-2. After another event, delete the Deployments, Services and Routes (`deepfake-detector-*` in `voice-id`, `infra/deepfake-detector*/`), and update
-   `install.sh` / profiles / docs (Rule Two). The legacy detector Routes are currently public; removing them is a security win.
-3. Move the adapter image to quay (`quay.io/agiertli/voice-id-ovms-adapter:v0.1.0`) and add `infra/openvino-detector/` to the installer profiles.
+1. ~~Scale the legacy detectors to 0.~~ Skipped: the owner decommissioned them directly.
+2. **Done:** the `deepfake-detector-*` Deployments, Services and (public) Routes in `voice-id` were deleted. `infra/deepfake-detector*/` stay in the
+   repository as emergency rollback manifests only; `install.sh` deploys them only with `--legacy-detectors`. Docs updated (Rule Two).
+3. **Done:** `infra/openvino-detector/` is in every installer profile; everything moved into namespace `voice-id`.
+   **Done:** the adapter image is public at `quay.io/agiertli/voice-id-ovms-adapter:v0.1.1`; the in-cluster BuildConfig moved to the optional `infra/openvino-detector/adapter-build.yaml`.
+   **Open:** the model weights are not in a registry; they are still copied onto PVCs with the loader pod (an OCI modelcar / Model Registry is the next step).
+   Leftover legacy objects on another cluster: `oc delete -f infra/deepfake-detector-base/manifests.yaml -f infra/deepfake-detector/manifests.yaml` (Deployment, Service, Route each).
 
 ## 8. Risks and open points
 
@@ -129,14 +143,15 @@ Keep the legacy `deepfake-detector-*` Deployments running during the soak, so ro
    watch `memory.current`. A fallback is `INPUT_LENGTH` padding to buckets, but that would change results, so it's not recommended.
 4. **Runtime version.** The template advertises OVMS v2026.1.0, but the image is 2026.2.0. An RHOAI upgrade can change the runtime image, so re-run
    `ovms_bench.py --phases parity` after every RHOAI upgrade. It takes about 15 min and must give 0 flips.
-5. **Headless predictor Service.** In-cluster calls must use `http://<isvc>-predictor.voice-id-ovms.svc.cluster.local:8888`. The ISVC status URL (port 80) does not work.
-6. **Adapter image location.** It is in the cluster's internal registry, built by the `voice-id-ovms-adapter` BuildConfig. The quay push failed (stale credentials).
-   Push `quay.io/agiertli/voice-id-ovms-adapter:v0.1.1` before relying on it across clusters.
-7. **No auth / NetworkPolicy** on OVMS and adapters. This is the same posture as the legacy detectors, which even have public Routes. Optionally add a NetworkPolicy:
-   ingress to `adapter-*` only from namespace `voice-id`, and to predictors only from the adapters.
+5. **Headless predictor Service.** In-cluster calls must use `http://<isvc>-predictor.voice-id.svc.cluster.local:8888`. The ISVC status URL (port 80) does not work.
+6. ~~Adapter image location.~~ Resolved: public `quay.io/agiertli/voice-id-ovms-adapter:v0.1.1` (pinned). Optional self-build: `infra/openvino-detector/adapter-build.yaml`.
+   Model weights still live only on the PVCs (loaded with `model-loader.yaml`); keep a private copy of the IR in `~/voice-id-audio/ovms/repo/`.
+7. **No auth / NetworkPolicy** on OVMS and adapters (no Routes, cluster-internal only). Optionally add a NetworkPolicy in `voice-id`:
+   ingress to `adapter-*` only from the game pod, and to the predictors only from the adapters.
 8. **Single replica** each, same as legacy. OVMS restart and model load take about 10 s.
-9. **Chart state.** Commit `d5c0e04` already contains the `detectorBackend` values, but **not** the template logic (`templates/deployment.yaml`, uncommitted).
-   Commit the template before the switch. Until then `detectorBackend` has no effect.
+9. ~~Chart state.~~ Resolved: the template logic is committed (`e5b6bc6`); the default adapter URLs now follow the release namespace.
+10. **Parity reference after RHOAI upgrades.** `ovms_bench.py` compares against the legacy `/predict`. With the legacy Deployments gone, apply
+    `infra/deepfake-detector*/manifests.yaml` temporarily as the reference (no Helm switch), run `--phases parity`, then delete them again.
 
 ## 9. Gate summary
 

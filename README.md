@@ -8,8 +8,9 @@ A conference booth game about trusting voices. Players hear five short clips,
 some real people and some AI clones of the same people saying the same sentences,
 and decide **natural voice** or **AI generated** as fast as they can. In battle
 mode they compete against four AI detectors, from a 7B audio LLM to a fine-tuned
-deepfake classifier. Everything runs on OpenShift and OpenShift AI (vLLM) on
-NVIDIA L4 GPUs; no voice leaves the cluster.
+deepfake classifier. Everything runs in one namespace on Red Hat OpenShift; Red Hat
+OpenShift AI serves the generative opponents with vLLM on NVIDIA L4 GPUs and the
+predictive classifiers with OpenVINO Model Server on CPU. No voice leaves the cluster.
 
 **New here?** Start with the [portal](https://agiertli.github.io/voice-id/)
 (source in [`portal/`](portal/)): what the game is, how to play, the opponents,
@@ -52,8 +53,13 @@ export KUBECONFIG=~/.kube/voice-id-<event>.kubeconfig   # log in yourself; the s
 ./install.sh --profile standard --admin-token-file ~/.voice-id-admin-token
 ```
 
-`install.sh` is checked with ShellCheck and mocked dry runs but not yet on a live
-cluster. About 35 minutes for `full` on a fresh OpenShift AI 3 cluster.
+`install.sh` deploys the detectors on OpenShift AI's OpenVINO Model Server for every
+profile: it needs the OpenVINO IR of the two models in `~/voice-id-audio/ovms/repo/`
+(`--ovms-model-dir`, from the owner or `export_openvino.py`; copied onto PVCs) and
+pulls the small adapter image from `quay.io/agiertli/voice-id-ovms-adapter`. `--legacy-detectors` is an emergency fallback; `--wait-cache`
+warms the opponent answer cache. It is checked with ShellCheck and mocked dry runs but
+not yet end-to-end on a fresh cluster. About 35 minutes for `full` on a fresh
+OpenShift AI 3 cluster.
 
 - [Installation runbook](docs/INSTALLATION.md): GPU nodes, opponents, TTS engines,
   the game, Voice Clone Studio, verification, troubleshooting.
@@ -86,8 +92,8 @@ the symlink when cloning. Claude Code also has a background agent at
 ```text
 apps/voice-id/             the game (Flask, SQLite), Helm chart, tools/ (seedpack, Clone Studio import)
 apps/voice-clone-studio/   voice cloning and sentence recording app, Helm chart
-apps/deepfake-detector/    detector research, training and inference server (Gary, Gary 2.0)
-infra/                     GPU MachineSet example, LLM opponents, detectors, TTS engines
+apps/deepfake-detector/    detector research and training, OpenVINO export, OVMS adapter (Gary, Gary 2.0)
+infra/                     GPU MachineSet example, LLM opponents, OpenVINO detectors (+ legacy rollback), TTS engines
 docs/                      runbooks and guides
 portal/                    public GitHub Pages site (Vite + React)
 ```
@@ -96,5 +102,5 @@ portal/                    public GitHub Pages site (Vite + React)
 
 A custom conference demo built on Red Hat OpenShift and OpenShift AI with
 community models (Qwen2-Audio, Coqui XTTS v2, Fish Speech, Wav2Vec2) and a Red Hat
-AI published Gemma model. Single replicas and SQLite: fine for a booth, not a
+AI published Gemma model, served by OpenShift AI's vLLM and OpenVINO Model Server runtimes. Single replicas and SQLite: fine for a booth, not a
 production design, and not a Red Hat supported solution as a whole.

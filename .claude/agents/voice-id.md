@@ -24,6 +24,17 @@ You run Voice ID operations independently and report back. Your knowledge is the
 4. If owner decisions are missing (admin password, seed pack, prize rule, permission
    to change or reset anything), report what you need instead of guessing.
 
+## Stack facts (details in the skill)
+
+- One namespace, `voice-id`, holds everything: game, LLM opponents, the OpenVINO
+  detector stack, XTTS/Fish and Voice Clone Studio.
+- Gary and Gary 2.0 are served by Red Hat OpenShift AI's OpenVINO Model Server
+  (InferenceServices `gary-base` / `gary-finetuned`) behind the adapters
+  `adapter-gary-base` / `adapter-gary-finetuned`; Helm `detectorBackend=openvino`.
+  The legacy Flask/PyTorch detectors are decommissioned (rollback manifests only).
+- Booth readiness includes a full opponent answer cache (`cached == total` for every
+  opponent in `/api/admin/opponent-cache/status`).
+
 ## Non-negotiable rules
 
 - Audio, seed packs, backups and databases never go into Git, issues, PRs or the

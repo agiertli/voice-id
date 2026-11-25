@@ -148,6 +148,20 @@ c = json.load(sys.stdin)
 print(len(c), "clips"); print(collections.Counter((x["language"], "AI" if x["is_ai"] else "human") for x in c))'
 ```
 
+**Warm the opponent answer cache** (after every import): each opponent's answer per
+clip is computed once and cached, so the battle's "Preparing the game" takes about 1 s.
+
+```bash
+curl -sk -X POST -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/opponent-cache/warm"
+curl -sk -H "Authorization: Bearer ${VOICEID_ADMIN_TOKEN}" "https://${ROUTE}/api/admin/opponent-cache/status" \
+  | python3 -c 'import json,sys; [print(o["id"], o["cached"], "/", o["total"]) for o in json.load(sys.stdin)["opponents"]]'
+```
+
+Repeat the status call until every opponent shows `cached == total` (about clips ×
+per-call time: Gary 2.0 about 1.2 s per clip, Iris 4–5 s per clip; the opponents warm
+in parallel). `./install.sh ... --wait-cache` does the same. Details:
+[answer cache](customization/ai-opponents.md#answer-cache-and-background-pre-warm).
+
 **Resolve speaker warnings** (mandatory before the booth opens): `/admin` shows a red
 banner and a counter on the **Speakers** tab when the check finds
 
@@ -245,7 +259,7 @@ repository is git-ignored, but don't rely on that: keep audio out of the tree.
 2. Import into the game, dry run first:
 
 ```bash
-STUDIO=https://$(oc get route voice-clone-studio -n voice-clone-studio -o jsonpath='{.spec.host}')
+STUDIO=https://$(oc get route voice-clone-studio -n voice-id -o jsonpath='{.spec.host}')
 python3 apps/voice-id/tools/import_from_clone_studio.py --studio "$STUDIO" --game "https://${ROUTE}"
 python3 apps/voice-id/tools/import_from_clone_studio.py --studio "$STUDIO" --game "https://${ROUTE}" \
   --with-ai --providers xtts,fish --apply

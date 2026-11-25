@@ -1,0 +1,33 @@
+# OPTIONAL: build the adapter image in-cluster instead of pulling the public
+# quay.io/agiertli/voice-id-ovms-adapter:v0.1.1 (default in adapter.yaml). Not used by install.sh.
+#   oc apply -f infra/openvino-detector/adapter-build.yaml
+#   oc start-build voice-id-ovms-adapter -n voice-id --from-dir=apps/deepfake-detector/ovms_adapter --follow
+# Then point the adapters at the internal image:
+#   oc set image deploy/adapter-gary-base deploy/adapter-gary-finetuned -n voice-id \
+#     adapter=image-registry.openshift-image-registry.svc:5000/voice-id/voice-id-ovms-adapter:v0.1.1
+# (or edit the image in adapter.yaml). Needs the OpenShift internal image registry and builds enabled.
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: voice-id-ovms-adapter
+  namespace: voice-id
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: voice-id-ovms-adapter
+  namespace: voice-id
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: voice-id-ovms-adapter:v0.1.1
+  resources:
+    limits: {cpu: "2", memory: 2Gi}

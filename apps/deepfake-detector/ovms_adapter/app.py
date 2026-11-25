@@ -11,7 +11,7 @@ zero-mean/unit-variance), calls OVMS over KServe v2 REST with the binary tensor 
 serve.py's softmax + thresholds. There are no model weights in this image.
 
 Environment:
-    OVMS_URL        e.g. http://gary-finetuned-predictor.voice-id-ovms.svc.cluster.local:8888
+    OVMS_URL        e.g. http://gary-finetuned-predictor.voice-id.svc.cluster.local:8888
                     (the predictor Service is headless, so use the pod port 8888, not the advertised :80)
     OVMS_MODEL      OVMS model name (= InferenceService name), e.g. gary-finetuned
     INPUT_LENGTH    "160000" (Gary 2.0, current serve.py) | "native" (Gary base image, older serve.py)

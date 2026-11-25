@@ -1,3 +1,8 @@
+# LEGACY ROLLBACK ONLY. Decommissioned 2026-11-25: Gary / Gary 2.0 are served by OpenShift AI's
+# OpenVINO Model Server (infra/openvino-detector/, Helm detectorBackend=openvino).
+# Apply only for an emergency rollback (./install.sh --legacy-detectors, or this file plus
+# helm --set detectorBackend=legacy) or as the reference side of a parity run (ovms_bench.py).
+# Note: the Route below is public. See docs/INSTALLATION.md#detector-rollback-legacy.
 ---
 apiVersion: apps/v1
 kind: Deployment

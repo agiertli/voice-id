@@ -181,7 +181,7 @@ mix rules above enforce that per game.
 
 ## Record new human voices with Voice Clone Studio
 
-Voice Clone Studio (`apps/voice-clone-studio`, namespace `voice-clone-studio`,
+Voice Clone Studio (`apps/voice-clone-studio`, namespace `voice-id`,
 v2.2.1) has a **sentence recording mode** (v2.1.0 and later). Since v2.2 it has a
 light theme and a Slovak UI; the header's EN / CS / SK switch sets the page language,
 while the separate **Recording language** control chooses which sentences are read.
@@ -209,7 +209,7 @@ only). It talks only to the two HTTP APIs and never opens either database.
 **Dry run is the default**; nothing is uploaded or generated until `--apply`.
 
 ```bash
-STUDIO=https://$(oc get route voice-clone-studio -n voice-clone-studio -o jsonpath='{.spec.host}')
+STUDIO=https://$(oc get route voice-clone-studio -n voice-id -o jsonpath='{.spec.host}')
 GAME=https://$(oc get route voice-id -n voice-id -o jsonpath='{.spec.host}')
 read -r -s -p 'Game admin password: ' VOICEID_ADMIN_TOKEN; printf '\n'; export VOICEID_ADMIN_TOKEN
 # The tool reads VOICEID_ADMIN_TOKEN (or --game-token) and sends it only to the game.
@@ -257,7 +257,7 @@ Behaviour to know:
 - **Fish voices live in memory.** After a Fish pod restart, Clone Studio
   re-registers stored voices when Clone Studio itself starts. If Fish restarted
   but Clone Studio did not, restart Clone Studio
-  (`oc rollout restart deploy/voice-clone-studio -n voice-clone-studio`) before
+  (`oc rollout restart deploy/voice-clone-studio -n voice-id`) before
   generating.
 - **Speaker keys come from the Clone Studio speaker name**, lowercased. Make sure the
   person entered their first name there; otherwise fix it with a merge afterwards.
@@ -279,9 +279,10 @@ Gary 2.0 only knows the voices and engines it was trained on. To retrain:
 2. Follow `apps/deepfake-detector/FINDINGS.md` and `experiment_v4.py` (V4 recipe:
    16 kHz mono, RMS-normalised, amplitude-only augmentation; about 11 minutes on an
    Apple M3). Keep a speaker held out to measure generalisation.
-3. Build a new `quay.io/agiertli/deepfake-detector:<tag>`, update
-   `infra/deepfake-detector/manifests.yaml`, re-measure accuracy and false positive
-   rate on real voices, and update the opponent texts if the numbers change.
+3. Export the new checkpoint to an OpenVINO IR (`export_openvino.py`), load it onto
+   the OVMS model PVC and clear Gary 2.0's answer cache
+   ([retraining Gary 2.0](ai-opponents.md#retraining-gary-20)), re-measure accuracy and
+   false positive rate on real voices, and update the opponent texts if the numbers change.
 
 Training data stays outside Git like every other audio file.
 
