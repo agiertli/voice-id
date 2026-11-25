@@ -201,3 +201,5 @@ model needs different preprocessing, change the adapter (`INPUT_LENGTH` in
 Details and caveats: `apps/deepfake-detector/FINDINGS.md`.
 
 Iris's spectrogram is analysed by Gemma as a full-quality PNG, but sent to the browser as a compressed WebP display copy (~10x smaller, e.g. 387 KB -> ~50 KB), so battle preparation stays fast on booth Wi-Fi. Measured on the live cluster with a warm cache (v3.4.1): pre-game analysis of 5 clips takes ~0.4-1.4 s for every opponent (was 4-23 s).
+
+**When the pre-warm runs:** in the background, never blocking the pod. The warmer thread starts with the first request each server process receives (in practice the Kubernetes health probe, seconds after startup); one process at a time warms (DB lease). It runs every `opponentCache.warmIntervalSec` (default 600 s), immediately on **Warm now** / `POST /api/admin/opponent-cache/warm`, and automatically right after an admin upload or a seed pack import that adds or replaces clips. Each run only computes missing or changed (opponent, clip) answers; the cache lives in the game DB on the PVC, so restarts and upgrades keep it.

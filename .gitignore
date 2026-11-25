@@ -71,3 +71,7 @@ apps/voice-id/src/static/real-person.jpg
 # Default work dir is ~/voice-id-audio/ovms/ (outside the repo); these guard accidental in-repo exports.
 **/ovms/repo/
 **/1/model.xml
+# live deployment details (URLs, admin password) — private, never in git
+now.env
+*.env
+slack-urls.txt

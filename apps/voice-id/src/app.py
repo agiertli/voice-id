@@ -818,6 +818,7 @@ def admin_upload_clip():
          _sha256_hex(audio_data), time.time()),
     )
     db.commit()
+    _request_cache_warm("admin upload")
 
     return jsonify({"id": clip_id, "filename": filename, "is_ai": bool(int(is_ai)), "language": language})
 
@@ -1763,6 +1764,9 @@ def admin_seedpack_import():
     summary["status"] = "imported"
     summary["integrity"] = _db_integrity(get_db())
     logger.info("SEEDPACK_IMPORT mode=%s clips=%s speakers=%s", mode, summary["clips"], summary["speakers"])
+    c = summary.get("clips") or {}
+    if (c.get("added") or 0) + (c.get("replaced") or 0) > 0:
+        _request_cache_warm("seed pack import")
     return jsonify(summary)
 
 
@@ -2531,6 +2535,17 @@ def admin_opponent_cache_status():
         "clips_total": total, "opponents": out,
     })
 
+
+
+def _request_cache_warm(reason):
+    """Ask the background warmer to run now (picked up within ~WARM_POLL_SEC) after new/changed clips."""
+    if not OPPONENT_CACHE_ENABLED:
+        return
+    try:
+        _set_meta(get_db(), "warm_requested", None, time.time())
+        logger.info("OPPONENT_CACHE_WARM requested after %s", reason)
+    except Exception:
+        logger.exception("could not request opponent cache warm after %s", reason)
 
 @app.route("/api/admin/opponent-cache/warm", methods=["POST"])
 @require_admin

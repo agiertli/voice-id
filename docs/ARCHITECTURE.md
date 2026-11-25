@@ -17,7 +17,7 @@ flowchart LR
 
     subgraph NS["namespace voice-id (everything)"]
         Game["voice-id<br/>Flask + gunicorn<br/>CPU"]
-        DB[("SQLite on PVC<br/>clips, players,<br/>games, leaderboard")]
+        DB[("SQLite on PVC<br/>clips, players,<br/>games, leaderboard,<br/>opponent answer cache")]
         subgraph RHOAI["Red Hat OpenShift AI (KServe)"]
             subgraph VLLM["vLLM, generative, GPU"]
                 Qwen["qwen2-audio<br/>LLMInferenceService<br/>L4 GPU #1"]
@@ -40,6 +40,7 @@ flowchart LR
     TV -->|"/api/leaderboard every 10 s"| Game
     Staff -->|"Bearer token"| Game
     Game --- DB
+    Game -.->|"background pre-warm:<br/>each clip x opponent once,<br/>answers cached in DB"| RHOAI
     Game -->|"raw WAV, chat/completions"| Qwen
     Game -->|"spectrogram PNG, chat/completions"| Gemma
     Game -->|"WAV, /predict"| AdB
