@@ -3,6 +3,7 @@ import { OPPONENTS, POINTS_BASE, POINTS_SPEED_MAX, SPEED_WINDOW_SEC, GAME_SIZE, 
 import { REPO, doc } from './links.js'
 import Calculator from './components/Calculator.jsx'
 import Architecture from './components/Architecture.jsx'
+import RoundDemo from './components/RoundDemo.jsx'
 
 const Icon = ({ name, label }) => <img className="icon" src={`./icons/${name}.svg`} alt={label || ''} aria-hidden={label ? undefined : 'true'} />
 
@@ -20,11 +21,6 @@ function Logo() {
   return ok
     ? <img className="brand-logo" src="./logo-compact.png" alt="Voice ID: AI or Alive?" onError={() => setOk(false)} />
     : <span className="brand-text">Voice ID <b>AI or Alive?</b></span>
-}
-
-function HeroLogo() {
-  const [ok, setOk] = useState(true)
-  return ok ? <img className="hero-logo" src="./logo.png" alt="" onError={() => setOk(false)} /> : null
 }
 
 function Stars({ n }) {
@@ -79,7 +75,7 @@ export default function App() {
                 <a className="btn" href="#install">Run it at your event</a>
               </div>
             </div>
-            <HeroLogo />
+            <RoundDemo />
           </div>
         </section>
 

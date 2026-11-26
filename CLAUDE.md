@@ -28,7 +28,7 @@ scoring, installation, infrastructure, profiles, opponents, seeding or security,
 material **in the same commit**, without being asked:
 - the skill: `.agents/skills/voice-id-operations/SKILL.md` (and `.claude/agents/voice-id.md`);
 - the guides: `docs/` (INSTALLATION, AGENT-INSTALLATION, ARCHITECTURE, SEEDING, CUSTOMIZATION, `docs/customization/*`);
-- the GitHub Pages portal: `portal/src/**` (sections, scoring calculator, architecture diagram), then confirm the Pages workflow succeeds after the push;
+- the GitHub Pages portal: `portal/src/**` (sections, animated hero round `RoundDemo.jsx`, scoring calculator, architecture diagram), then confirm the Pages workflow succeeds after the push;
 - the in-app `/architecture` page and diagrams, `README.md`, `install.sh`, Helm `values.yaml` comments;
 - this file and `AGENTS.md` (keep them identical).
 
